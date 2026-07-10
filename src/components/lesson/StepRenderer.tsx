@@ -1,15 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Level, LevelStep } from '../../types/content';
+import { LevelStep } from '../../types/content';
 import LevelBlockRenderer from './LevelBlockRenderer';
 
 interface StepRendererProps {
-  level: Level;
   step: LevelStep;
-  onQuestionAnswer?: (blockId: string, correct: boolean) => void;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void;
 }
 
-export default function StepRenderer({ level, step, onQuestionAnswer }: StepRendererProps) {
+export default function StepRenderer({ step, onQuestionAnswer }: StepRendererProps) {
   return (
     <View>
       <Text style={styles.stepTitle}>{step.title}</Text>
@@ -17,7 +16,6 @@ export default function StepRenderer({ level, step, onQuestionAnswer }: StepRend
         <LevelBlockRenderer
           key={block.id}
           block={block}
-          level={level}
           onQuestionAnswer={onQuestionAnswer}
         />
       ))}

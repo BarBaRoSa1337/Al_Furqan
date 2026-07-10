@@ -19,15 +19,15 @@ Create:
 - `src/types/progress.ts`
 
 Define:
-- LocalizedText
-- QuranSource
-- ContentPackage
-- Subject
-- Track
-- Unit
-- Concept
-- LessonStep
-- LessonBlock
+- ContentSource
+- SurahRecord
+- AyahRecord
+- TranslationEntry
+- TafsirEntry
+- LearningPath
+- Level
+- LevelStep
+- LevelBlock
 - QuizQuestion
 - ProgressState
 
@@ -35,14 +35,17 @@ Define:
 
 Create:
 
-- `src/lib/content/contentRepository.ts`
+- `src/lib/content/repository.ts`
 - `src/lib/content/packageValidator.ts`
+- `src/lib/content/legacyAdapter.ts`
 
 Functions:
-- getPackage()
-- getRoadmap()
-- getConceptById(id)
-- getNextConcept(id)
+- getCurrentLearningPath()
+- getSurahById(id)
+- getLevelById(id)
+- getAyahByRef(ref)
+- getAyatByRefs(refs)
+- getNextLevel(id)
 - validatePackage(package)
 
 ## Phase 3 - Surah Al-Fil Package
@@ -58,7 +61,7 @@ Include:
 - 5 ayah concepts
 - final review concept
 
-Content can start as draft placeholders, but Quran/translation/tafsir fields must be clearly marked with source metadata and review status.
+Content starts as canonical Surah/Ayah records plus LearningPath/Level curriculum. Quran/translation/tafsir fields must be source-attributed and review-marked.
 
 ## Phase 4 - Progress Store
 
@@ -68,8 +71,8 @@ Create:
 
 Functions:
 - getProgress()
-- markStepComplete(conceptId, stepId)
-- markConceptComplete(conceptId)
+- markStepComplete(levelId, stepId)
+- markLevelCompleted(levelId, pathId)
 - addXp(amount)
 - updateStreak()
 - resetProgress()
@@ -81,23 +84,22 @@ Use AsyncStorage or local equivalent.
 Create:
 
 - `src/app/roadmap.tsx`
-- `src/components/roadmap/RoadmapScreen.tsx`
 - `src/components/roadmap/RoadmapNode.tsx`
 
 Show:
 - Surah title
 - progress bar
-- nodes for intro, ayat 1-5, review
+- nodes for levels
 - locked/unlocked/completed states
 
 ## Phase 6 - Lesson Player
 
 Create:
 
-- `src/app/lesson/[conceptId].tsx`
-- `src/components/lesson/LessonPlayer.tsx`
+- `src/app/lesson/[levelId].tsx`
 - `src/components/lesson/StepRenderer.tsx`
-- `src/components/lesson/BlockRenderer.tsx`
+- `src/components/lesson/LevelBlockRenderer.tsx`
+- `src/components/lesson/LevelQuestionBlock.tsx`
 
 Support:
 - step navigation
@@ -139,13 +141,13 @@ Support:
 
 Create:
 
-- `src/app/complete/[conceptId].tsx`
+- `src/app/complete/[levelId].tsx`
 
 Show:
-- completed lesson
+- completed level
 - XP gained
 - streak
-- next lesson button
+- next level button
 - return to roadmap button
 
 ## Phase 10 - Polish

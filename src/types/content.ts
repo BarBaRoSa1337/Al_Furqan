@@ -187,6 +187,12 @@ export interface QuestionBlock {
   question: string;
   questionType: 'multiple-choice' | 'true-false' | 'fill-blank' | 'match';
   options?: string[];
+  blankText?: string;
+  matchPairs?: Array<{
+    id: string;
+    arabic: string;
+    meaning: string;
+  }>;
   correctAnswer: string | number;
   explanation?: string;
   sourceIds: string[];
@@ -344,7 +350,8 @@ export interface ContentPackage {
   title: string;
   description: string;
   type: 'surah' | 'juz' | 'topic' | 'course';
-  lessons: Lesson[];
+  /** Temporary compatibility projection. New packages may omit this. */
+  lessons?: Lesson[];
   sources: ContentSource[];
   surahs?: SurahRecord[];
   ayat?: AyahRecord[];
@@ -373,6 +380,18 @@ export interface ContentRepository {
   ayat: AyahRecord[];
   learningPaths: LearningPath[];
   levels: Level[];
+  getPackageById(id: string): ContentPackage | undefined;
+  getLessonById(id: string): Lesson | undefined;
+  getSourceById(id: string): ContentSource | undefined;
+  getSurahById(id: string): SurahRecord | undefined;
+  getLevelById(id: string): Level | undefined;
+  getAyahByRef(ref: AyahRef): AyahRecord | undefined;
+  getAyatByRefs(refs: AyahRef[]): AyahRecord[];
+  getNextLevel(levelId: string): Level | undefined;
+  getLearningPathById(id: string): LearningPath | undefined;
+  getCurrentLearningPath(): LearningPath | undefined;
+  getLevelsForLearningPath(pathId: string, sort?: RoadmapSort): Level[];
+  getSurahs(sort?: RoadmapSort): SurahRecord[];
 }
 
 // ─── Progress (legacy shape used in storage.ts) ───────────────────────────

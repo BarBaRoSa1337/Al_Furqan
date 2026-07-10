@@ -5,7 +5,12 @@ import { getContentRepository } from '../../lib/content/repository';
 import StepRenderer from '../../components/lesson/StepRenderer';
 import ProgressBar from '../../components/ui/ProgressBar';
 import Button from '../../components/ui/Button';
-import { getAppProgress } from '../../lib/progress/storage';
+import {
+  completeLevelStep,
+  getAppProgress,
+  recordQuestionAttempt,
+  startLevel,
+} from '../../lib/progress/storage';
 import { isLevelAccessible } from '../../lib/progress/lessonAccess';
 
 export default function LessonPlayerScreen() {
@@ -86,6 +91,26 @@ export default function LessonPlayerScreen() {
     };
   }, [level, path, repo, router]);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function restoreLevelProgress() {
+      if (!level || !path) return;
+
+      const progress = await startLevel(level.id, path.id, level.steps[0]?.id ?? '');
+      const savedStepIndex = level.steps.findIndex(stepItem => stepItem.id === progress.currentStepId);
+
+      if (!isCancelled && savedStepIndex >= 0) {
+        setCurrentStepIndex(savedStepIndex);
+      }
+    }
+
+    void restoreLevelProgress();
+    return () => {
+      isCancelled = true;
+    };
+  }, [level, path]);
+
   if (!level) {
     return (
       <View style={styles.center}>
@@ -117,13 +142,32 @@ export default function LessonPlayerScreen() {
     );
   }
 
-  const handleQuestionAnswer = (blockId: string, correct: boolean) => {
+  const handleQuestionAnswer = (blockId: string, selectedAnswer: string | number, correct: boolean) => {
+    if (path) {
+      void recordQuestionAttempt({
+        levelId: level.id,
+        pathId: path.id,
+        questionId: blockId,
+        selectedAnswer,
+        correct,
+      });
+    }
+
     if (correct) {
       setCorrectQuestionIds(prev => prev.includes(blockId) ? prev : [...prev, blockId]);
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (path) {
+      await completeLevelStep(
+        level.id,
+        path.id,
+        step.id,
+        level.steps[currentStepIndex + 1]?.id
+      );
+    }
+
     if (isLast) {
       router.replace(`/complete/${level.id}`);
     } else {
@@ -149,7 +193,7 @@ export default function LessonPlayerScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <StepRenderer level={level} step={step} onQuestionAnswer={handleQuestionAnswer} />
+        <StepRenderer step={step} onQuestionAnswer={handleQuestionAnswer} />
       </ScrollView>
 
       <View style={styles.footer}>

@@ -46,7 +46,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
     if (this._packages.some(p => p.id === pkg.id)) return;
     this._packages.push(pkg);
-    pkg.lessons.forEach(lesson => {
+    pkg.lessons?.forEach(lesson => {
       if (!this._lessons.some(l => l.id === lesson.id)) {
         this._lessons.push(lesson);
       }
@@ -106,6 +106,10 @@ class ContentRepositoryImpl implements ContentRepository {
 
   getLevelById(id: string): Level | undefined {
     return this._levels.find(level => level.id === id);
+  }
+
+  getLearningPathById(id: string): LearningPath | undefined {
+    return this._learningPaths.find(path => path.id === id);
   }
 
   getAyahByRef(ref: AyahRef): AyahRecord | undefined {

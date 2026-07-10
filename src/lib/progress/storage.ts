@@ -6,6 +6,7 @@ import {
   DEFAULT_PROGRESS,
   LearningPathProgress,
   LevelProgress,
+  QuestionAttempt,
   XP_REWARDS,
   XPRecord,
 } from '../../types/progress';
@@ -40,6 +41,14 @@ export interface LevelCompletionResult {
   learningPathJustCompleted: boolean;
   awardedLevelXp: number;
   awardedLearningPathXp: number;
+}
+
+export interface RecordQuestionAttemptInput {
+  levelId: string;
+  pathId: string;
+  questionId: string;
+  selectedAnswer: string | number;
+  correct: boolean;
 }
 
 export type LessonCompletionResult = LevelCompletionResult & {
@@ -189,6 +198,97 @@ export async function markLevelCompleted(
   };
 }
 
+export async function startLevel(
+  levelId: string,
+  pathId: string,
+  initialStepId: string
+): Promise<LevelProgress> {
+  const existing = await getStoredLevelProgress(levelId);
+  const now = new Date().toISOString();
+  const progress: LevelProgress = existing ?? {
+    levelId,
+    pathId,
+    completed: false,
+    startedAt: now,
+    currentStepId: initialStepId,
+    completedStepIds: [],
+    questionAttempts: [],
+  };
+
+  if (!existing) {
+    await saveLevelProgress(progress);
+  }
+
+  const appProgress = await getAppProgress();
+  await saveAppProgress({
+    ...appProgress,
+    currentLevelId: levelId,
+    lastActiveAt: now,
+  });
+
+  return progress;
+}
+
+export async function completeLevelStep(
+  levelId: string,
+  pathId: string,
+  stepId: string,
+  nextStepId?: string
+): Promise<LevelProgress> {
+  const existing = await getStoredLevelProgress(levelId);
+  const now = new Date().toISOString();
+  const progress: LevelProgress = {
+    levelId,
+    pathId,
+    completed: existing?.completed ?? false,
+    startedAt: existing?.startedAt ?? now,
+    completedAt: existing?.completedAt,
+    currentStepId: nextStepId,
+    completedStepIds: existing?.completedStepIds.includes(stepId)
+      ? existing.completedStepIds
+      : [...(existing?.completedStepIds ?? []), stepId],
+    questionAttempts: existing?.questionAttempts ?? [],
+  };
+
+  await saveLevelProgress(progress);
+  return progress;
+}
+
+export async function recordQuestionAttempt(
+  input: RecordQuestionAttemptInput
+): Promise<QuestionAttempt> {
+  const existing = await getStoredLevelProgress(input.levelId);
+  const now = new Date().toISOString();
+  const attempt: QuestionAttempt = {
+    questionId: input.questionId,
+    levelId: input.levelId,
+    selectedAnswer: input.selectedAnswer,
+    correct: input.correct,
+    attemptedAt: now,
+  };
+  const progress: LevelProgress = {
+    levelId: input.levelId,
+    pathId: input.pathId,
+    completed: existing?.completed ?? false,
+    startedAt: existing?.startedAt ?? now,
+    completedAt: existing?.completedAt,
+    currentStepId: existing?.currentStepId,
+    completedStepIds: existing?.completedStepIds ?? [],
+    questionAttempts: [...(existing?.questionAttempts ?? []), attempt],
+  };
+
+  await saveLevelProgress(progress);
+  return attempt;
+}
+
+export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
+  return getStoredLevelProgress(levelId);
+}
+
+async function saveLevelProgress(progress: LevelProgress): Promise<void> {
+  await AsyncStorage.setItem(KEYS.LEVEL_PREFIX + progress.levelId, JSON.stringify(progress));
+}
+
 async function getStoredLevelProgress(levelId: string): Promise<LevelProgress | null> {
   const raw = await AsyncStorage.getItem(KEYS.LEVEL_PREFIX + levelId);
   if (raw) return JSON.parse(raw) as LevelProgress;
@@ -247,18 +347,36 @@ async function updateLearningPathProgress(
   const raw = await AsyncStorage.getItem(key);
   const existing = raw ? (JSON.parse(raw) as LearningPathProgress) : null;
   const now = new Date().toISOString();
+  const levels = await getStoredLevelProgressesForPath(learningPathId);
 
   const progress: LearningPathProgress = {
     learningPathId,
     totalLevels: totalCount,
     completedLevels: completedCount,
     overallProgress: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
-    levels: existing?.levels ?? [],
+    levels,
     startedAt: existing?.startedAt ?? now,
     completedAt: completedCount >= totalCount ? now : existing?.completedAt,
   };
 
   await AsyncStorage.setItem(key, JSON.stringify(progress));
+}
+
+async function getStoredLevelProgressesForPath(learningPathId: string): Promise<LevelProgress[]> {
+  const keys = await AsyncStorage.getAllKeys();
+  const levelKeys = keys.filter(key => key.startsWith(KEYS.LEVEL_PREFIX));
+  const levels: LevelProgress[] = [];
+
+  for (const key of levelKeys) {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) continue;
+    const progress = JSON.parse(raw) as LevelProgress;
+    if (progress.pathId === learningPathId) {
+      levels.push(progress);
+    }
+  }
+
+  return levels;
 }
 
 export async function isLevelCompleted(levelId: string): Promise<boolean> {
