@@ -1,0 +1,62 @@
+# Cline Rules - Quran Habit App
+
+## Main behavior
+
+Before editing code:
+1. Read `AGENTS.md`.
+2. Read `docs/PRODUCT_BRIEF.md`.
+3. Read `docs/ARCHITECTURE_OVERVIEW.md`.
+4. Read `docs/CONTENT_GOVERNANCE.md`.
+5. Inspect existing files before creating new architecture.
+
+## Important
+
+Do not generate religious content freely.
+Do not invent Quran text.
+Do not invent tafsir.
+Do not place Quran content directly inside UI components.
+
+Use content packages.
+
+## Build priority
+
+Start simple and strong:
+1. content types
+2. content repository
+3. local Surah Al-Fil package
+4. roadmap screen
+5. lesson player
+6. block renderers
+7. quiz engine
+8. progress storage
+9. completion screen
+
+## UI direction
+
+The app should feel:
+- calm
+- premium
+- Islamic
+- modern
+- habit-forming
+- suitable for adults and 12+ users
+
+Avoid:
+- childish-only style
+- too many cartoon elements
+- fake Islamic claims
+- overwhelming screens
+
+## Code quality
+
+Use:
+- TypeScript
+- reusable components
+- clear file names
+- no large monolithic files
+- no duplicated quiz logic
+- no route-level hardcoded lesson data
+
+## Do not add
+
+Do not add backend, auth, payments, voice AI, or full Quran import unless explicitly requested.

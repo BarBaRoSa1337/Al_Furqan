@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Quran Habit",
+    "slug": "quran-habit-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+       "package": "com.quranhabit.app"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": false
+        }
+      ]
+    ]
+  }
+}
