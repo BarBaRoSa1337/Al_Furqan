@@ -1,5 +1,6 @@
 import { ChooseContinuationActivity, CompleteMissingTokenActivity, MatchAyahTranslationActivity, MatchWordMeaningActivity, OrderActivity, OrderAyatActivity, TypeMissingTextActivity } from '../../types/activities';
-import { evaluateActivity, validateActivity } from './activityEngine';
+import type { QuestionBlock } from '../../types/content';
+import { evaluateActivity, evaluateQuestion, validateActivity } from './activityEngine';
 
 const missing: CompleteMissingTokenActivity = { id: 'missing', kind: 'complete_missing_token', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], instruction: 'Complete', required: true, difficulty: 1, knowledgeRefs: ['token-1'], sourceIds: ['quran'], reviewerStatus: 'approved', config: { tokenBankIds: ['token-1', 'token-2'], correctTokenIds: ['token-1'] } };
 
@@ -107,4 +108,14 @@ test('only a passing self-rated recall unlocks a required recall activity', () =
   const recall = { ...missing, id: 'recall', kind: 'recall_then_reveal' as const, config: {} };
   expect(evaluateActivity(recall, 'again').correct).toBe(false);
   expect(evaluateActivity(recall, 'hard').correct).toBe(true);
+});
+
+test('evaluates legacy matches from stable pair mappings instead of a score', () => {
+  const block = {
+    id: 'legacy-match', type: 'question', questionType: 'match', question: 'Match', sourceIds: ['source'], reviewerStatus: 'approved',
+    matchPairs: [{ id: 'pair-a', arabic: 'A', meaning: 'One' }, { id: 'pair-b', arabic: 'B', meaning: 'Two' }],
+  } satisfies QuestionBlock;
+
+  expect(evaluateQuestion(block, { 'pair-a': 'pair-a', 'pair-b': 'pair-b' })).toBe(true);
+  expect(evaluateQuestion(block, 2)).toBe(false);
 });

@@ -21,7 +21,8 @@ export default function LearningActivityRenderer({ activity, onAnswer }: Props) 
   if (activity.kind === 'order_ayat') return <SequenceActivity activity={activity} ids={activity.config.correctOrderRefs.map(refKey)} answerLength={activity.config.correctOrderRefs.length} onAnswer={onAnswer} />;
   if (activity.kind === 'multiple_choice') return <ChoiceActivity activity={activity} onAnswer={onAnswer} />;
   if (activity.kind === 'type_missing_text') return <TypedActivity activity={activity} onAnswer={onAnswer} />;
-  return null;
+  const repo = getContentRepository();
+  return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
 }
 
 function SequenceActivity({ activity, ids, answerLength, onAnswer }: Props & { ids: string[]; answerLength: number }) {
@@ -79,20 +80,22 @@ function ContinuationActivity({ activity, onAnswer }: { activity: Extract<Learni
   </ActivityCard>;
 }
 
-function MatchActivity({ activity, prompts, choices, hint, onAnswer }: Props & { prompts: Array<{ id: string; label: string }>; choices: Array<{ id: string; label: string }>; hint: string }) {
+function MatchActivity({ activity, prompts, choices, hint, onAnswer }: Props & { prompts: { id: string; label: string }[]; choices: { id: string; label: string }[]; hint: string }) {
   const [activePrompt, setActivePrompt] = useState(prompts[0]?.id);
   const [answer, setAnswer] = useState<Record<string, string>>({});
   const submission = useSubmission(activity, onAnswer);
   return <ActivityCard instruction={activity.instruction}>
     <Text style={styles.hint}>{hint}</Text>
     <View style={styles.options}>{prompts.map(prompt => <Option key={prompt.id} label={prompt.label} selected={activePrompt === prompt.id} onPress={() => setActivePrompt(prompt.id)} />)}</View>
-    <View style={styles.options}>{choices.map(choice => <Option key={choice.id} label={choice.label} selected={Boolean(activePrompt && answer[activePrompt] === choice.id)} onPress={() => {
+    <View style={styles.options}>{choices.map(choice => {
+      const usedByAnotherPrompt = Boolean(activePrompt && Object.entries(answer).some(([promptId, choiceId]) => promptId !== activePrompt && choiceId === choice.id));
+      return <Option key={choice.id} label={choice.label} disabled={usedByAnotherPrompt} selected={Boolean(activePrompt && answer[activePrompt] === choice.id)} onPress={() => {
       if (!activePrompt || submission.result === true) return;
       setAnswer(current => ({ ...current, [activePrompt]: choice.id }));
       const next = prompts.find(prompt => !answer[prompt.id] && prompt.id !== activePrompt);
       setActivePrompt(next?.id ?? activePrompt);
       submission.reset();
-    }} />)}</View>
+    }} />; })}</View>
     <SubmitControl disabled={Object.keys(answer).length !== prompts.length} {...submission} onPress={() => submission.submit(answer)} />
   </ActivityCard>;
 }
@@ -185,6 +188,7 @@ export function createMatchLayout<P, C>(prompts: readonly P[], choices: readonly
 }
 
 const styles = StyleSheet.create({
+  unsupported: { color: '#7F8C8D', fontSize: 14, lineHeight: 21 },
   instruction: { fontSize: 17, color: '#2C3E50', lineHeight: 25, marginBottom: 14, fontWeight: '600' },
   hint: { color: '#7F8C8D', marginBottom: 10 },
   quranPrompt: { color: '#1B4F72', fontFamily: 'serif', fontSize: 27, lineHeight: 42, marginBottom: 16, textAlign: 'right', writingDirection: 'rtl' },

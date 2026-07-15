@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LearningPath, Level } from '../../types/content';
 import type { ActivityReviewSchedule, RecallRating, ReviewOutcome } from '../../types/activities';
 import { getLevelStepKind } from '../content/stepKind';
-import { isReviewDue, reviewStateKey, scheduleActivityReview } from './reviewScheduler';
+import { isReviewDue, restorePendingFinalInterval, reviewStateKey, scheduleActivityReview } from './reviewScheduler';
 import {
   AppProgress,
   CompletionReceipt,
@@ -52,7 +52,7 @@ export interface RecordQuestionAttemptInput {
   levelId: string;
   pathId: string;
   questionId: string;
-  selectedAnswer: string | number;
+  selectedAnswer: unknown;
   correct: boolean;
 }
 export interface RecordActivityAttemptInput { levelId: string; pathId: string; activityId: string; answer: unknown; correct: boolean; evaluationVersion: string; }
@@ -103,7 +103,7 @@ export async function syncCompletedLevelReviews(entries: ReviewCatalogEntry[], n
   await mutateSnapshot(snapshot => {
     entries.forEach(({ level, packageRevisionId }) => {
       const progress = snapshot.levels[level.id];
-      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, validDate(progress.completedAt) ?? now);
+      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, now);
     });
   });
 }
@@ -555,39 +555,94 @@ function createEmptySnapshot(): ProgressSnapshotV3 {
 }
 
 function isProgressSnapshotV3(value: unknown): value is ProgressSnapshotV3 {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<ProgressSnapshotV3>;
-  if (candidate.schemaVersion !== 3 || !candidate.app || !candidate.levels || typeof candidate.levels !== 'object' || !candidate.reviews || typeof candidate.reviews !== 'object') return false;
-  const app = candidate.app;
-  if (typeof app.xp !== 'number' || !Array.isArray(app.xpHistory) || !Array.isArray(app.completedLevelIds) || !Array.isArray(app.completedLearningPathIds)) return false;
-  if (!app.streak || typeof app.streak.currentStreak !== 'number' || typeof app.streak.longestStreak !== 'number' || typeof app.streak.lastActiveDate !== 'string') return false;
-  const levelsValid = Object.values(candidate.levels).every(level =>
-    Boolean(level) &&
-    typeof level.levelId === 'string' &&
-    typeof level.pathId === 'string' &&
-    typeof level.completed === 'boolean' &&
-    Array.isArray(level.completedStepIds) &&
-    Array.isArray(level.questionAttempts) && Array.isArray(level.activityAttempts)
-  );
+  if (!isRecord(value) || value.schemaVersion !== 3 || !isAppProgress(value.app) || !isRecord(value.levels) || !isRecord(value.reviews)) return false;
+  const levelsValid = Object.entries(value.levels).every(([key, level]) => isLevelProgress(level) && level.levelId === key);
   const outcomes = ['again', 'hard', 'remembered', 'correct', 'incorrect'];
-  const reviewsValid = Object.values(candidate.reviews).every(review =>
-    Boolean(review) &&
+  const reviewsValid = Object.entries(value.reviews).every(([key, value]) => {
+    if (!isRecord(value)) return false;
+    const review = value;
+    return (
     typeof review.activityId === 'string' &&
     typeof review.levelId === 'string' &&
     typeof review.packageRevisionId === 'string' &&
-    Number.isInteger(review.stage) && review.stage >= 0 &&
-    (review.dueAt === undefined || typeof review.dueAt === 'string') &&
-    typeof review.lastReviewedAt === 'string' &&
+    typeof review.stage === 'number' && Number.isInteger(review.stage) && review.stage >= 0 &&
+    (review.dueAt === undefined || isIsoDate(review.dueAt)) &&
+    isIsoDate(review.lastReviewedAt) &&
     typeof review.mastered === 'boolean' &&
-    outcomes.includes(review.lastOutcome)
-  );
-  return levelsValid && reviewsValid;
+    typeof review.lastOutcome === 'string' && outcomes.includes(review.lastOutcome) &&
+    key === reviewStateKey(review.levelId, review.activityId, review.packageRevisionId) &&
+    (!review.mastered || review.dueAt === undefined)
+    );
+  });
+  return levelsValid && reviewsValid && (value.lastCompletionReceipt === undefined || isCompletionReceipt(value.lastCompletionReceipt));
 }
 
 function isProgressSnapshotV2(value: unknown): value is ProgressSnapshotV2 {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<ProgressSnapshotV2>;
-  return candidate.schemaVersion === 2 && Boolean(candidate.app) && Boolean(candidate.levels) && typeof candidate.levels === 'object';
+  return isRecord(value) && value.schemaVersion === 2 && isAppProgress(value.app) && isRecord(value.levels) &&
+    Object.entries(value.levels).every(([key, level]) => isLevelProgress(level) && level.levelId === key) &&
+    (value.lastCompletionReceipt === undefined || isCompletionReceipt(value.lastCompletionReceipt));
+}
+
+function isAppProgress(value: unknown): value is AppProgress {
+  if (!isRecord(value) || !isNonNegativeNumber(value.xp) || !Array.isArray(value.xpHistory) || !isStringArray(value.completedLevelIds) || !isStringArray(value.completedLearningPathIds) || !isIsoDate(value.lastActiveAt)) return false;
+  if (!isRecord(value.streak) || !isNonNegativeInteger(value.streak.currentStreak) || !isNonNegativeInteger(value.streak.longestStreak) || value.streak.longestStreak < value.streak.currentStreak || !isLocalDateOrEmpty(value.streak.lastActiveDate)) return false;
+  if (value.currentLevelId !== undefined && typeof value.currentLevelId !== 'string') return false;
+  return value.xpHistory.every(record => isRecord(record) && isNonNegativeNumber(record.amount) && typeof record.reason === 'string' && isIsoDate(record.earnedAt));
+}
+
+function isLevelProgress(value: unknown): value is LevelProgress {
+  if (!isRecord(value) || typeof value.levelId !== 'string' || typeof value.pathId !== 'string' || typeof value.completed !== 'boolean' || !isIsoDate(value.startedAt)) return false;
+  if (value.completedAt !== undefined && !isIsoDate(value.completedAt)) return false;
+  if (value.currentStepId !== undefined && typeof value.currentStepId !== 'string') return false;
+  if (!isStringArray(value.completedStepIds) || !Array.isArray(value.questionAttempts) || !Array.isArray(value.activityAttempts)) return false;
+  return value.questionAttempts.every(isQuestionAttempt) && value.activityAttempts.every(isActivityAttempt);
+}
+
+function isQuestionAttempt(value: unknown): value is QuestionAttempt {
+  return isRecord(value) && typeof value.questionId === 'string' && typeof value.levelId === 'string' &&
+    'selectedAnswer' in value && isJsonValue(value.selectedAnswer) && typeof value.correct === 'boolean' && isIsoDate(value.attemptedAt);
+}
+
+function isActivityAttempt(value: unknown): value is ActivityAttempt {
+  return isRecord(value) && typeof value.activityId === 'string' && typeof value.levelId === 'string' &&
+    'answer' in value && isJsonValue(value.answer) && typeof value.correct === 'boolean' && isIsoDate(value.attemptedAt) && typeof value.evaluationVersion === 'string' && value.evaluationVersion.length > 0;
+}
+
+function isCompletionReceipt(value: unknown): value is CompletionReceipt {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.levelId === 'string' && typeof value.learningPathId === 'string' &&
+    typeof value.alreadyCompleted === 'boolean' && typeof value.learningPathJustCompleted === 'boolean' &&
+    isNonNegativeNumber(value.awardedLevelXp) && isNonNegativeNumber(value.awardedLearningPathXp) && isIsoDate(value.completedAt);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isJsonValue(value: unknown): boolean {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (Array.isArray(value)) return value.every(isJsonValue);
+  return isRecord(value) && Object.values(value).every(isJsonValue);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return isNonNegativeNumber(value) && Number.isInteger(value);
+}
+
+function isIsoDate(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && Number.isFinite(Date.parse(value));
+}
+
+function isLocalDateOrEmpty(value: unknown): value is string {
+  return value === '' || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00.000Z`)));
 }
 
 function isProgressKey(key: string): boolean {
@@ -601,17 +656,22 @@ function registerLevelReviews(snapshot: ProgressSnapshotV3, level: Level, packag
     .filter(activity => activity.reviewSchedule);
   activities.forEach(activity => {
     const key = reviewStateKey(level.id, activity.id, packageRevisionId);
-    if (snapshot.reviews[key]) return;
-    const attempt = [...(snapshot.levels[level.id]?.activityAttempts ?? [])].reverse()
-      .find(candidate => candidate.activityId === activity.id && candidate.correct);
-    if (!attempt || !activity.reviewSchedule) return;
+    if (snapshot.reviews[key] && activity.reviewSchedule) {
+      snapshot.reviews[key] = restorePendingFinalInterval(snapshot.reviews[key], activity.reviewSchedule);
+      return;
+    }
+    const attempts = (snapshot.levels[level.id]?.activityAttempts ?? [])
+      .filter(candidate => candidate.activityId === activity.id);
+    if (!attempts.some(candidate => candidate.correct) || !activity.reviewSchedule) return;
+    const attempt = attempts.at(-1)!;
+    const attemptedAt = validDate(attempt.attemptedAt) ?? now;
     snapshot.reviews[key] = scheduleActivityReview(undefined, {
       activityId: activity.id,
       levelId: level.id,
       packageRevisionId,
       outcome: toReviewOutcome(attempt.answer, attempt.correct),
       schedule: activity.reviewSchedule,
-    }, now);
+    }, attemptedAt);
   });
 }
 

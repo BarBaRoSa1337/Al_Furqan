@@ -12,7 +12,7 @@ export interface MatchPair {
 interface Props {
   question: string;
   pairs: MatchPair[];
-  onResult: (correct: boolean, score: number) => void | Promise<void>;
+  onResult: (correct: boolean, selections: Record<string, string>) => void | Promise<void>;
 }
 
 const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
@@ -29,21 +29,21 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
     setSelectedArabic(id === selectedArabic ? null : id);
   };
 
-  const handleMeaningPress = (meaning: string) => {
+  const handleMeaningPress = (choiceId: string) => {
     if (submitted || !selectedArabic) return;
-    setSelections(prev => ({ ...prev, [selectedArabic]: meaning }));
+    setSelections(prev => ({ ...prev, [selectedArabic]: choiceId }));
     setSelectedArabic(null);
   };
 
   const handleSubmit = async () => {
     let correct = 0;
     pairs.forEach(p => {
-      if (selections[p.id] === p.meaning) correct++;
+      if (selections[p.id] === p.id) correct++;
     });
     const isCorrect = correct === pairs.length;
     setSaving(true);
     try {
-      await onResult(isCorrect, correct);
+      await onResult(isCorrect, selections);
       setAllCorrect(isCorrect);
       setSubmitted(true);
     } catch {
@@ -70,35 +70,35 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
           {pairs.map(p => (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel={`${p.arabic}${selections[p.id] ? ` matched with ${selections[p.id]}` : ''}`}
+              accessibilityLabel={`${p.arabic}${selections[p.id] ? ` matched with ${pairs.find(choice => choice.id === selections[p.id])?.meaning ?? ''}` : ''}`}
               accessibilityState={{ selected: selectedArabic === p.id, disabled: submitted || saving }}
               key={p.id}
               style={[
                 styles.arabicItem,
                 selectedArabic === p.id && styles.arabicSelected,
-                submitted && (selections[p.id] === p.meaning ? styles.correct : styles.wrong),
+                submitted && (selections[p.id] === p.id ? styles.correct : styles.wrong),
               ]}
               onPress={() => handleArabicPress(p.id)}
               disabled={submitted || saving}
             >
               <Text style={styles.arabicText}>{p.arabic}</Text>
-              {selections[p.id] ? <Text style={styles.matchedText}>{selections[p.id]}</Text> : null}
+              {selections[p.id] ? <Text style={styles.matchedText}>{pairs.find(choice => choice.id === selections[p.id])?.meaning}</Text> : null}
             </TouchableOpacity>
           ))}
         </View>
         <View style={styles.col}>
-          {shuffledMeanings.map((m, i) => {
-            const usedByAnotherPair = Object.entries(selections).some(([id, meaning]) => id !== selectedArabic && meaning === m);
+          {shuffledMeanings.map(choice => {
+            const usedByAnotherPair = Object.entries(selections).some(([id, choiceId]) => id !== selectedArabic && choiceId === choice.id);
             return <TouchableOpacity
-              key={i}
+              key={choice.id}
               accessibilityRole="button"
-              accessibilityLabel={`Meaning: ${m}`}
+              accessibilityLabel={`Meaning: ${choice.meaning}`}
               accessibilityState={{ disabled: submitted || saving || usedByAnotherPair }}
               style={[styles.meaningItem, selectedArabic ? styles.meaningHint : null, usedByAnotherPair && styles.meaningUsed]}
-              onPress={() => handleMeaningPress(m)}
+              onPress={() => handleMeaningPress(choice.id)}
               disabled={submitted || saving || usedByAnotherPair}
             >
-              <Text style={styles.meaningText}>{m}</Text>
+              <Text style={styles.meaningText}>{choice.meaning}</Text>
             </TouchableOpacity>;
           })}
         </View>
@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
   retryText: { color: '#1B4F72', fontWeight: '700', fontSize: 15 },
 });
 
-function shuffleMeanings(pairs: MatchPair[]): string[] {
-  return [...pairs].sort(() => Math.random() - 0.5).map(pair => pair.meaning);
+function shuffleMeanings(pairs: MatchPair[]): MatchPair[] {
+  return [...pairs].sort(() => Math.random() - 0.5);
 }
 
 export default MatchQuestion;

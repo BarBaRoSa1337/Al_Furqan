@@ -27,8 +27,8 @@ export function compilePackage(draft: PublishablePackageDraft, canonical: Conten
     reciters: sortById(draft.curriculum.reciters),
     recitationTracks: sortById(draft.curriculum.recitationTracks),
   };
-  const validation = validatePackage(pkg, { mode: 'development' });
-  validation.errors.forEach(message => diagnostics.push({ code: 'package_invalid', message }));
+  const validation = validatePackage(pkg, { mode: 'production' });
+  validation.errors.forEach(message => diagnostics.push({ code: 'package_invalid', message, path: 'package' }));
   return { package: pkg, contentHash: hasher.hash(stableStringify(pkg)), diagnostics };
 }
 

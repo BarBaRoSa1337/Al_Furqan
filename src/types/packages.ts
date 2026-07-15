@@ -18,6 +18,8 @@ export interface ContentPackageManifest {
 export interface DownloadedContentPackage {
   manifest: ContentPackageManifest;
   content: ContentPackage;
+  /** Verified immutable file payloads captured during staging. */
+  files?: Record<string, string>;
 }
 
 export interface InstalledPackageRecord {

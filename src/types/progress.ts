@@ -25,7 +25,7 @@ export interface AppProgress {
 export interface QuestionAttempt {
   questionId: string;
   levelId: string;
-  selectedAnswer: string | number;
+  selectedAnswer: unknown;
   correct: boolean;
   attemptedAt: string;
 }

@@ -19,7 +19,9 @@ export function scheduleActivityReview(
   const stage = input.outcome === 'again' || input.outcome === 'incorrect'
     ? 0
     : passed ? previousStage + 1 : previousStage;
-  const mastered = stage >= input.schedule.intervalDays.length;
+  // Stage counts successful exposures. The final configured interval must be
+  // completed before an activity becomes mastered.
+  const mastered = stage > input.schedule.intervalDays.length;
   const intervalIndex = Math.max(0, Math.min(stage - 1, input.schedule.intervalDays.length - 1));
   const dueAt = mastered ? undefined : addDays(now, input.schedule.intervalDays[intervalIndex]).toISOString();
 
@@ -41,6 +43,17 @@ export function isReviewDue(state: ActivityReviewState, now: Date = new Date()):
 
 export function reviewStateKey(levelId: string, activityId: string, packageRevisionId: string): string {
   return `${levelId}:${activityId}:${packageRevisionId}`;
+}
+
+export function restorePendingFinalInterval(state: ActivityReviewState, schedule: ActivityReviewSchedule): ActivityReviewState {
+  if (!state.mastered || state.stage !== schedule.intervalDays.length || schedule.intervalDays.length === 0) return state;
+  const reviewedAt = new Date(state.lastReviewedAt);
+  if (!Number.isFinite(reviewedAt.getTime())) return state;
+  return {
+    ...state,
+    mastered: false,
+    dueAt: addDays(reviewedAt, schedule.intervalDays.at(-1)!).toISOString(),
+  };
 }
 
 function addDays(value: Date, days: number): Date {

@@ -10,7 +10,7 @@ export const CORE_PACKAGE_TEXT_KEYS = [
   'activity.typeFromMemory', 'activity.typedAnswerLabel',
   'review.title', 'review.due', 'review.start', 'review.noneDue', 'review.complete', 'review.next', 'review.backToRoadmap',
   'question.quiz', 'question.checkAnswer', 'question.checking', 'question.tryAgain', 'question.correct', 'question.answerIs', 'question.fillAnswer', 'question.typeAnswer', 'question.checkMatches', 'question.matchHint', 'question.true', 'question.false',
-  'content.translationUnavailable', 'content.arabicSource', 'content.translationSource', 'content.source', 'content.sourceUnavailable', 'content.tafsir', 'content.explanation', 'content.draftPendingReview', 'content.toggleDetails', 'content.wordByWord', 'content.translation', 'content.listen', 'content.audioUnavailable', 'content.context.historical_context', 'content.context.occasion_of_revelation', 'content.context.tafsir_summary',
+  'content.translationUnavailable', 'content.arabicSource', 'content.translationSource', 'content.source', 'content.sourceUnavailable', 'content.unsupported', 'content.tafsir', 'content.explanation', 'content.draftPendingReview', 'content.toggleDetails', 'content.wordByWord', 'content.translation', 'content.listen', 'content.audioUnavailable', 'content.context.historical_context', 'content.context.occasion_of_revelation', 'content.context.tafsir_summary',
 ] as const;
 
 export type PackageTextKey = typeof CORE_PACKAGE_TEXT_KEYS[number] | (string & {});
@@ -75,9 +75,8 @@ export interface QuranEdition {
 export interface WordMeaning {
   /** Stable resource ID used by activities and Studio selections. */
   id: string;
-  /** Stable canonical token reference. Arabic remains temporary renderer compatibility data. */
-  wordTokenId?: string;
-  arabic: string;
+  /** Stable canonical token reference. Arabic is resolved from WordToken. */
+  wordTokenId: string;
   transliteration: string;
   meaning: string;
   root?: string;
@@ -433,6 +432,7 @@ export interface ContentRepository {
   getSurahByNumber(number: number): SurahRecord | undefined;
   getLevelById(id: string): Level | undefined;
   getActivityById(id: string): LearningActivity | undefined;
+  getActivityForLevel(levelId: string, activityId: string): LearningActivity | undefined;
   getLevelForActivity(id: string): Level | undefined;
   getAyahByRef(ref: AyahRef, editionId?: QuranEditionId): AyahRecord | undefined;
   getAyatByRefs(refs: AyahRef[], editionId?: QuranEditionId): AyahRecord[];

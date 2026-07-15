@@ -64,11 +64,27 @@ class ContentRepositoryImpl implements ContentRepository {
   registerPackage(pkg: ContentPackage, activate = true): void {
     const validation = validatePackage(pkg, { mode: __DEV__ ? 'development' : 'production' });
     if (!validation.valid) throw new Error(`Invalid content package "${pkg.id}": ${validation.errors.join('; ')}`);
+    this._assertNoIdentityConflicts(pkg);
     const existingIndex = this._packages.findIndex(candidate => candidate.id === pkg.id);
     if (existingIndex >= 0) this._packages.splice(existingIndex, 1, pkg);
     else this._packages.push(pkg);
     if (activate || !this._activePackageId) this._activePackageId = pkg.id;
     this._rebuildIndexes();
+  }
+
+  private _assertNoIdentityConflicts(pkg: ContentPackage): void {
+    const otherPackages = this._packages.filter(candidate => candidate.id !== pkg.id);
+    const levelIds = new Set(otherPackages.flatMap(candidate => candidate.levels.map(level => level.id)));
+    const activityIds = new Set(otherPackages.flatMap(candidate => candidate.levels.flatMap(level => level.steps.flatMap(step => step.blocks
+      .filter(block => block.type === 'activity')
+      .map(block => block.activity.id)))));
+    const conflictingLevel = pkg.levels.find(level => levelIds.has(level.id));
+    if (conflictingLevel) throw new Error(`Level ID "${conflictingLevel.id}" is already owned by another package`);
+    const conflictingActivity = pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks
+      .filter(block => block.type === 'activity')
+      .map(block => block.activity.id)))
+      .find(id => activityIds.has(id));
+    if (conflictingActivity) throw new Error(`Activity ID "${conflictingActivity}" is already owned by another package`);
   }
 
   removePackage(id: string): void {
@@ -191,6 +207,13 @@ class ContentRepositoryImpl implements ContentRepository {
   getActivityById(id: string) {
     const block = this._levels.flatMap(level => level.steps).flatMap(step => step.blocks)
       .find((candidate): candidate is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => candidate.type === 'activity' && candidate.activity.id === id);
+    return block?.activity;
+  }
+
+  getActivityForLevel(levelId: string, activityId: string) {
+    const level = this.getLevelById(levelId);
+    const block = level?.steps.flatMap(step => step.blocks)
+      .find((candidate): candidate is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => candidate.type === 'activity' && candidate.activity.id === activityId);
     return block?.activity;
   }
 

@@ -1,4 +1,5 @@
 import { ActivityEvaluation, ActivityEvaluationContext, ActivityValidationContext, ActivityValidationResult, LearningActivity, TextComparisonMode } from '../../types/activities';
+import type { QuestionBlock } from '../../types/content';
 
 export function evaluateActivity(activity: LearningActivity, answer: unknown, context?: ActivityEvaluationContext): ActivityEvaluation {
   switch (activity.kind) {
@@ -19,6 +20,22 @@ export function evaluateActivity(activity: LearningActivity, answer: unknown, co
     }
     case 'order_ayat': return orderedEqual(answer, activity.config.correctOrderRefs.map(refKey), 'ayah_order');
   }
+}
+
+/** Compatibility evaluator for schema-v1 QuestionBlock records. */
+export function evaluateQuestion(block: QuestionBlock, answer: unknown): boolean {
+  if (block.questionType === 'multiple-choice' || block.questionType === 'true-false') return String(answer) === String(block.correctAnswer);
+  if (block.questionType === 'fill-blank') {
+    const actual = String(answer ?? '').trim();
+    const expected = block.correctAnswer.trim();
+    return block.caseSensitive ? actual === expected : actual.toLowerCase() === expected.toLowerCase();
+  }
+  if (block.questionType === 'match') {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return false;
+    const selections = answer as Record<string, unknown>;
+    return block.matchPairs.every(pair => selections[pair.id] === pair.id);
+  }
+  return false;
 }
 
 export function validateActivity(activity: LearningActivity, context: ActivityValidationContext): ActivityValidationResult {
@@ -94,7 +111,7 @@ function orderedEqual(answer: unknown, expected: string[], feedbackKey: string):
   const normalized = Array.isArray(answer) ? answer.map(String) : [];
   return { correct: normalized.length === expected.length && normalized.every((value, index) => value === expected[index]), normalizedAnswer: normalized, expectedAnswerRef: expected, feedbackKey };
 }
-function matchEqual(answer: unknown, expected: Array<{ promptId: string; choiceId: string }>, feedbackKey: string): ActivityEvaluation {
+function matchEqual(answer: unknown, expected: { promptId: string; choiceId: string }[], feedbackKey: string): ActivityEvaluation {
   const normalized = typeof answer === 'object' && answer ? answer as Record<string, string> : {};
   return { correct: expected.every(pair => normalized[pair.promptId] === pair.choiceId), normalizedAnswer: normalized, expectedAnswerRef: expected, feedbackKey };
 }
@@ -108,7 +125,7 @@ export function normalizeTypedAnswer(value: string, mode: TextComparisonMode, ig
     : value.trim().replace(/\s+/g, ' ').replace(/ـ/g, '').replace(ignoreHarakat ? /[\u064B-\u065F\u0670]/g : /$^/, '');
 }
 function sameSet(a: string[], b: string[]): boolean { return a.length === b.length && new Set(a).size === a.length && a.every(value => b.includes(value)); }
-function validateSegments(segments: Array<{ id: string; tokenIds: string[] }> | undefined, requiredIds: string[], availableTokenIds: string[], errors: string[]): void {
+function validateSegments(segments: { id: string; tokenIds: string[] }[] | undefined, requiredIds: string[], availableTokenIds: string[], errors: string[]): void {
   if (!segments || segments.length === 0) { errors.push('Segment activity requires segment definitions'); return; }
   validateUnique('segment', segments.map(segment => segment.id), errors);
   if (requiredIds.some(id => !segments.some(segment => segment.id === id))) errors.push('Segment activity references unavailable segment');

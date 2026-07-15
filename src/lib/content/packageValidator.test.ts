@@ -27,6 +27,17 @@ test('rejects duplicate block IDs and passage refs outside level', () => {
   expect(result.errors.some(error => error.includes('outside level.ayahRefs'))).toBe(true);
 });
 
+test('rejects block and activity identity reused across levels', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const first = pkg.levels[0].steps.flatMap(step => step.blocks).find(block => block.type === 'activity');
+  const second = pkg.levels[1].steps.flatMap(step => step.blocks).find(block => block.type === 'activity');
+  if (!first || first.type !== 'activity' || !second || second.type !== 'activity') throw new Error('Activity fixtures unavailable');
+  second.id = first.id;
+  second.activity.id = first.activity.id;
+
+  expect(validatePackage(pkg).errors.some(error => error.includes('Duplicate block id'))).toBe(true);
+});
+
 test('rejects canonical records with an unavailable Quran edition', () => {
   const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
   pkg.ayat[0].editionId = 'unknown-edition' as never;
@@ -79,8 +90,8 @@ test('authors Al-Fil Level 1 in the memorization-first sequence', () => {
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('2.2');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r4');
+  expect(surahAlFilPackage.version).toBe('2.3');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r5');
   expect(surahAlFilPackage.levels[1].steps.map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',

@@ -9,7 +9,7 @@ import { packageText } from '../../lib/content/text';
 
 interface LevelQuestionBlockProps {
   block: QuestionBlock;
-  onAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
+  onAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
 }
 
 export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlockProps) {
@@ -67,13 +67,13 @@ export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlo
         <MatchQuestion
           question={block.question}
           pairs={block.matchPairs ?? []}
-          onResult={(correct, score) => onAnswer?.(block.id, score, correct)}
+          onResult={(correct, selections) => onAnswer?.(block.id, selections, correct)}
         />
       </View>
     );
   }
 
-  return null;
+  return <Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text>;
 }
 
 const styles = StyleSheet.create({

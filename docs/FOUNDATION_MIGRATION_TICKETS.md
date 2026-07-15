@@ -246,3 +246,35 @@ Delivered: generic canonical-token continuation and canonical-ayah ordering rend
 Migration: built-in package `2.2`/revision `r4` preserves existing IDs, Progress V3, V2 migration, completion receipts, and earned XP. Completed levels remain complete; unfinished sessions rewind through the existing required-step adapter. Old review revisions remain stored but inactive.
 
 Gate: new derived activities remain source-linked drafts and production validation must reject them until genuine review and approval.
+
+## T31 — Review scheduling correctness
+
+Status: implemented. All authored intervals run before mastery; completed-level backfill anchors to the latest attempt after at least one success. Catalog sync repairs legacy stage-3 premature mastery once; Progress V3 keys and records are unchanged.
+
+## T32 — Studio production gate
+
+Status: implemented. Compilation uses production package validation and returns blocking package diagnostics for draft religious content. Approved test fixtures are isolated clones.
+
+## T33 — Package integrity boundary
+
+Status: implemented. Manifests require one safe relative curriculum file; verified bytes are captured and parsed as authoritative package content. Legacy stored objects remain readable after production revalidation.
+
+## T34 — Recoverable package activation
+
+Status: implemented. Immutable version data is written before the registry pointer; failed registry/runtime commits preserve the prior pointer. Hydration and rollback revalidate stored content.
+
+## T35 — Package-scoped learning identity
+
+Status: implemented. Review lookup resolves activities through their level, block IDs are package-wide unique, and installed packages cannot claim another package's level/activity IDs.
+
+## T36 — Progress runtime integrity
+
+Status: implemented. Progress V2/V3 dates, attempts, reviews, receipts, and JSON answers are validated before use; malformed snapshots use the existing quarantine and recovery warning path.
+
+## T37 — Canonical word-token separation
+
+Status: implemented. Al-Fil package `2.3`/revision `r5` authors immutable Hafs tokens independently from glosses; word meanings reference token IDs and render Arabic through repository lookup. Existing content IDs are preserved; old revision schedules remain stored but inactive.
+
+## T38 — Legacy question consolidation
+
+Status: implemented. Authoritative legacy-question evaluation lives beside the shared activity evaluator, match attempts persist stable pair mappings, optional steps do not gate navigation, and unsupported runtime content has a generic fallback.

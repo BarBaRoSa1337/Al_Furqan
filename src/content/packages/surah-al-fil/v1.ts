@@ -78,7 +78,7 @@ const localization = {
       'activity.recall': 'Recall', 'activity.reveal': 'Reveal', 'activity.revealAndRate': 'Reveal and rate', 'activity.compareAndRate': 'Compare your recall with the Quran passage, then rate it.', 'activity.again': 'Again', 'activity.hard': 'Hard', 'activity.remembered': 'Remembered', 'activity.selectedAnswer': 'Your answer', 'activity.buildAnswer': 'Tap choices to build your answer', 'activity.matchTranslationHint': 'Tap an ayah segment, then tap its translation', 'activity.typeFromMemory': 'Write from memory. Harakat are optional for this exercise.', 'activity.typedAnswerLabel': 'Arabic answer from memory',
       'review.title': 'Spaced Review', 'review.due': '{count} review activities due', 'review.start': 'Start Review', 'review.noneDue': 'No reviews are due right now.', 'review.complete': 'Review complete', 'review.next': 'Next Review', 'review.backToRoadmap': 'Back to Roadmap',
       'question.quiz': 'Quiz', 'question.checkAnswer': 'Check Answer', 'question.checking': 'Saving...', 'question.tryAgain': 'Try Again', 'question.correct': 'Correct!', 'question.answerIs': 'The answer is: {answer}', 'question.fillAnswer': 'Fill in the blank answer', 'question.typeAnswer': 'Type your answer...', 'question.checkMatches': 'Check Matches', 'question.matchHint': 'Tap an Arabic word, then tap its meaning', 'question.true': 'True', 'question.false': 'False',
-      'content.translationUnavailable': 'Translation unavailable.', 'content.arabicSource': 'Arabic source', 'content.translationSource': 'Translation source', 'content.source': 'Source', 'content.sourceUnavailable': 'Source unavailable', 'content.tafsir': 'Tafsir', 'content.explanation': 'Explanation', 'content.draftPendingReview': 'Draft religious explanation pending review', 'content.toggleDetails': 'Toggle details', 'content.wordByWord': 'Word Meaning', 'content.translation': 'Translation', 'content.listen': 'Listen', 'content.audioUnavailable': 'Recitation audio is not included in this package.', 'content.context.historical_context': 'Historical context', 'content.context.occasion_of_revelation': 'Occasion of revelation', 'content.context.tafsir_summary': 'Tafsir summary',
+      'content.translationUnavailable': 'Translation unavailable.', 'content.arabicSource': 'Arabic source', 'content.translationSource': 'Translation source', 'content.source': 'Source', 'content.sourceUnavailable': 'Source unavailable', 'content.unsupported': 'This content is unavailable in this app version.', 'content.tafsir': 'Tafsir', 'content.explanation': 'Explanation', 'content.draftPendingReview': 'Draft religious explanation pending review', 'content.toggleDetails': 'Toggle details', 'content.wordByWord': 'Word Meaning', 'content.translation': 'Translation', 'content.listen': 'Listen', 'content.audioUnavailable': 'Recitation audio is not included in this package.', 'content.context.historical_context': 'Historical context', 'content.context.occasion_of_revelation': 'Occasion of revelation', 'content.context.tafsir_summary': 'Tafsir summary',
     },
   }],
 };
@@ -118,9 +118,33 @@ const tafsir = (id: string, text: string, explanation?: string) => ({
   explanation,
 });
 
-const word = (arabic: string, transliteration: string, meaning: string, root?: string) => ({
-  id: '',
-  arabic,
+const tokenId = (ayahNumber: number, position: number) => `105:${ayahNumber}:word:${position}`;
+
+const canonicalWords: { ayahNumber: number; words: string[] }[] = [
+  { ayahNumber: 1, words: ['أَلَمْ', 'تَرَ', 'كَيْفَ', 'فَعَلَ', 'رَبُّكَ', 'بِأَصْحَابِ', 'ٱلْفِيلِ'] },
+  { ayahNumber: 2, words: ['أَلَمْ', 'يَجْعَلْ', 'كَيْدَهُمْ', 'فِى', 'تَضْلِيلٍ'] },
+  { ayahNumber: 3, words: ['وَأَرْسَلَ', 'عَلَيْهِمْ', 'طَيْرًا', 'أَبَابِيلَ'] },
+  { ayahNumber: 4, words: ['تَرْمِيهِم', 'بِحِجَارَةٍ', 'مِّن', 'سِجِّيلٍ'] },
+  { ayahNumber: 5, words: ['فَجَعَلَهُمْ', 'كَعَصْفٍ', 'مَّأْكُولٍ'] },
+];
+
+export const surahAlFilWordTokens: WordToken[] = canonicalWords.flatMap(({ ayahNumber, words }) => words.map((arabicText, index) => ({
+  id: tokenId(ayahNumber, index + 1),
+  editionId: HAFS_AN_ASIM_ID,
+  ayahRef: { surahNumber: 105, ayahNumber },
+  position: index + 1,
+  arabicText,
+  sourceId: QURAN_ARABIC_SOURCE_ID,
+  sourceVersion: '1.0',
+})));
+
+const wordTokenIds = (ayahNumber: number) => surahAlFilWordTokens
+  .filter(token => token.ayahRef.ayahNumber === ayahNumber)
+  .map(token => token.id);
+
+const word = (wordTokenId: string, transliteration: string, meaning: string, root?: string) => ({
+  id: `${wordTokenId}:meaning`,
+  wordTokenId,
   transliteration,
   meaning,
   root,
@@ -133,7 +157,7 @@ export const surahAlFilAyat: AyahRecord[] = [
     id: '105:1',
     editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 1 },
-    wordTokenIds: [],
+    wordTokenIds: wordTokenIds(1),
     sourceId: QURAN_ARABIC_SOURCE_ID,
     sourceVersion: '1.0',
     checksum: 'f91b44aa8aadad8e9e1e72724b15f9f679ae871914b1ee8bc481f9c3dbdef0b2',
@@ -157,20 +181,20 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      word('أَلَمْ', 'Alam', 'Have not / Did not'),
-      word('تَرَ', 'tara', 'you see / consider'),
-      word('كَيْفَ', 'kayfa', 'how'),
-      word('فَعَلَ', "fa'ala", 'He dealt / did'),
-      word('رَبُّكَ', 'Rabbuka', 'your Lord'),
-      word('بِأَصْحَابِ', "bi-as'habi", 'with the companions of'),
-      word('ٱلْفِيلِ', 'al-feel', 'the elephant'),
+      word(tokenId(1, 1), 'Alam', 'Have not / Did not'),
+      word(tokenId(1, 2), 'tara', 'you see / consider'),
+      word(tokenId(1, 3), 'kayfa', 'how'),
+      word(tokenId(1, 4), "fa'ala", 'He dealt / did'),
+      word(tokenId(1, 5), 'Rabbuka', 'your Lord'),
+      word(tokenId(1, 6), "bi-as'habi", 'with the companions of'),
+      word(tokenId(1, 7), 'al-feel', 'the elephant'),
     ],
   },
   {
     id: '105:2',
     editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 2 },
-    wordTokenIds: [],
+    wordTokenIds: wordTokenIds(2),
     sourceId: QURAN_ARABIC_SOURCE_ID,
     sourceVersion: '1.0',
     checksum: '4695b751b2752b02fc411f3481d552ffdbae4c6125c2feb1a96f84eff0ae01c3',
@@ -189,18 +213,18 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      word('أَلَمْ', 'Alam', 'Did He not'),
-      word('يَجْعَلْ', "yaj'al", 'make / render'),
-      word('كَيْدَهُمْ', 'kaydahum', 'their plan / scheme'),
-      word('فِى', 'fee', 'into / in'),
-      word('تَضْلِيلٍ', 'tadleel', 'misguidance / ruin / failure'),
+      word(tokenId(2, 1), 'Alam', 'Did He not'),
+      word(tokenId(2, 2), "yaj'al", 'make / render'),
+      word(tokenId(2, 3), 'kaydahum', 'their plan / scheme'),
+      word(tokenId(2, 4), 'fee', 'into / in'),
+      word(tokenId(2, 5), 'tadleel', 'misguidance / ruin / failure'),
     ],
   },
   {
     id: '105:3',
     editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 3 },
-    wordTokenIds: [],
+    wordTokenIds: wordTokenIds(3),
     sourceId: QURAN_ARABIC_SOURCE_ID,
     sourceVersion: '1.0',
     checksum: '28fc4a80e7e164328f51003c4b3639ff13538c783c7d7e12bb5aa947ffd34d69',
@@ -219,17 +243,17 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      word('وَأَرْسَلَ', 'Wa-arsala', 'And He sent'),
-      word('عَلَيْهِمْ', 'alayhim', 'against them / upon them'),
-      word('طَيْرًا', 'tayran', 'birds'),
-      word('أَبَابِيلَ', 'ababeel', 'in flocks / in groups'),
+      word(tokenId(3, 1), 'Wa-arsala', 'And He sent'),
+      word(tokenId(3, 2), 'alayhim', 'against them / upon them'),
+      word(tokenId(3, 3), 'tayran', 'birds'),
+      word(tokenId(3, 4), 'ababeel', 'in flocks / in groups'),
     ],
   },
   {
     id: '105:4',
     editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 4 },
-    wordTokenIds: [],
+    wordTokenIds: wordTokenIds(4),
     sourceId: QURAN_ARABIC_SOURCE_ID,
     sourceVersion: '1.0',
     checksum: '3b4399b60633a76491e33e1c726c275f06eca86cdc6f3792bbe828eacbf2913e',
@@ -248,17 +272,17 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      word('تَرْمِيهِم', 'Tarmeehim', 'striking them / pelting them'),
-      word('بِحِجَارَةٍ', 'bihijaaratin', 'with stones'),
-      word('مِّن', 'min', 'of / from'),
-      word('سِجِّيلٍ', 'sijjeel', 'hard baked clay', 'س-ج-ل'),
+      word(tokenId(4, 1), 'Tarmeehim', 'striking them / pelting them'),
+      word(tokenId(4, 2), 'bihijaaratin', 'with stones'),
+      word(tokenId(4, 3), 'min', 'of / from'),
+      word(tokenId(4, 4), 'sijjeel', 'hard baked clay', 'س-ج-ل'),
     ],
   },
   {
     id: '105:5',
     editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 5 },
-    wordTokenIds: [],
+    wordTokenIds: wordTokenIds(5),
     sourceId: QURAN_ARABIC_SOURCE_ID,
     sourceVersion: '1.0',
     checksum: '9f1e9227bc04511fbd0ad946f0d323d531fdb7fd0b38022d3db5b5f25630ecd2',
@@ -277,31 +301,12 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      word('فَجَعَلَهُمْ', "Faja'alahum", 'And He made them'),
-      word('كَعَصْفٍ', "ka'asfin", 'like straw / chaff'),
-      word('مَّأْكُولٍ', "ma'kool", 'eaten / devoured'),
+      word(tokenId(5, 1), "Faja'alahum", 'And He made them'),
+      word(tokenId(5, 2), "ka'asfin", 'like straw / chaff'),
+      word(tokenId(5, 3), "ma'kool", 'eaten / devoured'),
     ],
   },
 ];
-
-/** Temporary gloss compatibility: tokens become canonical IDs without changing rendered word cards. */
-export const surahAlFilWordTokens: WordToken[] = surahAlFilAyat.flatMap(ayah =>
-  (ayah.wordMeanings ?? []).map((meaning, index) => {
-    const id = `${ayah.id}:word:${index + 1}`;
-    meaning.id = `${id}:meaning`;
-    meaning.wordTokenId = id;
-    ayah.wordTokenIds.push(id);
-    return {
-      id,
-      editionId: HAFS_AN_ASIM_ID,
-      ayahRef: ayah.ref,
-      position: index + 1,
-      arabicText: meaning.arabic,
-      sourceId: ayah.sourceId,
-      sourceVersion: ayah.sourceVersion,
-    };
-  })
-);
 
 export const surahAlFilLearningPath: LearningPath = {
   id: 'surah-al-fil-path-v1',
@@ -822,9 +827,9 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '2.2',
+  version: '2.3',
   schemaVersion: 2,
-  revisionId: 'surah-al-fil-v1-r4',
+  revisionId: 'surah-al-fil-v1-r5',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',

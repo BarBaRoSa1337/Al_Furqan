@@ -13,7 +13,7 @@ export interface DueReviewItem {
 export function resolveDueReviewItems(repo: ContentRepository, states: ActivityReviewState[]): DueReviewItem[] {
   return states.flatMap(state => {
     const level = repo.getLevelById(state.levelId);
-    const activity = repo.getActivityById(state.activityId);
+    const activity = repo.getActivityForLevel(state.levelId, state.activityId);
     const pkg = repo.getPackageForLevel(state.levelId);
     const path = level ? repo.getLearningPathById(level.pathId) : undefined;
     if (!level || !activity || !activity.reviewSchedule || !pkg || !path || pkg.revisionId !== state.packageRevisionId) return [];

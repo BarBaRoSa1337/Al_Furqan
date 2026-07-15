@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getContentRepository } from '../lib/content/repository';
-import { evaluateActivity } from '../lib/activities/activityEngine';
+import { evaluateActivity, evaluateQuestion } from '../lib/activities/activityEngine';
 import { createActivityEvaluationContext } from '../lib/activities/activityContext';
 import { isLevelAccessible } from '../lib/progress/lessonAccess';
 import {
@@ -32,8 +32,8 @@ export function useLevelSession(levelId: string | undefined) {
   const operationLocked = useRef(false);
 
   const step = level?.steps[currentStepIndex];
-  const questionIds = step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
-  const requiredActivityIds = step?.blocks
+  const questionIds = step?.required === false ? [] : step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
+  const requiredActivityIds = step?.required === false ? [] : step?.blocks
     .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
     .map(block => block.activity.id) ?? [];
   const canProceed = questionIds.every(questionId => correctQuestionIds.includes(questionId))
@@ -80,7 +80,7 @@ export function useLevelSession(levelId: string | undefined) {
     return () => { cancelled = true; };
   }, [levelId]);
 
-  async function answerQuestion(blockId: string, selectedAnswer: string | number): Promise<void> {
+  async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
     if (!level || !path || operationLocked.current) return;
     const block = level.steps.flatMap(candidate => candidate.blocks)
       .find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === blockId);
@@ -168,17 +168,6 @@ function getLatestActivityResults(blockIds: string[], progress: LevelProgress): 
     if (blockIds.includes(attempt.activityId)) results[attempt.activityId] = attempt.correct;
     return results;
   }, {});
-}
-
-function evaluateQuestion(block: QuestionBlock, answer: string | number): boolean {
-  if (block.questionType === 'multiple-choice' || block.questionType === 'true-false') return Number(answer) === block.correctAnswer;
-  if (block.questionType === 'fill-blank') {
-    const actual = String(answer).trim();
-    const expected = block.correctAnswer.trim();
-    return block.caseSensitive ? actual === expected : actual.toLowerCase() === expected.toLowerCase();
-  }
-  if (block.questionType === 'match') return Number(answer) === block.matchPairs.length;
-  return false;
 }
 
 function toErrorMessage(cause: unknown): string {

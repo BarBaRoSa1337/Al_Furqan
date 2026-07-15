@@ -23,7 +23,7 @@ import { packageText } from '../../lib/content/text';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
   onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
 }
 
@@ -52,7 +52,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
       return <CanonicalContextBlock block={block} repo={repo} />;
     case 'word_explorer': {
       const words = block.ayahRefs.flatMap(ref => repo.getAyahByRef(ref)?.wordMeanings ?? []);
-      return words.length > 0 ? <WordExplorerBlock words={words} /> : null;
+      return words.length > 0 ? <WordExplorerBlock words={words} repo={repo} /> : null;
     }
     case 'audio':
       return <CanonicalAudioBlock block={block} repo={repo} />;
@@ -65,7 +65,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     case 'summary':
       return <CanonicalSummaryBlock block={block} />;
     default:
-      return null;
+      return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
   }
 }
 
@@ -85,7 +85,7 @@ function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; r
 function SelectedWordMeaningBlock({ block, repo }: { block: WordMeaningBlock; repo: ContentRepository }) {
   const selectedIds = new Set(block.wordMeaningIds);
   const words = repo.ayat.flatMap(ayah => ayah.wordMeanings ?? []).filter(word => selectedIds.has(word.id));
-  return words.length > 0 ? <WordExplorerBlock words={words} /> : null;
+  return words.length > 0 ? <WordExplorerBlock words={words} repo={repo} /> : null;
 }
 
 function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: ContentRepository }) {
@@ -173,14 +173,13 @@ function CanonicalContextBlock({ block, repo }: { block: ContextBlock; repo: Con
   );
 }
 
-function WordExplorerBlock({ words }: { words: WordMeaning[] }) {
-  const repo = getContentRepository();
+function WordExplorerBlock({ words, repo }: { words: WordMeaning[]; repo: ContentRepository }) {
   return (
     <Card style={styles.wordCard}>
       <Text style={styles.wordTitle}>{packageText(repo, 'content.wordByWord')}</Text>
-      {words.map((word, index) => (
-        <View key={`${word.arabic}-${index}`} style={styles.wordRow}>
-          <Text style={styles.wordArabic}>{word.arabic}</Text>
+      {words.map(word => (
+        <View key={word.id} style={styles.wordRow}>
+          <Text style={styles.wordArabic}>{repo.getWordToken(word.wordTokenId)?.arabicText ?? ''}</Text>
           <View style={styles.wordMeaning}>
             <Text style={styles.wordTransliteration}>{word.transliteration}</Text>
             <Text style={styles.wordText}>{word.meaning}</Text>
@@ -214,6 +213,7 @@ function ReviewBadge({ repo }: { repo: ContentRepository }) {
 }
 
 const styles = StyleSheet.create({
+  unsupported: { color: '#7F8C8D', fontSize: 14, lineHeight: 21 },
   ayahCard: { alignItems: 'center' },
   passageAyah: { width: '100%', paddingVertical: 6 },
   arabic: { fontSize: 30, fontFamily: 'serif', textAlign: 'right', color: '#1A1A1A', lineHeight: 48, width: '100%', writingDirection: 'rtl' },

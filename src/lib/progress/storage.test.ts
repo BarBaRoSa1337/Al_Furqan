@@ -109,7 +109,7 @@ test('registers the Level 4 memory and meaning ladder for deterministic review',
   const level = surahAlFilLevels[3];
   await seedSnapshot({ [level.id]: readyProgress(level) });
 
-  await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r4', now: new Date('2026-01-01T00:00:00.000Z') });
+  await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r5', now: new Date('2026-01-01T00:00:00.000Z') });
 
   expect((await getReviewStates()).map(review => review.activityId)).toEqual(expect.arrayContaining([
     'l4-continuation-5', 'l4-match-meaning', 'l4-recall-5', 'l4-order-ayat-1-5',
@@ -154,6 +154,27 @@ test('quarantines corrupt V2 progress and reports recovery', async () => {
 
   expect((await getAppProgress()).xp).toBe(0);
   expect(getProgressRecoveryWarning()?.code).toBe('corrupt_v2');
+  expect((await AsyncStorage.getAllKeys()).some(key => key.startsWith('qlp_progress_corrupt_'))).toBe(true);
+});
+
+test('quarantines structurally invalid V3 attempts and review dates', async () => {
+  const level = surahAlFilLevels[0];
+  const progress = readyProgress(level);
+  progress.activityAttempts[0].attemptedAt = 'not-a-date';
+  await AsyncStorage.setItem('qlp_progress_v3', JSON.stringify({
+    schemaVersion: 3,
+    app: createDefaultProgress(),
+    levels: { [level.id]: progress },
+    reviews: {
+      invalid: {
+        activityId: 'activity', levelId: level.id, packageRevisionId: 'revision', stage: 1,
+        dueAt: 'not-a-date', lastReviewedAt: 'not-a-date', lastOutcome: 'correct', mastered: false,
+      },
+    },
+  }));
+
+  expect(await getLevelProgress(level.id)).toBeNull();
+  expect(getProgressRecoveryWarning()?.code).toBe('corrupt_v3');
   expect((await AsyncStorage.getAllKeys()).some(key => key.startsWith('qlp_progress_corrupt_'))).toBe(true);
 });
 
@@ -211,6 +232,35 @@ test('keeps stale revision schedules while syncing the active package revision',
   const reviews = await getReviewStates();
   expect(reviews.filter(review => review.packageRevisionId === 'revision-r2')).toHaveLength(4);
   expect(reviews.filter(review => review.packageRevisionId === 'revision-r3')).toHaveLength(4);
+});
+
+test('backfills review state from the latest attempt instead of completion time', async () => {
+  const level = surahAlFilLevels[0];
+  const progress = readyProgress(level);
+  const activityId = 'l1-recall-ayah-1';
+  progress.completed = true;
+  progress.completedAt = '2026-01-02T00:00:00.000Z';
+  progress.activityAttempts.forEach(attempt => {
+    if (attempt.activityId === activityId) attempt.attemptedAt = '2026-01-01T00:00:00.000Z';
+  });
+  progress.activityAttempts.push({
+    activityId,
+    levelId: level.id,
+    answer: 'again',
+    correct: false,
+    attemptedAt: '2026-01-10T00:00:00.000Z',
+    evaluationVersion: '1',
+  });
+  await seedSnapshot({ [level.id]: progress });
+
+  await syncCompletedLevelReviews([{ level, packageRevisionId: 'revision-r5' }], new Date('2026-02-01T00:00:00.000Z'));
+
+  expect((await getReviewStates()).find(review => review.activityId === activityId)).toEqual(expect.objectContaining({
+    stage: 0,
+    dueAt: '2026-01-11T00:00:00.000Z',
+    lastReviewedAt: '2026-01-10T00:00:00.000Z',
+    lastOutcome: 'again',
+  }));
 });
 
 function readyProgress(level: Level): LevelProgress {

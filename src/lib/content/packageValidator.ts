@@ -59,6 +59,7 @@ export function validatePackage(
   validateUniqueIds('division key', pkg.divisions.map(division => `${division.editionId}:${division.kind}:${division.number}`), errors);
   validateUniqueIds('learning path', pkg.learningPaths.map(path => path.id), errors);
   validateUniqueIds('level', pkg.levels.map(level => level.id), errors);
+  validateUniqueIds('block', pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks.map(block => block.id))), errors);
 
   pkg.sources.forEach(source => validateReviewStatus(`Source "${source.id}"`, source.reviewerStatus, mode, errors, warnings));
   pkg.editions.forEach(edition => {
@@ -154,14 +155,20 @@ function validateAyah(
     const wordLabel = `${label} wordMeaning[${index}]`;
     validateSourceIds(wordLabel, [entry.sourceId], pkg, errors);
     validateReviewStatus(wordLabel, entry.reviewerStatus, mode, errors, warnings);
+    if (!entry.wordTokenId) errors.push(`${wordLabel} missing canonical token reference`);
     if (entry.wordTokenId && !ayah.wordTokenIds.includes(entry.wordTokenId)) {
       errors.push(`${wordLabel} token is absent from ${label}`);
     }
+    if (pkg.schemaVersion >= 2 && 'arabic' in entry) errors.push(`${wordLabel} duplicates canonical Arabic text`);
     if (!entry.id) errors.push(`${wordLabel} missing stable id`);
   });
   validateUniqueIds(`word meaning in ${label}`, ayah.wordMeanings?.map(entry => entry.id) ?? [], errors);
   if (ayah.wordTokenIds.length === 0) errors.push(`${label} missing word tokens`);
   validateUniqueIds(`word token in ${label}`, ayah.wordTokenIds, errors);
+  ayah.wordTokenIds.forEach((tokenId, index) => {
+    const token = pkg.wordTokens.find(candidate => candidate.id === tokenId);
+    if (!token || !sameRef(token.ayahRef, ayah.ref) || token.position !== index + 1) errors.push(`${label} word token order is not canonical`);
+  });
 }
 
 function validateWordToken(token: WordToken, pkg: ContentPackage, errors: string[]): void {
