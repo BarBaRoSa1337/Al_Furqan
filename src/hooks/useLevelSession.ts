@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getContentRepository } from '../lib/content/repository';
+import { evaluateActivity } from '../lib/activities/activityEngine';
+import { createActivityEvaluationContext } from '../lib/activities/activityContext';
 import { isLevelAccessible } from '../lib/progress/lessonAccess';
 import {
   completeLevel,
@@ -11,6 +13,8 @@ import {
   startLevel,
 } from '../lib/progress/storage';
 import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../types/progress';
+import { QuestionBlock } from '../types/content';
+import { getResumeStepIndex } from '../lib/progress/levelResume';
 
 export type LevelSessionStatus = 'loading' | 'ready' | 'locked' | 'not_found' | 'error';
 
@@ -21,6 +25,7 @@ export function useLevelSession(levelId: string | undefined) {
   const [status, setStatus] = useState<LevelSessionStatus>('loading');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [correctQuestionIds, setCorrectQuestionIds] = useState<string[]>([]);
+  const [activityResults, setActivityResults] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<ProgressRecoveryWarning | null>(null);
@@ -28,7 +33,11 @@ export function useLevelSession(levelId: string | undefined) {
 
   const step = level?.steps[currentStepIndex];
   const questionIds = step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
-  const canProceed = questionIds.every(questionId => correctQuestionIds.includes(questionId));
+  const requiredActivityIds = step?.blocks
+    .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
+    .map(block => block.activity.id) ?? [];
+  const canProceed = questionIds.every(questionId => correctQuestionIds.includes(questionId))
+    && requiredActivityIds.every(activityId => activityResults[activityId] === true);
   const isLastStep = Boolean(level && currentStepIndex === level.steps.length - 1);
 
   useEffect(() => {
@@ -51,11 +60,11 @@ export function useLevelSession(levelId: string | undefined) {
         }
 
         const progress = await startLevel(level.id, path.id, level.steps[0]?.id ?? '');
-        const savedIndex = level.steps.findIndex(candidate => candidate.id === progress.currentStepId);
-        const nextIndex = savedIndex >= 0 ? savedIndex : 0;
+        const nextIndex = getResumeStepIndex(level.steps, progress);
         if (!cancelled) {
           setCurrentStepIndex(nextIndex);
           setCorrectQuestionIds(getCorrectQuestionIds(level.steps[nextIndex]?.blocks.map(block => block.id) ?? [], progress));
+          setActivityResults(getLatestActivityResults(level.steps[nextIndex]?.blocks.map(block => block.id) ?? [], progress));
           setWarning(getProgressRecoveryWarning());
           setStatus('ready');
         }
@@ -71,8 +80,12 @@ export function useLevelSession(levelId: string | undefined) {
     return () => { cancelled = true; };
   }, [levelId]);
 
-  async function answerQuestion(blockId: string, selectedAnswer: string | number, correct: boolean): Promise<void> {
+  async function answerQuestion(blockId: string, selectedAnswer: string | number): Promise<void> {
     if (!level || !path || operationLocked.current) return;
+    const block = level.steps.flatMap(candidate => candidate.blocks)
+      .find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === blockId);
+    if (!block) throw new Error('Question is unavailable for this level.');
+    const correct = evaluateQuestion(block, selectedAnswer);
     const saved = await runExclusive(async () => {
       await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: blockId, selectedAnswer, correct });
       if (correct) setCorrectQuestionIds(current => current.includes(blockId) ? current : [...current, blockId]);
@@ -80,9 +93,17 @@ export function useLevelSession(levelId: string | undefined) {
     if (!saved) throw new Error('Answer could not be saved. Please try again.');
   }
 
-  async function answerActivity(activityId: string, answer: unknown, correct: boolean): Promise<void> {
+  async function answerActivity(activityId: string, answer: unknown): Promise<void> {
     if (!level || !path || operationLocked.current) return;
-    const saved = await runExclusive(async () => { await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId, answer, correct, evaluationVersion: '1' }); });
+    const activity = level.steps.flatMap(candidate => candidate.blocks)
+      .find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === activityId)
+      ?.activity;
+    if (!activity) throw new Error('Activity is unavailable for this level.');
+    const evaluation = evaluateActivity(activity, answer, createActivityEvaluationContext(repo));
+    const saved = await runExclusive(async () => {
+      await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId, answer, correct: evaluation.correct, evaluationVersion: '1' });
+      setActivityResults(current => ({ ...current, [activityId]: evaluation.correct }));
+    });
     if (!saved) throw new Error('Activity could not be saved. Please try again.');
   }
 
@@ -93,12 +114,13 @@ export function useLevelSession(levelId: string | undefined) {
       const nextStep = level.steps[currentStepIndex + 1];
       const progress = await completeLevelStep(level.id, path.id, step.id, nextStep?.id);
       if (isLastStep) {
-        receipt = await completeLevel(level, path);
+        receipt = await completeLevel(level, path, { packageRevisionId: repo.getPackageForLevel(level.id)?.revisionId });
         return;
       }
       const nextIndex = currentStepIndex + 1;
       setCurrentStepIndex(nextIndex);
       setCorrectQuestionIds(getCorrectQuestionIds(nextStep.blocks.map(block => block.id), progress));
+      setActivityResults(getLatestActivityResults(nextStep.blocks.map(block => block.id), progress));
     });
     return receipt;
   }
@@ -139,6 +161,24 @@ export function useLevelSession(levelId: string | undefined) {
 
 function getCorrectQuestionIds(blockIds: string[], progress: LevelProgress): string[] {
   return blockIds.filter(blockId => progress.questionAttempts.some(attempt => attempt.questionId === blockId && attempt.correct));
+}
+
+function getLatestActivityResults(blockIds: string[], progress: LevelProgress): Record<string, boolean> {
+  return progress.activityAttempts.reduce<Record<string, boolean>>((results, attempt) => {
+    if (blockIds.includes(attempt.activityId)) results[attempt.activityId] = attempt.correct;
+    return results;
+  }, {});
+}
+
+function evaluateQuestion(block: QuestionBlock, answer: string | number): boolean {
+  if (block.questionType === 'multiple-choice' || block.questionType === 'true-false') return Number(answer) === block.correctAnswer;
+  if (block.questionType === 'fill-blank') {
+    const actual = String(answer).trim();
+    const expected = block.correctAnswer.trim();
+    return block.caseSensitive ? actual === expected : actual.toLowerCase() === expected.toLowerCase();
+  }
+  if (block.questionType === 'match') return Number(answer) === block.matchPairs.length;
+  return false;
 }
 
 function toErrorMessage(cause: unknown): string {

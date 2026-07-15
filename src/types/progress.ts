@@ -39,6 +39,17 @@ export interface ActivityAttempt {
   evaluationVersion: string;
 }
 
+export interface ActivityReviewState {
+  activityId: string;
+  levelId: string;
+  packageRevisionId: string;
+  stage: number;
+  dueAt?: string;
+  lastOutcome: import('./activities').ReviewOutcome;
+  lastReviewedAt: string;
+  mastered: boolean;
+}
+
 export interface LevelProgress {
   levelId: string;
   pathId: string;
@@ -79,8 +90,16 @@ export interface ProgressSnapshotV2 {
   lastCompletionReceipt?: CompletionReceipt;
 }
 
+export interface ProgressSnapshotV3 {
+  schemaVersion: 3;
+  app: AppProgress;
+  levels: Record<string, LevelProgress>;
+  reviews: Record<string, ActivityReviewState>;
+  lastCompletionReceipt?: CompletionReceipt;
+}
+
 export interface ProgressRecoveryWarning {
-  code: 'corrupt_v2' | 'partial_legacy_migration';
+  code: 'corrupt_v2' | 'corrupt_v3' | 'partial_legacy_migration';
   message: string;
 }
 

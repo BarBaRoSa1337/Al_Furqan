@@ -12,10 +12,12 @@ import {
   QuranDivisionKind,
   LearningPath,
   Level,
+  PackageTextKey,
   RoadmapSort,
   SurahRecord,
   WordToken,
 } from '../../types/content';
+import { Reciter, RecitationTrack } from '../../types/media';
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { validatePackage } from './packageValidator';
 
@@ -27,8 +29,11 @@ class ContentRepositoryImpl implements ContentRepository {
   private _ayat: AyahRecord[] = [];
   private _wordTokens: WordToken[] = [];
   private _divisions: QuranDivision[] = [];
+  private _reciters: Reciter[] = [];
+  private _recitationTracks: RecitationTrack[] = [];
   private _learningPaths: LearningPath[] = [];
   private _levels: Level[] = [];
+  private _activePackageId: string | undefined;
   private _initialized = false;
 
   constructor() {
@@ -52,6 +57,27 @@ class ContentRepositoryImpl implements ContentRepository {
 
     if (this._packages.some(p => p.id === pkg.id)) return;
     this._packages.push(pkg);
+    if (!this._activePackageId) this._activePackageId = pkg.id;
+    this._appendPackageIndexes(pkg);
+  }
+
+  registerPackage(pkg: ContentPackage, activate = true): void {
+    const validation = validatePackage(pkg, { mode: __DEV__ ? 'development' : 'production' });
+    if (!validation.valid) throw new Error(`Invalid content package "${pkg.id}": ${validation.errors.join('; ')}`);
+    const existingIndex = this._packages.findIndex(candidate => candidate.id === pkg.id);
+    if (existingIndex >= 0) this._packages.splice(existingIndex, 1, pkg);
+    else this._packages.push(pkg);
+    if (activate || !this._activePackageId) this._activePackageId = pkg.id;
+    this._rebuildIndexes();
+  }
+
+  removePackage(id: string): void {
+    this._packages = this._packages.filter(pkg => pkg.id !== id);
+    if (this._activePackageId === id) this._activePackageId = this._packages[0]?.id;
+    this._rebuildIndexes();
+  }
+
+  private _appendPackageIndexes(pkg: ContentPackage): void {
     pkg.sources.forEach(source => {
       if (!this._sources.some(s => s.id === source.id)) {
         this._sources.push(source);
@@ -76,6 +102,12 @@ class ContentRepositoryImpl implements ContentRepository {
     pkg.divisions.forEach(division => {
       if (!this._divisions.some(candidate => candidate.id === division.id)) this._divisions.push(division);
     });
+    pkg.reciters.forEach(reciter => {
+      if (!this._reciters.some(candidate => candidate.id === reciter.id)) this._reciters.push(reciter);
+    });
+    pkg.recitationTracks.forEach(track => {
+      if (!this._recitationTracks.some(candidate => candidate.id === track.id)) this._recitationTracks.push(track);
+    });
     pkg.learningPaths?.forEach(path => {
       if (!this._learningPaths.some(p => p.id === path.id)) {
         this._learningPaths.push(path);
@@ -96,12 +128,44 @@ class ContentRepositoryImpl implements ContentRepository {
   get ayat(): AyahRecord[] { return this._ayat; }
   get wordTokens(): WordToken[] { return this._wordTokens; }
   get divisions(): QuranDivision[] { return this._divisions; }
+  get reciters(): Reciter[] { return this._reciters; }
+  get recitationTracks(): RecitationTrack[] { return this._recitationTracks; }
   get learningPaths(): LearningPath[] { return this._learningPaths; }
   get levels(): Level[] { return this._levels; }
+
+  getActivePackage(): ContentPackage | undefined {
+    return this._packages.find(pkg => pkg.id === this._activePackageId);
+  }
+
+  getText(key: PackageTextKey, locale?: string): string {
+    const pkg = this.getActivePackage();
+    const selectedLocale = locale ?? pkg?.localization.defaultLocale;
+    const catalog = pkg?.localization.catalogs.find(item => item.locale === selectedLocale)
+      ?? pkg?.localization.catalogs.find(item => item.locale === pkg.localization.defaultLocale);
+    return catalog?.entries[key] ?? key;
+  }
+
+  private _rebuildIndexes(): void {
+    this._sources = [];
+    this._editions = [];
+    this._surahs = [];
+    this._ayat = [];
+    this._wordTokens = [];
+    this._divisions = [];
+    this._reciters = [];
+    this._recitationTracks = [];
+    this._learningPaths = [];
+    this._levels = [];
+    this._packages.forEach(pkg => this._appendPackageIndexes(pkg));
+  }
 
   // Queries
   getPackageById(id: string): ContentPackage | undefined {
     return this._packages.find(p => p.id === id);
+  }
+
+  getPackageForLevel(levelId: string): ContentPackage | undefined {
+    return this._packages.find(pkg => pkg.levels.some(level => level.id === levelId));
   }
 
   getSourceById(id: string): ContentSource | undefined {
@@ -124,6 +188,16 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._levels.find(level => level.id === id);
   }
 
+  getActivityById(id: string) {
+    const block = this._levels.flatMap(level => level.steps).flatMap(step => step.blocks)
+      .find((candidate): candidate is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => candidate.type === 'activity' && candidate.activity.id === id);
+    return block?.activity;
+  }
+
+  getLevelForActivity(id: string): Level | undefined {
+    return this._levels.find(level => level.steps.some(step => step.blocks.some(block => block.type === 'activity' && block.activity.id === id)));
+  }
+
   getLearningPathById(id: string): LearningPath | undefined {
     return this._learningPaths.find(path => path.id === id);
   }
@@ -142,6 +216,17 @@ class ContentRepositoryImpl implements ContentRepository {
 
   getWordToken(id: string): WordToken | undefined {
     return this._wordTokens.find(token => token.id === id);
+  }
+
+  getReciterById(id: string): Reciter | undefined {
+    return this._reciters.find(reciter => reciter.id === id);
+  }
+
+  getRecitationTrackByAyah(ref: AyahRef, reciterId?: string, editionId: QuranEditionId = 'hafs-an-asim'): RecitationTrack | undefined {
+    return this._recitationTracks.find(track => track.editionId === editionId
+      && (!reciterId || track.reciterId === reciterId)
+      && track.ayahRef.surahNumber === ref.surahNumber
+      && track.ayahRef.ayahNumber === ref.ayahNumber);
   }
 
   listDivisions(kind: QuranDivisionKind, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision[] {
@@ -183,7 +268,9 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   getCurrentLearningPath(): LearningPath | undefined {
-    return this._learningPaths[0];
+    const pkg = this.getActivePackage();
+    const pathId = pkg?.metadata.defaultLearningPathId;
+    return pathId ? this.getLearningPathById(pathId) : this._learningPaths[0];
   }
 
   getLevelsForLearningPath(pathId: string, sort: RoadmapSort = 'path'): Level[] {

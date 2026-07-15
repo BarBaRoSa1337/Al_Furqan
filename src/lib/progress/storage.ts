@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LearningPath, Level } from '../../types/content';
+import type { ActivityReviewSchedule, RecallRating, ReviewOutcome } from '../../types/activities';
+import { getLevelStepKind } from '../content/stepKind';
+import { isReviewDue, reviewStateKey, scheduleActivityReview } from './reviewScheduler';
 import {
   AppProgress,
   CompletionReceipt,
@@ -8,14 +11,17 @@ import {
   LevelProgress,
   ProgressRecoveryWarning,
   ProgressSnapshotV2,
+  ProgressSnapshotV3,
   QuestionAttempt,
   ActivityAttempt,
+  ActivityReviewState,
   XP_REWARDS,
   XPRecord,
 } from '../../types/progress';
 
 const KEYS = {
-  SNAPSHOT: 'qlp_progress_v2',
+  SNAPSHOT: 'qlp_progress_v3',
+  SNAPSHOT_V2: 'qlp_progress_v2',
   APP_PROGRESS: 'qlp_app_progress',
   LEVEL_PREFIX: 'qlp_level_',
   PATH_PREFIX: 'qlp_path_',
@@ -50,6 +56,18 @@ export interface RecordQuestionAttemptInput {
   correct: boolean;
 }
 export interface RecordActivityAttemptInput { levelId: string; pathId: string; activityId: string; answer: unknown; correct: boolean; evaluationVersion: string; }
+export interface RecordReviewAttemptInput extends RecordActivityAttemptInput {
+  packageRevisionId: string;
+  reviewSchedule: ActivityReviewSchedule;
+  outcome: ReviewOutcome;
+  now?: Date;
+}
+
+export interface CompleteLevelOptions {
+  packageRevisionId?: string;
+  now?: Date;
+}
+export interface ReviewCatalogEntry { level: Level; packageRevisionId: string; }
 
 export class ProgressStorageError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -69,6 +87,25 @@ export async function getAppProgress(): Promise<AppProgress> {
 export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
   const snapshot = await readAfterMutations();
   return snapshot.levels[levelId] ?? null;
+}
+
+export async function getReviewStates(): Promise<ActivityReviewState[]> {
+  return Object.values((await readAfterMutations()).reviews);
+}
+
+export async function getDueReviewStates(now: Date = new Date()): Promise<ActivityReviewState[]> {
+  return (await getReviewStates())
+    .filter(state => isReviewDue(state, now))
+    .sort((a, b) => (a.dueAt ?? '').localeCompare(b.dueAt ?? ''));
+}
+
+export async function syncCompletedLevelReviews(entries: ReviewCatalogEntry[], now: Date = new Date()): Promise<void> {
+  await mutateSnapshot(snapshot => {
+    entries.forEach(({ level, packageRevisionId }) => {
+      const progress = snapshot.levels[level.id];
+      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, validDate(progress.completedAt) ?? now);
+    });
+  });
 }
 
 export async function getLastCompletionReceipt(levelId?: string): Promise<CompletionReceipt | null> {
@@ -164,13 +201,51 @@ export async function recordActivityAttempt(input: RecordActivityAttemptInput): 
   });
 }
 
-export async function completeLevel(level: Level, path: LearningPath): Promise<CompletionReceipt> {
+export async function recordReviewAttempt(input: RecordReviewAttemptInput): Promise<ActivityAttempt> {
+  return mutateSnapshot(snapshot => {
+    const now = input.now ?? new Date();
+    const attemptedAt = now.toISOString();
+    const existing = snapshot.levels[input.levelId];
+    const attempt: ActivityAttempt = {
+      activityId: input.activityId,
+      levelId: input.levelId,
+      answer: input.answer,
+      correct: input.correct,
+      attemptedAt,
+      evaluationVersion: input.evaluationVersion,
+    };
+    snapshot.levels[input.levelId] = {
+      levelId: input.levelId,
+      pathId: input.pathId,
+      completed: existing?.completed ?? false,
+      startedAt: existing?.startedAt ?? attemptedAt,
+      completedAt: existing?.completedAt,
+      currentStepId: existing?.currentStepId,
+      completedStepIds: existing?.completedStepIds ?? [],
+      questionAttempts: existing?.questionAttempts ?? [],
+      activityAttempts: [...(existing?.activityAttempts ?? []), attempt],
+    };
+    const key = reviewStateKey(input.levelId, input.activityId, input.packageRevisionId);
+    snapshot.reviews[key] = scheduleActivityReview(snapshot.reviews[key], {
+      activityId: input.activityId,
+      levelId: input.levelId,
+      packageRevisionId: input.packageRevisionId,
+      outcome: input.outcome,
+      schedule: input.reviewSchedule,
+    }, now);
+    snapshot.app.lastActiveAt = attemptedAt;
+    return attempt;
+  });
+}
+
+export async function completeLevel(level: Level, path: LearningPath, options: CompleteLevelOptions = {}): Promise<CompletionReceipt> {
   if (level.pathId !== path.id || !path.levelIds.includes(level.id)) {
     throw new ProgressStorageError(`Level "${level.id}" does not belong to path "${path.id}"`);
   }
 
   return mutateSnapshot(snapshot => {
-    const now = new Date().toISOString();
+    const nowDate = options.now ?? new Date();
+    const now = nowDate.toISOString();
     const existing = snapshot.levels[level.id] ?? null;
     if (!isLevelReadyForCompletion(level, existing)) {
       throw new ProgressStorageError(`Level "${level.id}" is not ready for completion`);
@@ -196,7 +271,8 @@ export async function completeLevel(level: Level, path: LearningPath): Promise<C
     const awardedLearningPathXp = learningPathJustCompleted ? XP_REWARDS.LEARNING_PATH_COMPLETE : 0;
     if (awardedLevelXp > 0) addXpToSnapshot(snapshot, awardedLevelXp, `Completed level: ${level.id}`, now);
     if (awardedLearningPathXp > 0) addXpToSnapshot(snapshot, awardedLearningPathXp, `Completed learning path: ${path.id}`, now);
-    if (!alreadyCompleted) updateStreakInSnapshot(snapshot, new Date());
+    if (!alreadyCompleted) updateStreakInSnapshot(snapshot, nowDate);
+    if (options.packageRevisionId) registerLevelReviews(snapshot, level, options.packageRevisionId, nowDate);
 
     const currentIndex = path.levelIds.indexOf(level.id);
     snapshot.app.currentLevelId = path.levelIds[currentIndex + 1] ?? level.id;
@@ -234,14 +310,30 @@ export async function updateStreak(): Promise<AppProgress> {
 export function isLevelReadyForCompletion(level: Level, progress: LevelProgress | null): boolean {
   if (!progress) return false;
   if (progress.completed) return true;
-  const allStepsCompleted = level.steps.every(step => progress.completedStepIds.includes(step.id));
-  const requiredQuestionIds = level.steps.flatMap(step =>
+  const allStepsCompleted = level.steps
+    .filter(step => step.required !== false)
+    .every(step => progress.completedStepIds.includes(step.id));
+  const requiredQuestionIds = level.steps.filter(step => step.required !== false).flatMap(step =>
     step.blocks.filter(block => block.type === 'question').map(block => block.id)
   );
-  const requiredActivityIds = level.steps.flatMap(step => step.blocks
+  const requiredActivityIds = level.steps.filter(step => step.required !== false).flatMap(step => step.blocks
     .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
     .map(block => block.activity.id));
-  return allStepsCompleted && requiredQuestionIds.every(questionId =>
+  const memoryActivityIds = level.steps
+    .filter(step => getLevelStepKind(step) === 'memorize' || getLevelStepKind(step) === 'memory_practice')
+    .flatMap(step => step.blocks.filter(block => block.type === 'activity').map(block => block.activity.id));
+  const understandingBlocks = level.steps
+    .filter(step => getLevelStepKind(step) === 'understanding_practice')
+    .flatMap(step => step.blocks);
+  const hasMemoryCompletion = !level.completionRules?.requireMemoryActivity || memoryActivityIds.some(activityId =>
+    progress.activityAttempts.some(attempt => attempt.activityId === activityId && attempt.correct)
+  );
+  const hasUnderstandingCompletion = !level.completionRules?.requireUnderstandingActivity || understandingBlocks.some(block =>
+    block.type === 'activity'
+      ? progress.activityAttempts.some(attempt => attempt.activityId === block.activity.id && attempt.correct)
+      : block.type === 'question' && progress.questionAttempts.some(attempt => attempt.questionId === block.id && attempt.correct)
+  );
+  return allStepsCompleted && hasMemoryCompletion && hasUnderstandingCompletion && requiredQuestionIds.every(questionId =>
     progress.questionAttempts.some(attempt => attempt.questionId === questionId && attempt.correct)
   ) && requiredActivityIds.every(activityId => progress.activityAttempts.some(attempt => attempt.activityId === activityId && attempt.correct));
 }
@@ -285,13 +377,13 @@ export async function resetProgress(): Promise<void> {
   });
 }
 
-function addXpToSnapshot(snapshot: ProgressSnapshotV2, amount: number, reason: string, earnedAt: string): void {
+function addXpToSnapshot(snapshot: ProgressSnapshotV3, amount: number, reason: string, earnedAt: string): void {
   const record: XPRecord = { amount, reason, earnedAt };
   snapshot.app.xp += amount;
   snapshot.app.xpHistory.push(record);
 }
 
-function updateStreakInSnapshot(snapshot: ProgressSnapshotV2, date: Date): void {
+function updateStreakInSnapshot(snapshot: ProgressSnapshotV3, date: Date): void {
   const today = localDateKey(date);
   if (snapshot.app.streak.lastActiveDate === today) return;
   const yesterday = new Date(date);
@@ -306,11 +398,11 @@ function updateStreakInSnapshot(snapshot: ProgressSnapshotV2, date: Date): void 
   };
 }
 
-async function readAfterMutations(): Promise<ProgressSnapshotV2> {
+async function readAfterMutations(): Promise<ProgressSnapshotV3> {
   return enqueueMutation(loadSnapshot);
 }
 
-function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV2) => T): Promise<T> {
+function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV3) => T): Promise<T> {
   return enqueueMutation(async () => {
     const snapshot = await loadSnapshot();
     const result = mutation(snapshot);
@@ -325,22 +417,24 @@ function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   return result;
 }
 
-async function loadSnapshot(): Promise<ProgressSnapshotV2> {
+async function loadSnapshot(): Promise<ProgressSnapshotV3> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT);
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as unknown;
-        if (isProgressSnapshot(parsed)) return parsed;
+        if (isProgressSnapshotV3(parsed)) return parsed;
       } catch {
         // Quarantined below.
       }
       const quarantineKey = `${KEYS.CORRUPT_PREFIX}${Date.now()}`;
       await AsyncStorage.setItem(quarantineKey, raw);
       await AsyncStorage.removeItem(KEYS.SNAPSHOT);
-      recoveryWarning = { code: 'corrupt_v2', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
+      recoveryWarning = { code: 'corrupt_v3', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
       return createEmptySnapshot();
     }
+    const migratedV2 = await migrateV2Snapshot();
+    if (migratedV2) return migratedV2;
     return migrateLegacyProgress();
   } catch (error) {
     if (error instanceof ProgressStorageError) throw error;
@@ -348,7 +442,32 @@ async function loadSnapshot(): Promise<ProgressSnapshotV2> {
   }
 }
 
-async function migrateLegacyProgress(): Promise<ProgressSnapshotV2> {
+async function migrateV2Snapshot(): Promise<ProgressSnapshotV3 | null> {
+  const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V2);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isProgressSnapshotV2(parsed)) throw new Error('Invalid V2 snapshot');
+    const snapshot: ProgressSnapshotV3 = {
+      schemaVersion: 3,
+      app: parsed.app,
+      levels: parsed.levels,
+      reviews: {},
+      lastCompletionReceipt: parsed.lastCompletionReceipt,
+    };
+    await writeSnapshot(snapshot);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V2);
+    return snapshot;
+  } catch {
+    const quarantineKey = `${KEYS.CORRUPT_PREFIX}${Date.now()}`;
+    await AsyncStorage.setItem(quarantineKey, raw);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V2);
+    recoveryWarning = { code: 'corrupt_v2', message: 'Saved V2 progress was corrupt and was reset. A recovery copy was kept.' };
+    return createEmptySnapshot();
+  }
+}
+
+async function migrateLegacyProgress(): Promise<ProgressSnapshotV3> {
   const keys = await AsyncStorage.getAllKeys();
   const oldKeys = keys.filter(key => key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX));
   if (oldKeys.length === 0) return createEmptySnapshot();
@@ -423,7 +542,7 @@ function normalizeLevelProgress(progress: LevelProgress): LevelProgress {
   };
 }
 
-async function writeSnapshot(snapshot: ProgressSnapshotV2): Promise<void> {
+async function writeSnapshot(snapshot: ProgressSnapshotV3): Promise<void> {
   try {
     await AsyncStorage.setItem(KEYS.SNAPSHOT, JSON.stringify(snapshot));
   } catch (error) {
@@ -431,18 +550,18 @@ async function writeSnapshot(snapshot: ProgressSnapshotV2): Promise<void> {
   }
 }
 
-function createEmptySnapshot(): ProgressSnapshotV2 {
-  return { schemaVersion: 2, app: createDefaultProgress(), levels: {} };
+function createEmptySnapshot(): ProgressSnapshotV3 {
+  return { schemaVersion: 3, app: createDefaultProgress(), levels: {}, reviews: {} };
 }
 
-function isProgressSnapshot(value: unknown): value is ProgressSnapshotV2 {
+function isProgressSnapshotV3(value: unknown): value is ProgressSnapshotV3 {
   if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<ProgressSnapshotV2>;
-  if (candidate.schemaVersion !== 2 || !candidate.app || !candidate.levels || typeof candidate.levels !== 'object') return false;
+  const candidate = value as Partial<ProgressSnapshotV3>;
+  if (candidate.schemaVersion !== 3 || !candidate.app || !candidate.levels || typeof candidate.levels !== 'object' || !candidate.reviews || typeof candidate.reviews !== 'object') return false;
   const app = candidate.app;
   if (typeof app.xp !== 'number' || !Array.isArray(app.xpHistory) || !Array.isArray(app.completedLevelIds) || !Array.isArray(app.completedLearningPathIds)) return false;
   if (!app.streak || typeof app.streak.currentStreak !== 'number' || typeof app.streak.longestStreak !== 'number' || typeof app.streak.lastActiveDate !== 'string') return false;
-  return Object.values(candidate.levels).every(level =>
+  const levelsValid = Object.values(candidate.levels).every(level =>
     Boolean(level) &&
     typeof level.levelId === 'string' &&
     typeof level.pathId === 'string' &&
@@ -450,10 +569,56 @@ function isProgressSnapshot(value: unknown): value is ProgressSnapshotV2 {
     Array.isArray(level.completedStepIds) &&
     Array.isArray(level.questionAttempts) && Array.isArray(level.activityAttempts)
   );
+  const outcomes = ['again', 'hard', 'remembered', 'correct', 'incorrect'];
+  const reviewsValid = Object.values(candidate.reviews).every(review =>
+    Boolean(review) &&
+    typeof review.activityId === 'string' &&
+    typeof review.levelId === 'string' &&
+    typeof review.packageRevisionId === 'string' &&
+    Number.isInteger(review.stage) && review.stage >= 0 &&
+    (review.dueAt === undefined || typeof review.dueAt === 'string') &&
+    typeof review.lastReviewedAt === 'string' &&
+    typeof review.mastered === 'boolean' &&
+    outcomes.includes(review.lastOutcome)
+  );
+  return levelsValid && reviewsValid;
+}
+
+function isProgressSnapshotV2(value: unknown): value is ProgressSnapshotV2 {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ProgressSnapshotV2>;
+  return candidate.schemaVersion === 2 && Boolean(candidate.app) && Boolean(candidate.levels) && typeof candidate.levels === 'object';
 }
 
 function isProgressKey(key: string): boolean {
-  return key === KEYS.SNAPSHOT || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
+  return key === KEYS.SNAPSHOT || key === KEYS.SNAPSHOT_V2 || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
+}
+
+function registerLevelReviews(snapshot: ProgressSnapshotV3, level: Level, packageRevisionId: string, now: Date): void {
+  const activities = level.steps.flatMap(step => step.blocks)
+    .filter((block): block is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => block.type === 'activity')
+    .map(block => block.activity)
+    .filter(activity => activity.reviewSchedule);
+  activities.forEach(activity => {
+    const key = reviewStateKey(level.id, activity.id, packageRevisionId);
+    if (snapshot.reviews[key]) return;
+    const attempt = [...(snapshot.levels[level.id]?.activityAttempts ?? [])].reverse()
+      .find(candidate => candidate.activityId === activity.id && candidate.correct);
+    if (!attempt || !activity.reviewSchedule) return;
+    snapshot.reviews[key] = scheduleActivityReview(undefined, {
+      activityId: activity.id,
+      levelId: level.id,
+      packageRevisionId,
+      outcome: toReviewOutcome(attempt.answer, attempt.correct),
+      schedule: activity.reviewSchedule,
+    }, now);
+  });
+}
+
+function toReviewOutcome(answer: unknown, correct: boolean): ReviewOutcome {
+  return answer === 'again' || answer === 'hard' || answer === 'remembered'
+    ? answer as RecallRating
+    : correct ? 'correct' : 'incorrect';
 }
 
 function mapLegacyPathId(id: string): string {
@@ -470,4 +635,10 @@ function localDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function validDate(value: string | undefined): Date | undefined {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { getContentRepository } from '../../lib/content/repository';
+import { packageText } from '../../lib/content/text';
 
 interface Props {
   question: string;
@@ -11,6 +13,7 @@ interface Props {
 }
 
 const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer, explanation, caseSensitive, onResult }) => {
+  const repo = getContentRepository();
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(false);
@@ -46,29 +49,29 @@ const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer
       <Text style={styles.question}>{question}</Text>
       <Text style={styles.blank}>{displayText}</Text>
       <TextInput
-        accessibilityLabel="Fill in the blank answer"
+        accessibilityLabel={packageText(repo, 'question.fillAnswer')}
         style={[styles.input, submitted && (correct ? styles.inputCorrect : styles.inputWrong)]}
         value={answer}
         onChangeText={setAnswer}
         editable={!submitted && !saving}
-        placeholder="Type your answer..."
+        placeholder={packageText(repo, 'question.typeAnswer')}
         placeholderTextColor="#AAA"
         returnKeyType="done"
         onSubmitEditing={handleSubmit}
       />
       {!submitted ? (
         <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !answer.trim() || saving, busy: saving }} style={[styles.submit, !answer.trim() && styles.submitDisabled]} onPress={handleSubmit} disabled={!answer.trim() || saving}>
-          <Text style={styles.submitText}>{saving ? 'Saving...' : 'Check Answer'}</Text>
+          <Text style={styles.submitText}>{saving ? packageText(repo, 'question.checking') : packageText(repo, 'question.checkAnswer')}</Text>
         </TouchableOpacity>
       ) : (
         <View>
           <Text style={[styles.result, correct ? styles.resultCorrect : styles.resultWrong]}>
-            {correct ? '✅ Correct!' : `❌ The answer is: ${correctAnswer}`}
+            {correct ? packageText(repo, 'question.correct') : packageText(repo, 'question.answerIs', { answer: correctAnswer })}
           </Text>
           {explanation ? <Text style={styles.explanation}>{explanation}</Text> : null}
           {!correct ? (
             <TouchableOpacity accessibilityRole="button" style={styles.retry} onPress={handleRetry}>
-              <Text style={styles.retryText}>Try Again</Text>
+              <Text style={styles.retryText}>{packageText(repo, 'question.tryAgain')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

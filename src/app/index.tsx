@@ -3,9 +3,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { getContentRepository } from '../lib/content/repository';
+import { packageText } from '../lib/content/text';
 
 export default function IndexScreen() {
   const router = useRouter();
+  const repo = getContentRepository();
+  const packageTitle = packageText(repo, 'app.title');
 
   useEffect(() => {
     // Small delay to let the layout settle, then go to roadmap
@@ -18,7 +22,7 @@ export default function IndexScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>📖</Text>
-      <Text style={styles.title}>QuranDo</Text>
+      <Text style={styles.title}>{packageTitle}</Text>
       <ActivityIndicator color="#1B4F72" style={styles.spinner} />
     </View>
   );

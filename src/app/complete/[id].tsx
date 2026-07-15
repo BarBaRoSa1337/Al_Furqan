@@ -8,6 +8,7 @@ import Screen from '../../components/ui/Screen';
 import { getContentRepository } from '../../lib/content/repository';
 import { getLastCompletionReceipt, getLevelProgress } from '../../lib/progress/storage';
 import { CompletionReceipt } from '../../types/progress';
+import { packageText } from '../../lib/content/text';
 
 export default function CompleteScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -16,6 +17,7 @@ export default function CompleteScreen() {
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const nextLevel = level ? repo.getNextLevel(level.id) : undefined;
+  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values);
   const [receipt, setReceipt] = useState<CompletionReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +56,8 @@ export default function CompleteScreen() {
   if (!level) {
     return (
       <Screen style={styles.center}>
-        <Text style={styles.errorTitle}>Level not found.</Text>
-        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
+        <Text style={styles.errorTitle}>{text('completion.levelNotFound')}</Text>
+        <Button title={text('completion.backToRoadmap')} onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
       </Screen>
     );
   }
@@ -64,7 +66,7 @@ export default function CompleteScreen() {
     return (
       <Screen backgroundColor="#1B4F72" statusBarStyle="light-content" style={styles.center}>
         <ActivityIndicator color="#FFFFFF" />
-        <Text style={styles.loadingText}>Loading completion...</Text>
+        <Text style={styles.loadingText}>{text('completion.loading')}</Text>
       </Screen>
     );
   }
@@ -72,7 +74,7 @@ export default function CompleteScreen() {
   if (error) {
     return (
       <Screen style={styles.center}>
-        <Text style={styles.errorTitle}>Progress unavailable</Text>
+        <Text style={styles.errorTitle}>{text('completion.progressUnavailable')}</Text>
         <Text style={styles.errorText}>{error}</Text>
         <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
       </Screen>
@@ -86,25 +88,25 @@ export default function CompleteScreen() {
     <Screen backgroundColor="#1B4F72" statusBarStyle="light-content" edges={['top', 'bottom', 'left', 'right']}>
       {receipt && !receipt.alreadyCompleted ? <ConfettiCannon count={100} origin={{ x: -10, y: 0 }} fadeOut /> : null}
       <View style={styles.content}>
-        <Text style={styles.title}>Alhamdulillah!</Text>
-        <Text style={styles.subtitle}>You completed {level.title}</Text>
+        <Text style={styles.title}>{text('completion.alhamdulillah')}</Text>
+        <Text style={styles.subtitle}>{text('completion.completed', { title: level.title })}</Text>
         <Card style={styles.statsCard}>
-          <Text style={styles.rewardTitle}>Rewards Earned</Text>
+          <Text style={styles.rewardTitle}>{text('completion.rewardsEarned')}</Text>
           <View style={styles.rewardRow}>
             <Text style={styles.rewardIcon}>★</Text>
             <View style={styles.rewardInfo}>
-              <Text style={styles.rewardText}>{receipt?.alreadyCompleted ? 'Already counted earlier' : 'Level completed'}</Text>
-              <Text style={styles.rewardXp}>+{awardedLevelXp} XP{awardedPathXp > 0 ? `  •  +${awardedPathXp} path XP` : ''}</Text>
+              <Text style={styles.rewardText}>{receipt?.alreadyCompleted ? text('completion.alreadyCounted') : text('completion.levelCompleted')}</Text>
+              <Text style={styles.rewardXp}>+{awardedLevelXp} XP{awardedPathXp > 0 ? text('completion.pathXp', { xp: awardedPathXp }) : ''}</Text>
             </View>
           </View>
-          {!receipt ? <Text style={styles.repeatNote}>Completion already saved.</Text> : null}
+          {!receipt ? <Text style={styles.repeatNote}>{text('completion.saved')}</Text> : null}
         </Card>
       </View>
       <View style={styles.footer}>
         {nextLevel ? (
-          <Button title="Start Next Level" onPress={() => router.replace(`/lesson/${nextLevel.id}`)} size="lg" variant="secondary" />
+          <Button title={text('completion.startNextLevel')} onPress={() => router.replace(`/lesson/${nextLevel.id}`)} size="lg" variant="secondary" />
         ) : null}
-        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} size="md" variant="ghost" textStyle={styles.roadmapButtonText} />
+        <Button title={text('completion.backToRoadmap')} onPress={() => router.replace('/roadmap')} size="md" variant="ghost" textStyle={styles.roadmapButtonText} />
       </View>
     </Screen>
   );

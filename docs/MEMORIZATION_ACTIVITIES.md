@@ -27,11 +27,13 @@ A typical level should require:
 ```ts
 export type ActivityKind =
   | 'recall_then_reveal'
+  | 'fill_gap'
   | 'complete_missing_token'
   | 'order_tokens'
   | 'order_segments'
   | 'choose_continuation'
   | 'match_word_meaning'
+  | 'match_ayah_translation'
   | 'type_missing_text'
   | 'order_ayat'
   | 'multiple_choice';
@@ -55,6 +57,8 @@ export type LearningActivity = {
 ```
 
 `knowledgeRefs` must point to material introduced earlier in the same level or explicitly declared prerequisite content.
+
+`complete_missing_token` remains a schema-v1 compatibility alias. New schema-v2 packages author `fill_gap`.
 
 ## First learner-facing activities
 
@@ -88,11 +92,32 @@ Prompts and choices must be independently shuffled.
 
 Evaluation uses stable word-gloss IDs.
 
+### Match ayah to translation
+
+Arabic segments reference canonical token IDs. Translation segments and pair IDs are package-authored, sourced, reviewed, and independently shuffled from Arabic prompts. Evaluation compares stable segment IDs.
+
+## Completion contract
+
+A level requires all authored teaching steps except `required: false` steps, at least one successful activity from a `memorize` or `memory_practice` step, and at least one successful activity/question from an `understanding_practice` step.
+
 ## Supported next activities
 
 ### Choose continuation
 
 Show a passage prefix and multiple candidate continuations. Use canonical token or segment references.
+
+The learner-facing contract keeps stable option IDs while resolving every Arabic label from canonical tokens:
+
+```ts
+config: {
+  promptTokenIds?: string[];
+  optionIds: string[];
+  correctOptionId: string;
+  segments?: ActivitySegment[];
+}
+```
+
+With `segments`, each option may contain several tokens. Without them, option IDs are canonical `WordToken` IDs for backward compatibility. Options are shuffled once and evaluation uses the selected stable ID.
 
 ### Type missing text
 
@@ -117,9 +142,21 @@ It must not silently replace letters or alter the displayed canonical Quran text
 
 Normalization applies only to the learner answer and a comparison copy.
 
+The activity stores a canonical target, never copied Quran text:
+
+```ts
+type TypedAnswerTarget =
+  | { kind: 'ayah'; ayahRef: AyahRef }
+  | { kind: 'token_sequence'; tokenIds: string[] };
+```
+
+The evaluator resolves the expected string through the active content repository. The first learner slice uses `letters_and_order` with optional harakat, while preserving hamza/letter identity and canonical display text.
+
 ### Order ayat
 
 Use only in a multi-ayah review after the ayat were taught.
+
+The renderer resolves `correctOrderRefs` through the Quran repository, shuffles the ayah choices, and submits stable `surah:ayah` keys. Validation requires at least two unique refs and an exact set match with the activity ayah refs.
 
 ## Evaluation contract
 
@@ -150,6 +187,18 @@ type ActivityAttempt = {
 ```
 
 Completion XP must remain idempotent. Retrying must not create duplicate completion rewards.
+
+## Deterministic spaced review
+
+An activity may author `reviewSchedule.intervalDays`. Al-Fil Level 1 uses `[1, 3, 7]`.
+
+- correct/Remembered advances one stage;
+- Hard retains the current stage;
+- incorrect/Again resets to stage zero;
+- the last successful stage marks the activity mastered;
+- package revision is part of review identity.
+
+Completed-level catalog sync can seed missing review state from preserved successful attempts. Old revision state is retained but excluded from the active queue. This is deterministic offline review, not adaptive SRS.
 
 ## Validation rules
 

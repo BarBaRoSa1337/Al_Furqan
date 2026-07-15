@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { getContentRepository } from '../../lib/content/repository';
+import { packageText } from '../../lib/content/text';
 
 export interface MCQOption {
   id: string;
@@ -15,6 +17,7 @@ interface Props {
 }
 
 const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOptionId, explanation, onResult }) => {
+  const repo = getContentRepository();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,20 +68,20 @@ const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOpt
       {!submitted ? (
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Check answer"
+          accessibilityLabel={packageText(repo, 'question.checkAnswer')}
           accessibilityState={{ disabled: !selectedId || saving, busy: saving }}
           style={[styles.submit, !selectedId && styles.submitDisabled]}
           onPress={handleSubmit}
           disabled={!selectedId || saving}
         >
-          <Text style={styles.submitText}>{saving ? 'Saving...' : 'Check Answer'}</Text>
+          <Text style={styles.submitText}>{saving ? packageText(repo, 'question.checking') : packageText(repo, 'question.checkAnswer')}</Text>
         </TouchableOpacity>
       ) : (
         <View>
           {explanation ? <Text style={styles.explanation}>{explanation}</Text> : null}
           {selectedId !== correctOptionId ? (
             <TouchableOpacity accessibilityRole="button" style={styles.retry} onPress={handleRetry}>
-              <Text style={styles.retryText}>Try Again</Text>
+              <Text style={styles.retryText}>{packageText(repo, 'question.tryAgain')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

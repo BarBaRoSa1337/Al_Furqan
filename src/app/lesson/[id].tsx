@@ -6,17 +6,21 @@ import StepRenderer from '../../components/lesson/StepRenderer';
 import Button from '../../components/ui/Button';
 import ProgressBar from '../../components/ui/ProgressBar';
 import { useLevelSession } from '../../hooks/useLevelSession';
+import { getContentRepository } from '../../lib/content/repository';
+import { packageText } from '../../lib/content/text';
 
 export default function LessonPlayerScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const levelId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const session = useLevelSession(levelId);
+  const repo = getContentRepository();
+  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key);
 
   const confirmExit = () => {
-    Alert.alert('Leave level?', 'Completed steps are saved. You can continue later.', [
-      { text: 'Keep Learning', style: 'cancel' },
-      { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+    Alert.alert(text('lesson.leaveLevel'), text('lesson.leaveMessage'), [
+      { text: text('lesson.keepLearning'), style: 'cancel' },
+      { text: text('lesson.leave'), style: 'destructive', onPress: () => router.back() },
     ]);
   };
 
@@ -33,15 +37,15 @@ export default function LessonPlayerScreen() {
   }, [router, session.status]);
 
   if (session.status === 'loading' || session.status === 'locked') {
-    return <LoadingState label="Loading level..." />;
+    return <LoadingState label={text('lesson.loadingLevel')} />;
   }
 
   if (session.status === 'not_found' || !session.level || !session.path || !session.step) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>Level not found.</Text>
-          <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
+          <Text style={styles.errorTitle}>{text('lesson.levelNotFound')}</Text>
+          <Button title={text('lesson.backToRoadmap')} onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
         </View>
       </SafeAreaView>
     );
@@ -51,9 +55,9 @@ export default function LessonPlayerScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>Progress unavailable</Text>
+          <Text style={styles.errorTitle}>{text('lesson.progressUnavailable')}</Text>
           <Text style={styles.errorText}>{session.error}</Text>
-          <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
+          <Button title={text('lesson.backToRoadmap')} onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
         </View>
       </SafeAreaView>
     );
@@ -71,7 +75,7 @@ export default function LessonPlayerScreen() {
       <View style={styles.topBar}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Leave level"
+          accessibilityLabel={text('lesson.leave')}
           onPress={confirmExit}
           style={styles.closeButton}
         >
@@ -90,7 +94,7 @@ export default function LessonPlayerScreen() {
 
       <View style={styles.footer}>
         <Button
-          title={session.isLastStep ? 'Complete Level' : 'Continue'}
+          title={session.isLastStep ? text('lesson.completeLevel') : text('lesson.continue')}
           onPress={() => { void handleAdvance(); }}
           disabled={!session.canProceed || session.busy}
           loading={session.busy}

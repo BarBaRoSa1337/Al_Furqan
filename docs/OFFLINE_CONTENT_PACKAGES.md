@@ -99,6 +99,16 @@ Never activate a partially downloaded package.
 - Package deletion must not delete learner progress.
 - Built-in and downloaded packages must expose the same repository interface.
 
+## Curriculum schema migration
+
+The current Al-Fil content package uses curriculum schema v2. V2 requires semantic lesson step kinds, explicit completion rules, and validation that separates teaching blocks from practice activities.
+
+Schema-v1 packages remain readable through a repository/session adapter: missing step kinds are inferred from the existing blocks and legacy completion behavior is retained. A package upgrade never deletes learner progress; an unfinished session is moved back only when it skipped a newly inserted required step.
+
+Activity review schedules are immutable package curriculum. Learner review stages and due dates remain in Progress V3. Review state is keyed by level, activity, and package revision; activating a new revision retains old state but only matching active-revision entries can enter the due queue.
+
+Al-Fil package `2.2`/revision `r4` expands Levels 2–4 while preserving stable level and legacy activity IDs. Existing completed progress and rewards remain valid; only successful activities authored with a review schedule seed the active r4 review queue.
+
 ## Current milestone
 
 Implement:

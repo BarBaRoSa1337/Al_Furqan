@@ -66,6 +66,23 @@ const tafsirSource: ContentSource = {
 
 const sources = [quranArabicSource, quranTranslationSource, tafsirSource];
 
+const localization = {
+  defaultLocale: 'en',
+  catalogs: [{
+    locale: 'en',
+    entries: {
+      'app.title': 'Quran Do', 'app.loading': 'Loading...', 'app.errorLearningPathNotFound': 'Learning path not found',
+      'roadmap.levels': '{count} Levels', 'roadmap.pathProgress': 'Path progress', 'roadmap.loadingProgress': 'Loading progress...', 'roadmap.progressUnavailable': 'Progress could not be loaded.',
+      'lesson.loadingLevel': 'Loading level...', 'lesson.levelNotFound': 'Level not found.', 'lesson.backToRoadmap': 'Back to Roadmap', 'lesson.leaveLevel': 'Leave level?', 'lesson.leaveMessage': 'Completed steps are saved. You can continue later.', 'lesson.keepLearning': 'Keep Learning', 'lesson.leave': 'Leave', 'lesson.progressUnavailable': 'Progress unavailable', 'lesson.continue': 'Continue', 'lesson.completeLevel': 'Complete Level',
+      'completion.loading': 'Loading completion...', 'completion.levelNotFound': 'Level not found.', 'completion.progressUnavailable': 'Progress unavailable', 'completion.alhamdulillah': 'Alhamdulillah!', 'completion.completed': 'You completed {title}', 'completion.rewardsEarned': 'Rewards Earned', 'completion.alreadyCounted': 'Already counted earlier', 'completion.levelCompleted': 'Level completed', 'completion.pathXp': '  •  +{xp} path XP', 'completion.saved': 'Completion already saved.', 'completion.startNextLevel': 'Start Next Level', 'completion.backToRoadmap': 'Back to Roadmap',
+      'activity.recall': 'Recall', 'activity.reveal': 'Reveal', 'activity.revealAndRate': 'Reveal and rate', 'activity.compareAndRate': 'Compare your recall with the Quran passage, then rate it.', 'activity.again': 'Again', 'activity.hard': 'Hard', 'activity.remembered': 'Remembered', 'activity.selectedAnswer': 'Your answer', 'activity.buildAnswer': 'Tap choices to build your answer', 'activity.matchTranslationHint': 'Tap an ayah segment, then tap its translation', 'activity.typeFromMemory': 'Write from memory. Harakat are optional for this exercise.', 'activity.typedAnswerLabel': 'Arabic answer from memory',
+      'review.title': 'Spaced Review', 'review.due': '{count} review activities due', 'review.start': 'Start Review', 'review.noneDue': 'No reviews are due right now.', 'review.complete': 'Review complete', 'review.next': 'Next Review', 'review.backToRoadmap': 'Back to Roadmap',
+      'question.quiz': 'Quiz', 'question.checkAnswer': 'Check Answer', 'question.checking': 'Saving...', 'question.tryAgain': 'Try Again', 'question.correct': 'Correct!', 'question.answerIs': 'The answer is: {answer}', 'question.fillAnswer': 'Fill in the blank answer', 'question.typeAnswer': 'Type your answer...', 'question.checkMatches': 'Check Matches', 'question.matchHint': 'Tap an Arabic word, then tap its meaning', 'question.true': 'True', 'question.false': 'False',
+      'content.translationUnavailable': 'Translation unavailable.', 'content.arabicSource': 'Arabic source', 'content.translationSource': 'Translation source', 'content.source': 'Source', 'content.sourceUnavailable': 'Source unavailable', 'content.tafsir': 'Tafsir', 'content.explanation': 'Explanation', 'content.draftPendingReview': 'Draft religious explanation pending review', 'content.toggleDetails': 'Toggle details', 'content.wordByWord': 'Word Meaning', 'content.translation': 'Translation', 'content.listen': 'Listen', 'content.audioUnavailable': 'Recitation audio is not included in this package.', 'content.context.historical_context': 'Historical context', 'content.context.occasion_of_revelation': 'Occasion of revelation', 'content.context.tafsir_summary': 'Tafsir summary',
+    },
+  }],
+};
+
 export const surahAlFilRecord: SurahRecord = {
   id: 'surah-al-fil',
   surahNumber: 105,
@@ -102,6 +119,7 @@ const tafsir = (id: string, text: string, explanation?: string) => ({
 });
 
 const word = (arabic: string, transliteration: string, meaning: string, root?: string) => ({
+  id: '',
   arabic,
   transliteration,
   meaning,
@@ -270,6 +288,7 @@ export const surahAlFilAyat: AyahRecord[] = [
 export const surahAlFilWordTokens: WordToken[] = surahAlFilAyat.flatMap(ayah =>
   (ayah.wordMeanings ?? []).map((meaning, index) => {
     const id = `${ayah.id}:word:${index + 1}`;
+    meaning.id = `${id}:meaning`;
     meaning.wordTokenId = id;
     ayah.wordTokenIds.push(id);
     return {
@@ -314,10 +333,13 @@ export const surahAlFilLevels: Level[] = [
     ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
     difficulty: 'easy',
     goals: ['memorize', 'understand', 'reflect', 'quiz'],
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     steps: [
       {
         id: 'l1-context',
+        kind: 'context',
         title: 'Context',
+        required: false,
         blocks: [
           {
             id: 'l1-context-year',
@@ -333,44 +355,166 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l1-read',
-        title: 'Read',
-        blocks: [{ id: 'l1-ayah-1', type: 'ayah_ref', ayahRef: { surahNumber: 105, ayahNumber: 1 } }],
+        kind: 'read',
+        title: 'Read / Listen',
+        blocks: [
+          { id: 'l1-ayah-1', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], showTransliteration: true },
+          { id: 'l1-audio-1', type: 'audio', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }] },
+        ],
       },
       {
         id: 'l1-meaning',
-        title: 'Meaning',
+        kind: 'translation',
+        title: 'Translation',
+        blocks: [{ id: 'l1-translation-1', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], locale: 'en', translationEntryIds: ['105-1-sahih-en'] }],
+      },
+      {
+        id: 'l1-word-meaning',
+        kind: 'word_meaning',
+        title: 'Word Meaning',
         blocks: [
-          { id: 'l1-words-1', type: 'word_explorer', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }] },
+          { id: 'l1-words-1', type: 'word_meaning', wordMeaningIds: ['105:1:word:3:meaning', '105:1:word:5:meaning', '105:1:word:7:meaning'] },
+        ],
+      },
+      {
+        id: 'l1-tafsir',
+        kind: 'tafsir',
+        title: 'Tafsir',
+        blocks: [{ id: 'l1-tafsir-1', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 1 }, tafsirEntryId: '105-1-ibn-kathir-summary' }],
+      },
+      {
+        id: 'l1-recall',
+        kind: 'memorize',
+        title: 'Memorization Exercise 1',
+        blocks: [
           {
-            id: 'l1-tafsir-1',
-            type: 'tafsir_ref',
-            ayahRef: { surahNumber: 105, ayahNumber: 1 },
-            tafsirEntryId: '105-1-ibn-kathir-summary',
+            id: 'l1-recall-ayah-1',
+            type: 'activity',
+            activity: {
+              id: 'l1-recall-ayah-1',
+              kind: 'recall_then_reveal',
+              ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+              instruction: 'Recall Ayah 1, then reveal it and rate your recall.',
+              required: true,
+              difficulty: 1,
+              knowledgeRefs: ['l1-ayah-1'],
+              sourceIds: [QURAN_ARABIC_SOURCE_ID],
+              reviewerStatus: 'approved',
+              reviewSchedule: { intervalDays: [1, 3, 7] },
+              config: {},
+            },
           },
         ],
       },
       {
-        id: 'l1-quiz',
-        title: 'Quiz',
+        id: 'l1-memory-practice',
+        kind: 'memory_practice',
+        title: 'Memorization Exercise 2',
         blocks: [
           {
-            id: 'l1-quiz-1',
-            type: 'question',
-            question: 'Who were the "companions of the elephant" mentioned in this ayah?',
-            questionType: 'multiple-choice',
-            options: [
-              'Pilgrims travelling to the Kaaba with camels and elephants',
-              "Abraha's army from Yemen that tried to destroy the Kaaba",
-              'A tribe in Arabia known for keeping elephants',
-              'The people of Makkah who owned elephants',
-            ],
-            correctAnswer: 1,
-            explanation:
-              'The phrase refers to Abraha\'s army from Yemen, which marched with war elephants intending to destroy the Kaaba.',
-            sourceIds: [TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
+            id: 'l1-fill-gap-1',
+            type: 'activity',
+            activity: {
+              id: 'l1-fill-gap-1', kind: 'fill_gap', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+              instruction: 'Choose the missing ending token from Ayah 1.', required: true, difficulty: 1,
+              knowledgeRefs: ['l1-ayah-1'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+              reviewSchedule: { intervalDays: [1, 3, 7] },
+              config: { tokenBankIds: ['105:1:word:3', '105:1:word:7', '105:1:word:1'], correctTokenIds: ['105:1:word:7'] },
+            },
           },
         ],
+      },
+      {
+        id: 'l1-order-words',
+        kind: 'memory_practice',
+        title: 'Rebuild the Ayah',
+        blocks: [{
+          id: 'l1-order-ayah-1', type: 'activity', activity: {
+            id: 'l1-order-ayah-1', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+            instruction: 'Put every word of Ayah 1 in the correct order.', required: true, difficulty: 2,
+            knowledgeRefs: ['l1-ayah-1'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: {
+              itemIds: ['105:1:word:4', '105:1:word:1', '105:1:word:7', '105:1:word:3', '105:1:word:6', '105:1:word:2', '105:1:word:5'],
+              correctOrderIds: ['105:1:word:1', '105:1:word:2', '105:1:word:3', '105:1:word:4', '105:1:word:5', '105:1:word:6', '105:1:word:7'],
+            },
+          },
+        }],
+      },
+      {
+        id: 'l1-type-recall',
+        kind: 'memory_practice',
+        title: 'Write from Memory',
+        required: false,
+        blocks: [{
+          id: 'l1-type-ayah-1', type: 'activity', activity: {
+            id: 'l1-type-ayah-1', kind: 'type_missing_text', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+            instruction: 'Write Ayah 1 from memory before checking.', required: false, difficulty: 3,
+            knowledgeRefs: ['l1-ayah-1'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: { target: { kind: 'ayah', ayahRef: { surahNumber: 105, ayahNumber: 1 } }, comparisonMode: 'letters_and_order', ignoreHarakat: true },
+          },
+        }],
+      },
+      {
+        id: 'l1-quiz',
+        kind: 'understanding_practice',
+        title: 'Understanding Exercise',
+        blocks: [
+          {
+            id: 'l1-match-meaning', type: 'activity', activity: {
+              id: 'l1-match-meaning', kind: 'match_word_meaning', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+              instruction: 'Match each selected Quran word to its meaning.', required: true, difficulty: 1,
+              knowledgeRefs: ['l1-words-1'], sourceIds: [TRANSLATION_SOURCE_ID], reviewerStatus: 'draft',
+              reviewSchedule: { intervalDays: [1, 3, 7] },
+              config: { pairs: [
+                { promptTokenId: '105:1:word:3', meaningId: '105:1:word:3:meaning' },
+                { promptTokenId: '105:1:word:7', meaningId: '105:1:word:7:meaning' },
+              ] },
+            },
+          },
+          {
+            id: 'l1-match-translation', type: 'activity', activity: {
+              id: 'l1-match-translation', kind: 'match_ayah_translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+              instruction: 'Match each part of Ayah 1 with its translation.', required: false, difficulty: 2,
+              knowledgeRefs: ['l1-translation-1'], sourceIds: [QURAN_ARABIC_SOURCE_ID, TRANSLATION_SOURCE_ID], reviewerStatus: 'draft',
+              config: {
+                ayahSegments: [
+                  { id: 'l1-segment-a', tokenIds: ['105:1:word:1', '105:1:word:2', '105:1:word:3', '105:1:word:4'] },
+                  { id: 'l1-segment-b', tokenIds: ['105:1:word:5', '105:1:word:6', '105:1:word:7'] },
+                ],
+                translationSegments: [
+                  { id: 'l1-translation-a', text: 'Have you not considered how your Lord dealt', translationEntryId: '105-1-sahih-en' },
+                  { id: 'l1-translation-b', text: 'with the companions of the elephant?', translationEntryId: '105-1-sahih-en' },
+                ],
+                pairs: [
+                  { ayahSegmentId: 'l1-segment-a', translationSegmentId: 'l1-translation-a' },
+                  { ayahSegmentId: 'l1-segment-b', translationSegmentId: 'l1-translation-b' },
+                ],
+              },
+            },
+          },
+          {
+            id: 'l1-quiz-1', type: 'activity', activity: {
+              id: 'l1-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
+              instruction: 'Who were the "companions of the elephant" mentioned in this ayah?', required: false, difficulty: 1,
+              knowledgeRefs: ['l1-tafsir-1'], sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+              config: { options: [
+                { id: 'pilgrims', text: 'Pilgrims travelling to the Kaaba with camels and elephants' },
+                { id: 'abraha-army', text: "Abraha's army from Yemen that tried to destroy the Kaaba" },
+                { id: 'arabian-tribe', text: 'A tribe in Arabia known for keeping elephants' },
+                { id: 'makkah-owners', text: 'The people of Makkah who owned elephants' },
+              ], correctOptionId: 'abraha-army' },
+            },
+          },
+        ],
+      },
+      {
+        id: 'l1-summary', kind: 'summary', title: 'Summary / Wisdom', blocks: [{
+          id: 'l1-summary-1', type: 'summary', title: 'Remember',
+          points: ['Ayah 1 invites reflection on how Allah dealt with the companions of the elephant.'],
+          sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+        }],
       },
     ],
   },
@@ -384,45 +528,86 @@ export const surahAlFilLevels: Level[] = [
     ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
     difficulty: 'easy',
     goals: ['memorize', 'understand', 'quiz'],
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-1-context-ayah-1'] },
     steps: [
       {
+        id: 'l2-context', kind: 'context', title: 'Context', required: false,
+        blocks: [{ id: 'l2-context-plan', type: 'context', kind: 'tafsir_summary', title: 'The Ruined Plan', text: 'Allah made Abraha\'s careful planning futile. Human power cannot overcome Allah\'s decree.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+      },
+      {
         id: 'l2-read',
-        title: 'Read',
-        blocks: [{ id: 'l2-ayah-2', type: 'ayah_ref', ayahRef: { surahNumber: 105, ayahNumber: 2 } }],
+        kind: 'read',
+        title: 'Read / Listen',
+        blocks: [{ id: 'l2-ayah-2', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], showTransliteration: true }],
       },
       {
-        id: 'l2-meaning',
-        title: 'Meaning',
-        blocks: [
-          { id: 'l2-words-2', type: 'word_explorer', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }] },
-          {
-            id: 'l2-context-plan',
-            type: 'context',
-            kind: 'tafsir_summary',
-            title: 'The Ruined Plan',
-            text: 'Allah made Abraha\'s careful planning futile. Human power cannot overcome Allah\'s decree.',
-            sourceIds: [TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
+        id: 'l2-translation', kind: 'translation', title: 'Translation',
+        blocks: [{ id: 'l2-translation-2', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], locale: 'en', translationEntryIds: ['105-2-sahih-en'] }],
+      },
+      {
+        id: 'l2-retrieval', kind: 'memory_practice', title: 'Continue the Ayah',
+        blocks: [{ id: 'l2-continuation-2', type: 'activity', activity: {
+          id: 'l2-continuation-2', kind: 'choose_continuation', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
+          instruction: 'Choose the words that correctly continue Ayah 2.', required: true, difficulty: 1,
+          knowledgeRefs: ['l2-ayah-2'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: {
+            promptTokenIds: ['105:2:word:1', '105:2:word:2'],
+            optionIds: ['l2-continuation-correct', 'l2-continuation-reverse', 'l2-continuation-mixed'],
+            correctOptionId: 'l2-continuation-correct',
+            segments: [
+              { id: 'l2-continuation-correct', tokenIds: ['105:2:word:3', '105:2:word:4', '105:2:word:5'] },
+              { id: 'l2-continuation-reverse', tokenIds: ['105:2:word:5', '105:2:word:4', '105:2:word:3'] },
+              { id: 'l2-continuation-mixed', tokenIds: ['105:2:word:4', '105:2:word:3', '105:2:word:5'] },
+            ],
           },
+        } }],
+      },
+      {
+        id: 'l2-meaning', kind: 'word_meaning', title: 'Word Meaning',
+        blocks: [{ id: 'l2-words-2', type: 'word_meaning', wordMeaningIds: ['105:2:word:2:meaning', '105:2:word:5:meaning'] }],
+      },
+      {
+        id: 'l2-quiz', kind: 'understanding_practice', title: 'Vocabulary Practice',
+        blocks: [
+          { id: 'l2-match-meaning', type: 'activity', activity: {
+            id: 'l2-match-meaning', kind: 'match_word_meaning', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
+            instruction: 'Match the selected words from Ayah 2 to their meanings.', required: true, difficulty: 1,
+            knowledgeRefs: ['l2-words-2'], sourceIds: [TRANSLATION_SOURCE_ID], reviewerStatus: 'draft',
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: { pairs: [
+              { promptTokenId: '105:2:word:2', meaningId: '105:2:word:2:meaning' },
+              { promptTokenId: '105:2:word:5', meaningId: '105:2:word:5:meaning' },
+            ] },
+          } },
+          { id: 'l2-quiz-1', type: 'activity', activity: {
+            id: 'l2-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
+            instruction: 'What does the key word translated around ruin or misguidance mean in this ayah?', required: false, difficulty: 1,
+            knowledgeRefs: ['l2-words-2'], sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+            config: { options: [
+              { id: 'success', text: 'Success and victory' }, { id: 'ruin', text: 'Misguidance, ruin, and failure' },
+              { id: 'journey', text: 'A long journey' }, { id: 'battle', text: 'A battle in the desert' },
+            ], correctOptionId: 'ruin' },
+          } },
         ],
       },
       {
-        id: 'l2-quiz',
-        title: 'Quiz',
-        blocks: [
-          {
-            id: 'l2-quiz-1',
-            type: 'question',
-            question: 'What does the key word translated around ruin or misguidance mean in this ayah?',
-            questionType: 'multiple-choice',
-            options: ['Success and victory', 'Misguidance, ruin, and failure', 'A long journey', 'A battle in the desert'],
-            correctAnswer: 1,
-            explanation: '"Tadleel" means misguidance or ruin. Allah made their plan completely fail.',
-            sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
-          },
-        ],
+        id: 'l2-tafsir', kind: 'tafsir', title: 'Tafsir',
+        blocks: [{ id: 'l2-tafsir-2', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 2 }, tafsirEntryId: '105-2-ibn-kathir-summary' }],
+      },
+      {
+        id: 'l2-recall', kind: 'memory_practice', title: 'Memorization Practice',
+        blocks: [{ id: 'l2-recall-2', type: 'activity', activity: {
+          id: 'l2-recall-2', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
+          instruction: 'Recall Ayah 2, then reveal it and rate your recall.', required: true, difficulty: 1,
+          knowledgeRefs: ['l2-ayah-2'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+        } }],
+      },
+      {
+        id: 'l2-summary', kind: 'summary', title: 'Summary / Wisdom',
+        blocks: [{ id: 'l2-summary-1', type: 'summary', title: 'Remember', points: ['Ayah 2 teaches that the army\'s plan was made futile.'], sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
       },
     ],
   },
@@ -439,55 +624,82 @@ export const surahAlFilLevels: Level[] = [
     ],
     difficulty: 'medium',
     goals: ['memorize', 'understand', 'quiz'],
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-2-ayah-2'] },
     steps: [
       {
+        id: 'l3-context', kind: 'context', title: 'Context', required: false,
+        blocks: [{ id: 'l3-context-birds', type: 'context', kind: 'tafsir_summary', title: 'Birds in Flocks', text: 'The birds came in groups, carrying stones by Allah\'s command.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+      },
+      {
         id: 'l3-read',
-        title: 'Read',
+        kind: 'read',
+        title: 'Read / Listen',
         blocks: [
-          { id: 'l3-ayah-3', type: 'ayah_ref', ayahRef: { surahNumber: 105, ayahNumber: 3 } },
-          { id: 'l3-ayah-4', type: 'ayah_ref', ayahRef: { surahNumber: 105, ayahNumber: 4 } },
+          { id: 'l3-passage-3-4', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], showTransliteration: true },
         ],
       },
       {
-        id: 'l3-meaning',
-        title: 'Meaning',
+        id: 'l3-translation', kind: 'translation', title: 'Translation',
+        blocks: [{ id: 'l3-translation-3-4', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], locale: 'en', translationEntryIds: ['105-3-sahih-en', '105-4-sahih-en'] }],
+      },
+      {
+        id: 'l3-retrieval', kind: 'memory_practice', title: 'Order the Ayat',
+        blocks: [{ id: 'l3-order-ayat-3-4', type: 'activity', activity: {
+          id: 'l3-order-ayat-3-4', kind: 'order_ayat', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }],
+          instruction: 'Put Ayat 3 and 4 in their Quran order.', required: true, difficulty: 2,
+          knowledgeRefs: ['l3-passage-3-4'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { correctOrderRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }] },
+        } }],
+      },
+      {
+        id: 'l3-meaning', kind: 'word_meaning', title: 'Word Meaning',
+        blocks: [{ id: 'l3-words-3-4', type: 'word_meaning', wordMeaningIds: ['105:3:word:3:meaning', '105:4:word:2:meaning'] }],
+      },
+      {
+        id: 'l3-quiz', kind: 'understanding_practice', title: 'Vocabulary Practice',
         blocks: [
-          {
-            id: 'l3-context-birds',
-            type: 'context',
-            kind: 'tafsir_summary',
-            title: 'Birds in Flocks',
-            text: 'The birds came in groups, carrying stones by Allah\'s command.',
-            sourceIds: [TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
-          },
-          {
-            id: 'l3-words-3-4',
-            type: 'word_explorer',
-            ayahRefs: [
-              { surahNumber: 105, ayahNumber: 3 },
-              { surahNumber: 105, ayahNumber: 4 },
-            ],
-          },
+          { id: 'l3-match-meaning', type: 'activity', activity: {
+            id: 'l3-match-meaning', kind: 'match_word_meaning', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }],
+            instruction: 'Match the selected words from Ayat 3 and 4 to their meanings.', required: true, difficulty: 2,
+            knowledgeRefs: ['l3-words-3-4'], sourceIds: [TRANSLATION_SOURCE_ID], reviewerStatus: 'draft',
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: { pairs: [
+              { promptTokenId: '105:3:word:3', meaningId: '105:3:word:3:meaning' },
+              { promptTokenId: '105:4:word:2', meaningId: '105:4:word:2:meaning' },
+            ] },
+          } },
+          { id: 'l3-quiz-1', type: 'activity', activity: {
+            id: 'l3-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }],
+            instruction: 'What does the key word about the birds describe?', required: false, difficulty: 2,
+            knowledgeRefs: ['l3-words-3-4'], sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+            config: { options: [
+              { id: 'large', text: 'They were very large birds' }, { id: 'flocks', text: 'They came in flocks, group after group' },
+              { id: 'white', text: 'They were white birds only' }, { id: 'prey', text: 'They were birds of prey like eagles' },
+            ], correctOptionId: 'flocks' },
+          } },
         ],
       },
       {
-        id: 'l3-quiz',
-        title: 'Quiz',
+        id: 'l3-tafsir', kind: 'tafsir', title: 'Tafsir',
         blocks: [
-          {
-            id: 'l3-quiz-1',
-            type: 'question',
-            question: 'What does the key word about the birds describe?',
-            questionType: 'multiple-choice',
-            options: ['They were very large birds', 'They came in flocks, group after group', 'They were white birds only', 'They were birds of prey like eagles'],
-            correctAnswer: 1,
-            explanation: '"Ababeel" describes birds coming in flocks or successive groups.',
-            sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
-          },
+          { id: 'l3-tafsir-3', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 3 }, tafsirEntryId: '105-3-ibn-kathir-summary' },
+          { id: 'l3-tafsir-4', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 4 }, tafsirEntryId: '105-4-ibn-kathir-summary' },
         ],
+      },
+      {
+        id: 'l3-recall', kind: 'memory_practice', title: 'Memorization Practice',
+        blocks: [{ id: 'l3-recall-3-4', type: 'activity', activity: {
+          id: 'l3-recall-3-4', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }],
+          instruction: 'Recall Ayat 3 and 4 in order, then reveal them.', required: true, difficulty: 2,
+          knowledgeRefs: ['l3-passage-3-4'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+        } }],
+      },
+      {
+        id: 'l3-summary', kind: 'summary', title: 'Summary / Wisdom',
+        blocks: [{ id: 'l3-summary-1', type: 'summary', title: 'Remember', points: ['Ayat 3 and 4 describe birds in flocks carrying stones of clay.'], sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
       },
     ],
   },
@@ -498,68 +710,111 @@ export const surahAlFilLevels: Level[] = [
     title: 'Ayah 5 + Review',
     description: 'Complete the Surah and review its main lesson.',
     durationMinutes: 8,
-    ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+    ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })),
     difficulty: 'medium',
     goals: ['memorize', 'understand', 'reflect', 'quiz'],
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-3-ayat-3-4'] },
     metadata: { isFinalReview: true },
     steps: [
       {
-        id: 'l4-read',
-        title: 'Read',
-        blocks: [{ id: 'l4-ayah-5', type: 'ayah_ref', ayahRef: { surahNumber: 105, ayahNumber: 5 } }],
-      },
-      {
         id: 'l4-context',
+        kind: 'context',
         title: 'Context',
-        blocks: [
-          {
-            id: 'l4-context-review',
-            type: 'context',
-            kind: 'occasion_of_revelation',
-            title: 'Makkan Reminder',
-            text:
-              'Surah Al-Fil was revealed in Makkah and reminded Quraysh that Allah protected His House by His power.',
-            sourceIds: [TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
-          },
-        ],
+        required: false,
+        blocks: [{
+          id: 'l4-context-review', type: 'context', kind: 'occasion_of_revelation', title: 'Makkan Reminder',
+          text: 'Surah Al-Fil was revealed in Makkah and reminded Quraysh that Allah protected His House by His power.',
+          sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+        }],
       },
       {
-        id: 'l4-review',
-        title: 'Review',
-        blocks: [
-          {
-            id: 'l4-summary',
-            type: 'summary',
-            title: 'What You Learned',
-            points: [
-              'Surah Al-Fil is Quran 105 with 5 ayat',
-              'Abraha\'s army intended to destroy the Kaaba',
-              'Allah sent birds in flocks carrying stones of hardened clay',
-              'The army was left like eaten straw',
-              'No plan can overcome Allah\'s decree',
+        id: 'l4-read',
+        kind: 'read',
+        title: 'Read / Listen',
+        blocks: [{ id: 'l4-ayah-5', type: 'quran_passage', ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })), showTransliteration: true }],
+      },
+      {
+        id: 'l4-translation', kind: 'translation', title: 'Translation',
+        blocks: [{ id: 'l4-translation-5', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }], locale: 'en', translationEntryIds: ['105-5-sahih-en'] }],
+      },
+      {
+        id: 'l4-retrieval', kind: 'memory_practice', title: 'Continue the Ayah',
+        blocks: [{ id: 'l4-continuation-5', type: 'activity', activity: {
+          id: 'l4-continuation-5', kind: 'choose_continuation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+          instruction: 'Choose the words that correctly complete Ayah 5.', required: true, difficulty: 2,
+          knowledgeRefs: ['l4-ayah-5'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: {
+            promptTokenIds: ['105:5:word:1'],
+            optionIds: ['l4-continuation-correct', 'l4-continuation-reverse'],
+            correctOptionId: 'l4-continuation-correct',
+            segments: [
+              { id: 'l4-continuation-correct', tokenIds: ['105:5:word:2', '105:5:word:3'] },
+              { id: 'l4-continuation-reverse', tokenIds: ['105:5:word:3', '105:5:word:2'] },
             ],
-            sourceIds: [QURAN_ARABIC_SOURCE_ID, TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
           },
-          {
-            id: 'l4-quiz-1',
-            type: 'question',
-            question: 'What is the main lesson of Surah Al-Fil?',
-            questionType: 'multiple-choice',
-            options: [
-              'Elephants are powerful animals',
-              'No plan or army can overcome the will of Allah',
-              'The Arabs of Makkah were the strongest people',
-              'Birds are sacred in Islam',
-            ],
-            correctAnswer: 1,
-            explanation: 'The Surah shows that no human plan can overcome Allah\'s will.',
-            sourceIds: [TAFSIR_SOURCE_ID],
-            reviewerStatus: 'draft',
-          },
-        ],
+        } }],
+      },
+      {
+        id: 'l4-word-meaning', kind: 'word_meaning', title: 'Word Meaning',
+        blocks: [{ id: 'l4-words-5', type: 'word_meaning', wordMeaningIds: ['105:5:word:2:meaning', '105:5:word:3:meaning'] }],
+      },
+      {
+        id: 'l4-vocabulary', kind: 'understanding_practice', title: 'Vocabulary Practice',
+        blocks: [{ id: 'l4-match-meaning', type: 'activity', activity: {
+          id: 'l4-match-meaning', kind: 'match_word_meaning', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+          instruction: 'Match the selected words from Ayah 5 to their meanings.', required: true, difficulty: 2,
+          knowledgeRefs: ['l4-words-5'], sourceIds: [TRANSLATION_SOURCE_ID], reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { pairs: [
+            { promptTokenId: '105:5:word:2', meaningId: '105:5:word:2:meaning' },
+            { promptTokenId: '105:5:word:3', meaningId: '105:5:word:3:meaning' },
+          ] },
+        } }],
+      },
+      {
+        id: 'l4-tafsir', kind: 'tafsir', title: 'Tafsir',
+        blocks: [{ id: 'l4-tafsir-5', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 5 }, tafsirEntryId: '105-5-ibn-kathir-summary' }],
+      },
+      {
+        id: 'l4-understanding', kind: 'understanding_practice', title: 'Understanding Practice', required: false,
+        blocks: [{ id: 'l4-quiz-1', type: 'activity', activity: {
+          id: 'l4-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+          instruction: 'What is the main lesson of Surah Al-Fil?', required: false, difficulty: 2,
+          knowledgeRefs: ['l4-tafsir-5'], sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+          config: { options: [
+            { id: 'elephants', text: 'Elephants are powerful animals' }, { id: 'allah-will', text: 'No plan or army can overcome the will of Allah' },
+            { id: 'makkah', text: 'The Arabs of Makkah were the strongest people' }, { id: 'birds', text: 'Birds are sacred in Islam' },
+          ], correctOptionId: 'allah-will' },
+        } }],
+      },
+      {
+        id: 'l4-memory', kind: 'memory_practice', title: 'Memorization Practice',
+        blocks: [{ id: 'l4-recall-5', type: 'activity', activity: {
+          id: 'l4-recall-5', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+          instruction: 'Recall Ayah 5, then reveal it and rate your recall.', required: true, difficulty: 2,
+          knowledgeRefs: ['l4-ayah-5'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
+          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+        } }],
+      },
+      {
+        id: 'l4-order-review', kind: 'memory_practice', title: 'Full Surah Review',
+        blocks: [{ id: 'l4-order-ayat-1-5', type: 'activity', activity: {
+          id: 'l4-order-ayat-1-5', kind: 'order_ayat', ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })),
+          instruction: 'Put all five ayat of Surah Al-Fil in Quran order.', required: true, difficulty: 3,
+          knowledgeRefs: ['l4-ayah-5'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { correctOrderRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })) },
+        } }],
+      },
+      {
+        id: 'l4-review', kind: 'summary', title: 'Summary / Wisdom',
+        blocks: [{
+          id: 'l4-summary', type: 'summary', title: 'What You Learned',
+          points: ['Surah Al-Fil is Quran 105 with 5 ayat', 'Abraha\'s army intended to destroy the Kaaba', 'Allah sent birds in flocks carrying stones of hardened clay', 'The army was left like eaten straw', 'No plan can overcome Allah\'s decree'],
+          sourceIds: [QURAN_ARABIC_SOURCE_ID, TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+        }],
       },
     ],
   },
@@ -567,7 +822,9 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '1.0',
+  version: '2.2',
+  schemaVersion: 2,
+  revisionId: 'surah-al-fil-v1-r4',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
@@ -577,15 +834,19 @@ const surahAlFilPackage: ContentPackage = {
   wordTokens: surahAlFilWordTokens,
   // Division records require a verified external boundary source; none is bundled yet.
   divisions: [],
+  reciters: [],
+  recitationTracks: [],
+  localization,
+  mediaAssets: [],
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,
-  assets: { images: [], audio: [] },
   metadata: {
     totalLevels: surahAlFilLevels.length,
     totalDuration: surahAlFilLevels.reduce((total, level) => total + level.durationMinutes, 0),
     language: 'en',
     targetAudience: 'family',
+    defaultLearningPathId: surahAlFilLearningPath.id,
   },
 };
 

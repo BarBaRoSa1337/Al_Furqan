@@ -1,0 +1,48 @@
+import type { ActivityReviewSchedule, ReviewOutcome } from '../../types/activities';
+import type { ActivityReviewState } from '../../types/progress';
+
+export interface ScheduleReviewInput {
+  activityId: string;
+  levelId: string;
+  packageRevisionId: string;
+  outcome: ReviewOutcome;
+  schedule: ActivityReviewSchedule;
+}
+
+export function scheduleActivityReview(
+  current: ActivityReviewState | undefined,
+  input: ScheduleReviewInput,
+  now: Date = new Date()
+): ActivityReviewState {
+  const previousStage = current?.stage ?? 0;
+  const passed = input.outcome === 'correct' || input.outcome === 'remembered';
+  const stage = input.outcome === 'again' || input.outcome === 'incorrect'
+    ? 0
+    : passed ? previousStage + 1 : previousStage;
+  const mastered = stage >= input.schedule.intervalDays.length;
+  const intervalIndex = Math.max(0, Math.min(stage - 1, input.schedule.intervalDays.length - 1));
+  const dueAt = mastered ? undefined : addDays(now, input.schedule.intervalDays[intervalIndex]).toISOString();
+
+  return {
+    activityId: input.activityId,
+    levelId: input.levelId,
+    packageRevisionId: input.packageRevisionId,
+    stage,
+    dueAt,
+    lastOutcome: input.outcome,
+    lastReviewedAt: now.toISOString(),
+    mastered,
+  };
+}
+
+export function isReviewDue(state: ActivityReviewState, now: Date = new Date()): boolean {
+  return !state.mastered && Boolean(state.dueAt) && new Date(state.dueAt!).getTime() <= now.getTime();
+}
+
+export function reviewStateKey(levelId: string, activityId: string, packageRevisionId: string): string {
+  return `${levelId}:${activityId}:${packageRevisionId}`;
+}
+
+function addDays(value: Date, days: number): Date {
+  return new Date(value.getTime() + days * 24 * 60 * 60 * 1000);
+}

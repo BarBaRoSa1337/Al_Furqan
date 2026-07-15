@@ -64,6 +64,26 @@ Owns:
 
 Levels reference canonical ayat and resources. They do not duplicate Quran payloads.
 
+## Lesson schema v2
+
+`LevelStep` has a semantic `kind` and optional `required` flag. Schema-v2 packages author these kinds:
+
+```text
+context -> read -> translation -> word_meaning -> tafsir
+-> memorize -> memory_practice -> understanding_practice -> summary
+```
+
+`context` may be authored with `required: false`. Content blocks and practice activities remain separate concepts, even though both are rendered within a step:
+
+- Content: `ContextBlock`, `QuranPassageBlock`, `TranslationBlock`, `WordMeaningBlock`, `TafsirBlock`, `AudioBlock`, `MediaBlock`, and `SummaryBlock`.
+- Practice: `LearningActivity` wrapped by a practice activity block.
+
+Arabic Quran payloads remain canonical references. A passage or activity segment selects `AyahRef` and stable `WordToken` IDs; curriculum never stores Arabic Quran text.
+
+Completion rules are explicit on a level. A schema-v2 level requires all required teaching steps, one successful memory activity from `memorize` or `memory_practice`, and one successful understanding activity or question from `understanding_practice`.
+
+The current Al-Fil package is schema v2. Schema-v1 packages are adapted by inferring a step kind from their blocks and retain legacy completion behavior. If an in-progress learner resumes after required steps were inserted before their saved position, the session resumes at the earliest missing required step.
+
 ### 4. Learner-state layer
 
 Owns:
@@ -77,6 +97,8 @@ Owns:
 - package-independent progress.
 
 Progress remains valid when a content package is updated, subject to explicit migration rules.
+
+Progress schema V3 adds revision-scoped `ActivityReviewState` beside level progress. V2 snapshots migrate atomically; Quran/package content is never copied into learner state. Due-review resolution joins learner state to the active package and ignores missing or stale-revision activities without deleting history.
 
 ### 5. Distribution layer
 
@@ -220,6 +242,15 @@ evaluateActivity(activity, answer, context)
 validateActivity(activity, packageContext)
 ```
 
+### Review repository
+
+```ts
+getReviewStates()
+getDueReviewStates(now)
+recordReviewAttempt(input)
+syncCompletedLevelReviews(catalog)
+```
+
 ## Data flow
 
 ```text
@@ -232,6 +263,17 @@ Published package
 -> roadmap/level session
 -> blocks and activities
 -> progress storage
+```
+
+Due review follows the same rendering boundary:
+
+```text
+Progress V3 due state
+-> active package/revision lookup
+-> LearningActivity
+-> canonical evaluation context
+-> shared activity renderer
+-> atomic attempt + schedule update
 ```
 
 ## Compatibility strategy

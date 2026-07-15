@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import {
   AyahRecord,
+  AudioBlock,
   ContentRepository,
   ContextBlock,
   LevelBlock,
+  MediaBlock,
+  QuranPassageBlock,
   SummaryLevelBlock,
   TafsirEntry,
+  TranslationBlock,
   WordMeaning,
+  WordMeaningBlock,
 } from '../../types/content';
 import { getContentRepository } from '../../lib/content/repository';
 import Card from '../ui/Card';
 import LevelQuestionBlock from './LevelQuestionBlock';
-import RecallThenRevealActivity from './RecallThenRevealActivity';
+import PracticeActivityRenderer from './PracticeActivityRenderer';
+import { packageText } from '../../lib/content/text';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
@@ -26,6 +33,12 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
   const repo = getContentRepository();
 
   switch (block.type) {
+    case 'quran_passage':
+      return <CanonicalPassageBlock block={block} repo={repo} />;
+    case 'translation':
+      return <CanonicalTranslationBlock block={block} repo={repo} />;
+    case 'word_meaning':
+      return <SelectedWordMeaningBlock block={block} repo={repo} />;
     case 'ayah_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
       return ayah ? <CanonicalAyahBlock ayah={ayah} locale={block.translationLocale} repo={repo} /> : null;
@@ -41,15 +54,52 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
       const words = block.ayahRefs.flatMap(ref => repo.getAyahByRef(ref)?.wordMeanings ?? []);
       return words.length > 0 ? <WordExplorerBlock words={words} /> : null;
     }
+    case 'audio':
+      return <CanonicalAudioBlock block={block} repo={repo} />;
+    case 'media':
+      return <CanonicalMediaBlock block={block} repo={repo} />;
     case 'question':
       return <LevelQuestionBlock block={block} onAnswer={onQuestionAnswer} />;
     case 'activity':
-      return block.activity.kind === 'recall_then_reveal' ? <RecallThenRevealActivity instruction={block.activity.instruction} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve()} /> : null;
+      return <PracticeActivityRenderer activity={block.activity} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve()} />;
     case 'summary':
       return <CanonicalSummaryBlock block={block} />;
     default:
       return null;
   }
+}
+
+function CanonicalPassageBlock({ block, repo }: { block: QuranPassageBlock; repo: ContentRepository }) {
+  const ayat = repo.getAyatByRefs(block.ayahRefs);
+  return <Card variant="ayah" style={styles.ayahCard}>{ayat.map(ayah => <View key={ayah.id} style={styles.passageAyah}><Text style={styles.arabic}>{ayah.arabicText.text}</Text>{block.showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}</View>)}</Card>;
+}
+
+function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; repo: ContentRepository }) {
+  const entries = repo.getAyatByRefs(block.ayahRefs).flatMap(ayah => {
+    const selected = ayah.translations.filter(entry => entry.locale === block.locale && (!block.translationEntryIds || block.translationEntryIds.includes(entry.id)));
+    return selected.map(entry => ({ ayah, entry, source: repo.getSourceById(entry.sourceId) }));
+  });
+  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={styles.translation}>{entry.text}</Text><Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
+}
+
+function SelectedWordMeaningBlock({ block, repo }: { block: WordMeaningBlock; repo: ContentRepository }) {
+  const selectedIds = new Set(block.wordMeaningIds);
+  const words = repo.ayat.flatMap(ayah => ayah.wordMeanings ?? []).filter(word => selectedIds.has(word.id));
+  return words.length > 0 ? <WordExplorerBlock words={words} /> : null;
+}
+
+function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: ContentRepository }) {
+  const tracks = block.ayahRefs.flatMap(ref => {
+    const track = repo.getRecitationTrackByAyah(ref, block.reciterId);
+    return track ? [track] : [];
+  });
+  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.listen')}</Text>{tracks.length === block.ayahRefs.length ? tracks.map(track => <Text key={track.id} style={styles.sourceValue}>{repo.getReciterById(track.reciterId)?.displayName ?? packageText(repo, 'content.sourceUnavailable')}</Text>) : <Text style={styles.translation}>{packageText(repo, 'content.audioUnavailable')}</Text>}</Card>;
+}
+
+function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: ContentRepository }) {
+  const asset = repo.getActivePackage()?.mediaAssets.find(candidate => candidate.id === block.assetId);
+  if (!asset) return null;
+  return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /><Text style={styles.source}>{asset.altText}</Text></Card>;
 }
 
 function CanonicalAyahBlock({ ayah, locale, repo }: { ayah: AyahRecord; locale?: string; repo: ContentRepository }) {
@@ -62,12 +112,12 @@ function CanonicalAyahBlock({ ayah, locale, repo }: { ayah: AyahRecord; locale?:
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
       {ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
       <View style={styles.divider} />
-      <Text style={styles.translation}>{translation?.text ?? 'Translation unavailable.'}</Text>
+      <Text style={styles.translation}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
       <View style={styles.sourceGroup}>
-        <Text style={styles.sourceLabel}>Arabic source</Text>
-        <Text style={styles.sourceValue}>{arabicSource?.name ?? ayah.arabicText.sourceId}</Text>
-        <Text style={styles.sourceLabel}>Translation source</Text>
-        <Text style={styles.sourceValue}>{translationSource?.name ?? translation?.sourceId ?? 'Unavailable'}</Text>
+        <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}</Text>
+        <Text style={styles.sourceValue}>{arabicSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+        <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}</Text>
+        <Text style={styles.sourceValue}>{translationSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
       </View>
     </Card>
   );
@@ -81,27 +131,27 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
     <Card variant="tafsir">
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Toggle tafsir"
+        accessibilityLabel={packageText(repo, 'content.toggleDetails')}
         accessibilityState={{ expanded }}
         onPress={() => setExpanded(value => !value)}
         activeOpacity={0.8}
       >
         <View style={styles.tafsirHeader}>
-          <Text style={styles.tafsirLabel}>Tafsir</Text>
+          <Text style={styles.tafsirLabel}>{packageText(repo, 'content.tafsir')}</Text>
           <Text style={styles.toggle}>{expanded ? '▲' : '▼'}</Text>
         </View>
       </TouchableOpacity>
       {expanded ? (
         <View>
-          {entry.reviewerStatus !== 'approved' ? <ReviewBadge /> : null}
+          {entry.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
           <Text style={styles.tafsirText}>{entry.text}</Text>
           {entry.explanation ? (
             <View style={styles.explanationSection}>
-              <Text style={styles.explanationLabel}>Explanation</Text>
+            <Text style={styles.explanationLabel}>{packageText(repo, 'content.explanation')}</Text>
               <Text style={styles.explanationText}>{entry.explanation}</Text>
             </View>
           ) : null}
-          <Text style={styles.source}>Source: {source?.name ?? entry.sourceId} ({entry.reviewerStatus})</Text>
+          <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({entry.reviewerStatus})</Text>
         </View>
       ) : null}
     </Card>
@@ -109,24 +159,25 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
 }
 
 function CanonicalContextBlock({ block, repo }: { block: ContextBlock; repo: ContentRepository }) {
-  const sources = block.sourceIds.map(id => repo.getSourceById(id)?.name ?? id).join(', ');
-  const label = block.kind.replace(/_/g, ' ');
+  const sources = block.sourceIds.map(id => repo.getSourceById(id)?.name ?? packageText(repo, 'content.sourceUnavailable')).join(', ');
+  const label = packageText(repo, `content.context.${block.kind}`);
 
   return (
     <Card variant="story">
       <Text style={styles.contextLabel}>{label}</Text>
-      {block.reviewerStatus !== 'approved' ? <ReviewBadge /> : null}
+      {block.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
       <Text style={styles.contextTitle}>{block.title}</Text>
       <Text style={styles.contextText}>{block.text}</Text>
-      <Text style={styles.source}>Source: {sources} ({block.reviewerStatus})</Text>
+      <Text style={styles.source}>{packageText(repo, 'content.source')}: {sources} ({block.reviewerStatus})</Text>
     </Card>
   );
 }
 
 function WordExplorerBlock({ words }: { words: WordMeaning[] }) {
+  const repo = getContentRepository();
   return (
     <Card style={styles.wordCard}>
-      <Text style={styles.wordTitle}>Word by Word</Text>
+      <Text style={styles.wordTitle}>{packageText(repo, 'content.wordByWord')}</Text>
       {words.map((word, index) => (
         <View key={`${word.arabic}-${index}`} style={styles.wordRow}>
           <Text style={styles.wordArabic}>{word.arabic}</Text>
@@ -154,20 +205,22 @@ function CanonicalSummaryBlock({ block }: { block: SummaryLevelBlock }) {
   );
 }
 
-function ReviewBadge() {
+function ReviewBadge({ repo }: { repo: ContentRepository }) {
   return (
     <View style={styles.reviewBadge}>
-      <Text style={styles.reviewBadgeText}>Draft religious explanation pending review</Text>
+      <Text style={styles.reviewBadgeText}>{packageText(repo, 'content.draftPendingReview')}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   ayahCard: { alignItems: 'center' },
+  passageAyah: { width: '100%', paddingVertical: 6 },
   arabic: { fontSize: 30, fontFamily: 'serif', textAlign: 'right', color: '#1A1A1A', lineHeight: 48, width: '100%', writingDirection: 'rtl' },
   transliteration: { fontSize: 15, fontStyle: 'italic', color: '#666', textAlign: 'center', marginTop: 8, lineHeight: 22 },
   divider: { height: 1, backgroundColor: '#EEE', width: '100%', marginVertical: 12 },
   translation: { fontSize: 17, color: '#2C3E50', lineHeight: 26, textAlign: 'center', fontWeight: '500' },
+  translationEntry: { marginBottom: 12 },
   sourceGroup: { width: '100%', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
   sourceLabel: { fontSize: 11, color: '#7F8C8D', textTransform: 'uppercase', letterSpacing: 0.6, textAlign: 'center' },
   sourceValue: { fontSize: 12, color: '#566573', marginTop: 2, marginBottom: 8, textAlign: 'center' },
@@ -196,4 +249,5 @@ const styles = StyleSheet.create({
   summaryPoint: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
   summaryBullet: { fontSize: 18, color: '#1B4F72', marginRight: 10, lineHeight: 24 },
   summaryText: { fontSize: 15, color: '#2C3E50', lineHeight: 24, flex: 1 },
+  media: { width: '100%', minHeight: 180 },
 });

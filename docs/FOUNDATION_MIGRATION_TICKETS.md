@@ -80,7 +80,7 @@ Compatibility:
 
 ## T19 — Memorization activity UI and persistence
 
-Status: planned.
+Status: implemented (recall vertical slice).
 
 Scope:
 
@@ -91,13 +91,15 @@ Scope:
 - optional typed missing text;
 - attempt persistence through Progress V2.
 
+Delivered: activity block dispatch, accessible recall/reveal rating, ActivityAttempt persistence and resume, required-activity session/completion gates, activity metadata validation, tests, and a Level 1 recall fixture. Missing-token/order/match UI remains T23 expansion.
+
 Compatibility:
 
 - retain idempotent XP and existing completion receipts.
 
 ## T20 — Audio resource foundation
 
-Status: planned.
+Status: implemented (contract only).
 
 Scope:
 
@@ -112,9 +114,11 @@ Compatibility:
 - no unapproved audio fetch;
 - lesson remains usable without optional audio unless explicitly marked required.
 
+Delivered: reciter and ayah-track contracts, Hafs compatibility/source/license/checksum validation, repository lookups, and a resolver/player boundary. No audio fixture or playback is enabled because no approved Hafs audio source is configured.
+
 ## T21 — Offline package manifest and installer
 
-Status: planned.
+Status: implemented (installer foundation).
 
 Scope:
 
@@ -132,9 +136,11 @@ Compatibility:
 - built-in and downloaded packages share repository APIs;
 - progress remains separate.
 
+Delivered: runtime manifest checks, checksum verifier/downloader seams, staging, production package validation, registry activation, rollback, and local fixture tests. Native file staging/download transport and repository registration are deferred integration work.
+
 ## T22 — Studio publishing contract
 
-Status: planned.
+Status: implemented (compiler contract).
 
 Scope:
 
@@ -149,9 +155,11 @@ Compatibility:
 - no Studio UI/backend;
 - compiler output matches mobile package schema.
 
+Delivered: roles/publication states, canonical-selection-only draft model, deterministic compiler export, structured diagnostics, and fixture tests. The compiler selects canonical Quran records from the trusted package; a Studio draft cannot provide Arabic text or word tokens.
+
 ## T23 — Al-Fil production-shaped vertical slice
 
-Status: planned.
+Status: blocked by content governance.
 
 Scope:
 
@@ -167,9 +175,11 @@ Compatibility:
 
 - preserve current roadmap and level access behavior.
 
+Current state: Level 1 has the recall fixture from T19. The required reviewed tafsir/context/summary approvals and an approved Hafs audio source are absent, so the full production-shaped slice is intentionally not fabricated or published.
+
 ## T24 — Release hardening
 
-Status: planned.
+Status: started (gate audit).
 
 Scope:
 
@@ -179,4 +189,60 @@ Scope:
 - production content/edition gates;
 - accessibility and build validation.
 
+Current historical gate result: typecheck, 25 tests, and Expo web production export passed. Production content validation rejected draft religious records as intended. Lint/format scripts are not configured.
 
+Delivered: versioned package localization/media contracts, required-key and asset validation, repository package registration and active-package lookup, AsyncStorage hydration at app startup, authoritative question/activity evaluation, package-driven existing labels, and reusable token/matching activity rendering. The native storage adapter is isolated from the platform-neutral installer for Jest compatibility.
+
+## T25 — Package-driven learner surface
+
+Status: implemented (foundation boundary).
+
+Scope: remove learner-facing lesson strings and answers from screens/components; render supported activity kinds from package references and canonical repository records.
+
+Compatibility: existing routes, progress, question engine, and recall UI remain unchanged at their public boundaries. Unsupported future activity kinds remain schema-driven extension points rather than route-specific branches.
+
+Gate: production content remains blocked until draft records receive required editorial/shaykh approval.
+
+## T26 — Memorization-first lesson flow
+
+Status: implemented (schema v2 development slice).
+
+Delivered: semantic step kinds; separate passage, translation, selected word-meaning, tafsir, audio, media, summary, and practice contracts; `fill_gap` and ayah-translation matching; stable-ID tap activities with independent shuffling; level-wide memory/understanding completion gates; schema-v1 step-kind inference; and resume rewind for newly inserted required steps.
+
+Migration: Al-Fil package `2.0`/revision `r2` separates mixed meaning/tafsir steps across all four levels. Level 1 includes the complete target sequence and two memory exercises. Existing level/path IDs and key legacy step IDs remain stable.
+
+Gate: new derived activities and summaries remain source-linked drafts. Production validation must continue to reject them until approval; approved Hafs audio is still unavailable.
+
+## T27 — Memorization practice ladder
+
+Status: implemented (Level 1 development slice).
+
+Delivered: tap-only missing-token and word-order reconstruction, independently shuffled word matching, RTL from-memory typing, canonical answer resolution, retry feedback, and one shared activity renderer for lessons/reviews. Typed activity schemas now reference ayat or token IDs; raw Quran answer text is not stored in curriculum.
+
+Compatibility: existing activity IDs/kinds and the `complete_missing_token` alias remain readable. Typed exercises are optional and non-blocking.
+
+## T28 — Deterministic spaced review
+
+Status: implemented (local foundation).
+
+Delivered: package-authored review intervals, deterministic Again/Hard/Remembered/correct transitions, Progress V3 review state, atomic review attempts, due queries, and completed-level backfill from preserved successful attempts. Review keys include package revision, so stale schedules remain stored but inactive after package updates.
+
+Migration: `qlp_progress_v2` is read once and written to `qlp_progress_v3` without changing levels, attempts, XP, streaks, or receipts. This is fixed interval review, not adaptive SRS.
+
+## T29 — Al-Fil review vertical slice
+
+Status: implemented (development content).
+
+Delivered: Al-Fil package `2.1`/revision `r3`, a complete Level 1 retrieval ladder, a package-driven due-review card, and a generic review session reusing canonical repositories, evaluators, renderers, and progress storage. The ladder moves from recall to missing-token cues, full word reconstruction, optional free typing, and meaning matching.
+
+Gate: production activation remains blocked by the pre-existing draft tafsir/context/summary/activity records. No approval states were fabricated.
+
+## T30 — Complete Al-Fil pedagogy slice
+
+Status: implemented (development content).
+
+Delivered: generic canonical-token continuation and canonical-ayah ordering renderers; stricter stable-reference validation; complete short retrieval, vocabulary, tafsir, recall, and summary sequences for Levels 2–4; and deterministic review schedules for memory and selected-word practice. Level 4 orders all five ayat without copying Quran text into curriculum.
+
+Migration: built-in package `2.2`/revision `r4` preserves existing IDs, Progress V3, V2 migration, completion receipts, and earned XP. Completed levels remain complete; unfinished sessions rewind through the existing required-step adapter. Old review revisions remain stored but inactive.
+
+Gate: new derived activities remain source-linked drafts and production validation must reject them until genuine review and approval.

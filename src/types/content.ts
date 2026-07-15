@@ -1,5 +1,43 @@
 // Content Types for Quran Habit App
 import type { LearningActivity } from './activities';
+import type { Reciter, RecitationTrack } from './media';
+
+export const CORE_PACKAGE_TEXT_KEYS = [
+  'app.title', 'app.loading', 'app.errorLearningPathNotFound', 'roadmap.levels', 'roadmap.pathProgress', 'roadmap.loadingProgress', 'roadmap.progressUnavailable',
+  'lesson.loadingLevel', 'lesson.levelNotFound', 'lesson.backToRoadmap', 'lesson.leaveLevel', 'lesson.leaveMessage', 'lesson.keepLearning', 'lesson.leave', 'lesson.progressUnavailable', 'lesson.continue', 'lesson.completeLevel',
+  'completion.loading', 'completion.levelNotFound', 'completion.progressUnavailable', 'completion.alhamdulillah', 'completion.completed', 'completion.rewardsEarned', 'completion.alreadyCounted', 'completion.levelCompleted', 'completion.pathXp', 'completion.saved', 'completion.startNextLevel', 'completion.backToRoadmap',
+  'activity.recall', 'activity.reveal', 'activity.revealAndRate', 'activity.compareAndRate', 'activity.again', 'activity.hard', 'activity.remembered', 'activity.selectedAnswer', 'activity.buildAnswer', 'activity.matchTranslationHint',
+  'activity.typeFromMemory', 'activity.typedAnswerLabel',
+  'review.title', 'review.due', 'review.start', 'review.noneDue', 'review.complete', 'review.next', 'review.backToRoadmap',
+  'question.quiz', 'question.checkAnswer', 'question.checking', 'question.tryAgain', 'question.correct', 'question.answerIs', 'question.fillAnswer', 'question.typeAnswer', 'question.checkMatches', 'question.matchHint', 'question.true', 'question.false',
+  'content.translationUnavailable', 'content.arabicSource', 'content.translationSource', 'content.source', 'content.sourceUnavailable', 'content.tafsir', 'content.explanation', 'content.draftPendingReview', 'content.toggleDetails', 'content.wordByWord', 'content.translation', 'content.listen', 'content.audioUnavailable', 'content.context.historical_context', 'content.context.occasion_of_revelation', 'content.context.tafsir_summary',
+] as const;
+
+export type PackageTextKey = typeof CORE_PACKAGE_TEXT_KEYS[number] | (string & {});
+
+export interface PackageTextCatalog {
+  locale: string;
+  entries: Record<string, string>;
+}
+
+export interface PackageLocalization {
+  defaultLocale: string;
+  catalogs: PackageTextCatalog[];
+}
+
+export type MediaAssetKind = 'image' | 'svg' | 'animation';
+
+export interface MediaAsset {
+  id: string;
+  kind: MediaAssetKind;
+  uri: string;
+  altText: string;
+  sourceIds: string[];
+  license: string;
+  checksum: string;
+  reviewerStatus: ReviewerStatus;
+  reducedMotionAssetId?: string;
+}
 
 // ─── Source & Governance ───────────────────────────────────────────────────
 
@@ -35,6 +73,8 @@ export interface QuranEdition {
 }
 
 export interface WordMeaning {
+  /** Stable resource ID used by activities and Studio selections. */
+  id: string;
   /** Stable canonical token reference. Arabic remains temporary renderer compatibility data. */
   wordTokenId?: string;
   arabic: string;
@@ -138,6 +178,16 @@ export interface SurahRecord {
 
 export type LearningGoal = 'memorize' | 'understand' | 'reflect' | 'quiz';
 export type ContextKind = 'historical_context' | 'occasion_of_revelation' | 'tafsir_summary';
+export type LevelStepKind =
+  | 'context'
+  | 'read'
+  | 'translation'
+  | 'word_meaning'
+  | 'tafsir'
+  | 'memorize'
+  | 'memory_practice'
+  | 'understanding_practice'
+  | 'summary';
 
 export type LevelDifficulty = 'easy' | 'medium' | 'hard';
 export type RoadmapSort = 'mushaf' | 'revelation' | 'difficulty' | 'path';
@@ -166,6 +216,10 @@ export interface Level {
   difficulty: LevelDifficulty;
   goals: LearningGoal[];
   steps: LevelStep[];
+  completionRules?: {
+    requireMemoryActivity: boolean;
+    requireUnderstandingActivity: boolean;
+  };
   unlockRules?: {
     requiresLevelIds?: string[];
   };
@@ -176,24 +230,50 @@ export interface Level {
 
 export interface LevelStep {
   id: string;
+  /** Required in package schema v2; optional here so schema v1 packages can be adapted. */
+  kind?: LevelStepKind;
   title: string;
+  /** Optional context may be authored without becoming a completion requirement. */
+  required?: boolean;
   blocks: LevelBlock[];
 }
 
-export type LevelBlock =
+export type ContentBlock =
+  | QuranPassageBlock
+  | TranslationBlock
+  | WordMeaningBlock
   | AyahRefBlock
   | TafsirRefBlock
   | ContextBlock
   | WordExplorerBlock
-  | ActivityLevelBlock
+  | AudioBlock
+  | MediaBlock
   | QuestionBlock
   | SummaryLevelBlock;
+
+export type PracticeActivityBlock = ActivityLevelBlock;
+export type LevelBlock = ContentBlock | PracticeActivityBlock;
 
 export interface AyahRefBlock {
   id: string;
   type: 'ayah_ref';
   ayahRef: AyahRef;
   translationLocale?: string;
+}
+
+export interface QuranPassageBlock {
+  id: string;
+  type: 'quran_passage';
+  ayahRefs: AyahRef[];
+  showTransliteration?: boolean;
+}
+
+export interface TranslationBlock {
+  id: string;
+  type: 'translation';
+  ayahRefs: AyahRef[];
+  locale: string;
+  translationEntryIds?: string[];
 }
 
 export interface TafsirRefBlock {
@@ -217,6 +297,26 @@ export interface WordExplorerBlock {
   id: string;
   type: 'word_explorer';
   ayahRefs: AyahRef[];
+}
+
+export interface WordMeaningBlock {
+  id: string;
+  type: 'word_meaning';
+  wordMeaningIds: string[];
+}
+
+export interface AudioBlock {
+  id: string;
+  type: 'audio';
+  ayahRefs: AyahRef[];
+  reciterId?: string;
+  required?: boolean;
+}
+
+export interface MediaBlock {
+  id: string;
+  type: 'media';
+  assetId: string;
 }
 
 export interface ActivityLevelBlock {
@@ -281,6 +381,8 @@ export interface SummaryLevelBlock {
 export interface ContentPackage {
   id: string;
   version: string;
+  schemaVersion: number;
+  revisionId: string;
   title: string;
   description: string;
   type: 'surah' | 'juz' | 'topic' | 'course';
@@ -290,18 +392,18 @@ export interface ContentPackage {
   ayat: AyahRecord[];
   wordTokens: WordToken[];
   divisions: QuranDivision[];
+  reciters: Reciter[];
+  recitationTracks: RecitationTrack[];
+  localization: PackageLocalization;
+  mediaAssets: MediaAsset[];
   learningPaths: LearningPath[];
   levels: Level[];
-  assets?: {
-    images?: string[];
-    audio?: string[];
-    videos?: string[];
-  };
   metadata: {
     totalLevels: number;
     totalDuration?: number;
     language: string;
     targetAudience: 'children' | 'teens' | 'adults' | 'family';
+    defaultLearningPathId?: string;
   };
 }
 
@@ -315,17 +417,28 @@ export interface ContentRepository {
   ayat: AyahRecord[];
   wordTokens: WordToken[];
   divisions: QuranDivision[];
+  reciters: Reciter[];
+  recitationTracks: RecitationTrack[];
   learningPaths: LearningPath[];
   levels: Level[];
   getPackageById(id: string): ContentPackage | undefined;
+  getPackageForLevel(levelId: string): ContentPackage | undefined;
+  getActivePackage(): ContentPackage | undefined;
+  getText(key: PackageTextKey, locale?: string): string;
+  registerPackage(pkg: ContentPackage, activate?: boolean): void;
+  removePackage(id: string): void;
   getSourceById(id: string): ContentSource | undefined;
   getEdition(id: QuranEditionId): QuranEdition | undefined;
   getSurahById(id: string): SurahRecord | undefined;
   getSurahByNumber(number: number): SurahRecord | undefined;
   getLevelById(id: string): Level | undefined;
+  getActivityById(id: string): LearningActivity | undefined;
+  getLevelForActivity(id: string): Level | undefined;
   getAyahByRef(ref: AyahRef, editionId?: QuranEditionId): AyahRecord | undefined;
   getAyatByRefs(refs: AyahRef[], editionId?: QuranEditionId): AyahRecord[];
   getWordToken(id: string): WordToken | undefined;
+  getReciterById(id: string): Reciter | undefined;
+  getRecitationTrackByAyah(ref: AyahRef, reciterId?: string, editionId?: QuranEditionId): RecitationTrack | undefined;
   listDivisions(kind: QuranDivisionKind, editionId?: QuranEditionId): QuranDivision[];
   getDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): QuranDivision | undefined;
   listAyahRefsInDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): AyahRef[];

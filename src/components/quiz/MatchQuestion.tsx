@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { getContentRepository } from '../../lib/content/repository';
+import { packageText } from '../../lib/content/text';
 
 export interface MatchPair {
   id: string;
@@ -14,6 +16,7 @@ interface Props {
 }
 
 const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
+  const repo = getContentRepository();
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [allCorrect, setAllCorrect] = useState(false);
@@ -61,7 +64,7 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
   return (
     <View>
       <Text style={styles.question}>{question}</Text>
-      <Text style={styles.hint}>Tap an Arabic word, then tap its meaning</Text>
+      <Text style={styles.hint}>{packageText(repo, 'question.matchHint')}</Text>
       <View style={styles.columns}>
         <View style={styles.col}>
           {pairs.map(p => (
@@ -108,11 +111,11 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
           onPress={handleSubmit}
           disabled={Object.keys(selections).length < pairs.length || saving}
         >
-          <Text style={styles.submitText}>{saving ? 'Saving...' : 'Check Matches'}</Text>
+          <Text style={styles.submitText}>{saving ? packageText(repo, 'question.checking') : packageText(repo, 'question.checkMatches')}</Text>
         </TouchableOpacity>
       ) : !allCorrect ? (
         <TouchableOpacity accessibilityRole="button" style={styles.retry} onPress={handleRetry}>
-          <Text style={styles.retryText}>Try Again</Text>
+          <Text style={styles.retryText}>{packageText(repo, 'question.tryAgain')}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
