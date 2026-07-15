@@ -4,12 +4,12 @@
 
 import {
   AyahRecord,
+  ContentPackage,
   ContentSource,
   LearningPath,
   Level,
   SurahRecord,
 } from '../../../types/content';
-import { createLegacyPackageFromLearningPath } from '../../../lib/content/legacyAdapter';
 
 const QURAN_ARABIC_SOURCE_ID = 'quran-arabic-madani';
 const TRANSLATION_SOURCE_ID = 'quran-translation-sahih-international';
@@ -22,7 +22,6 @@ const quranArabicSource: ContentSource = {
   publisher: 'King Fahd Quran Printing Complex',
   version: '1.0',
   language: 'ar',
-  reviewed: true,
   reviewerStatus: 'approved',
   reviewDate: '2024-01-01',
   license: 'Public Domain',
@@ -35,7 +34,6 @@ const quranTranslationSource: ContentSource = {
   publisher: 'Saheeh International',
   version: '1.0',
   language: 'en',
-  reviewed: true,
   reviewerStatus: 'approved',
   reviewDate: '2024-01-01',
   license: 'Public Domain',
@@ -48,7 +46,6 @@ const tafsirSource: ContentSource = {
   publisher: 'Darussalam',
   version: '1.0',
   language: 'en',
-  reviewed: false,
   reviewerStatus: 'draft',
   notes: 'Summaries pending scholar review before publication.',
   license: 'Educational use',
@@ -91,6 +88,15 @@ const tafsir = (id: string, text: string, explanation?: string) => ({
   explanation,
 });
 
+const word = (arabic: string, transliteration: string, meaning: string, root?: string) => ({
+  arabic,
+  transliteration,
+  meaning,
+  root,
+  sourceId: TRANSLATION_SOURCE_ID,
+  reviewerStatus: 'approved' as const,
+});
+
 export const surahAlFilAyat: AyahRecord[] = [
   {
     id: '105:1',
@@ -115,13 +121,13 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      { arabic: 'أَلَمْ', transliteration: 'Alam', meaning: 'Have not / Did not', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'تَرَ', transliteration: 'tara', meaning: 'you see / consider', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'كَيْفَ', transliteration: 'kayfa', meaning: 'how', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'فَعَلَ', transliteration: "fa'ala", meaning: 'He dealt / did', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'رَبُّكَ', transliteration: 'Rabbuka', meaning: 'your Lord', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'بِأَصْحَابِ', transliteration: "bi-as'habi", meaning: 'with the companions of', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'ٱلْفِيلِ', transliteration: 'al-feel', meaning: 'the elephant', sourceId: TRANSLATION_SOURCE_ID },
+      word('أَلَمْ', 'Alam', 'Have not / Did not'),
+      word('تَرَ', 'tara', 'you see / consider'),
+      word('كَيْفَ', 'kayfa', 'how'),
+      word('فَعَلَ', "fa'ala", 'He dealt / did'),
+      word('رَبُّكَ', 'Rabbuka', 'your Lord'),
+      word('بِأَصْحَابِ', "bi-as'habi", 'with the companions of'),
+      word('ٱلْفِيلِ', 'al-feel', 'the elephant'),
     ],
   },
   {
@@ -142,11 +148,11 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      { arabic: 'أَلَمْ', transliteration: 'Alam', meaning: 'Did He not', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'يَجْعَلْ', transliteration: "yaj'al", meaning: 'make / render', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'كَيْدَهُمْ', transliteration: 'kaydahum', meaning: 'their plan / scheme', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'فِى', transliteration: 'fee', meaning: 'into / in', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'تَضْلِيلٍ', transliteration: 'tadleel', meaning: 'misguidance / ruin / failure', sourceId: TRANSLATION_SOURCE_ID },
+      word('أَلَمْ', 'Alam', 'Did He not'),
+      word('يَجْعَلْ', "yaj'al", 'make / render'),
+      word('كَيْدَهُمْ', 'kaydahum', 'their plan / scheme'),
+      word('فِى', 'fee', 'into / in'),
+      word('تَضْلِيلٍ', 'tadleel', 'misguidance / ruin / failure'),
     ],
   },
   {
@@ -167,10 +173,10 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      { arabic: 'وَأَرْسَلَ', transliteration: 'Wa-arsala', meaning: 'And He sent', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'عَلَيْهِمْ', transliteration: 'alayhim', meaning: 'against them / upon them', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'طَيْرًا', transliteration: 'tayran', meaning: 'birds', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'أَبَابِيلَ', transliteration: 'ababeel', meaning: 'in flocks / in groups', sourceId: TRANSLATION_SOURCE_ID },
+      word('وَأَرْسَلَ', 'Wa-arsala', 'And He sent'),
+      word('عَلَيْهِمْ', 'alayhim', 'against them / upon them'),
+      word('طَيْرًا', 'tayran', 'birds'),
+      word('أَبَابِيلَ', 'ababeel', 'in flocks / in groups'),
     ],
   },
   {
@@ -191,10 +197,10 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      { arabic: 'تَرْمِيهِم', transliteration: 'Tarmeehim', meaning: 'striking them / pelting them', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'بِحِجَارَةٍ', transliteration: 'bihijaaratin', meaning: 'with stones', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'مِّن', transliteration: 'min', meaning: 'of / from', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'سِجِّيلٍ', transliteration: 'sijjeel', meaning: 'hard baked clay', root: 'س-ج-ل', sourceId: TRANSLATION_SOURCE_ID },
+      word('تَرْمِيهِم', 'Tarmeehim', 'striking them / pelting them'),
+      word('بِحِجَارَةٍ', 'bihijaaratin', 'with stones'),
+      word('مِّن', 'min', 'of / from'),
+      word('سِجِّيلٍ', 'sijjeel', 'hard baked clay', 'س-ج-ل'),
     ],
   },
   {
@@ -215,9 +221,9 @@ export const surahAlFilAyat: AyahRecord[] = [
       ),
     ],
     wordMeanings: [
-      { arabic: 'فَجَعَلَهُمْ', transliteration: "Faja'alahum", meaning: 'And He made them', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'كَعَصْفٍ', transliteration: "ka'asfin", meaning: 'like straw / chaff', sourceId: TRANSLATION_SOURCE_ID },
-      { arabic: 'مَّأْكُولٍ', transliteration: "ma'kool", meaning: 'eaten / devoured', sourceId: TRANSLATION_SOURCE_ID },
+      word('فَجَعَلَهُمْ', "Faja'alahum", 'And He made them'),
+      word('كَعَصْفٍ', "ka'asfin", 'like straw / chaff'),
+      word('مَّأْكُولٍ', "ma'kool", 'eaten / devoured'),
     ],
   },
 ];
@@ -503,16 +509,24 @@ export const surahAlFilLevels: Level[] = [
   },
 ];
 
-const surahAlFilPackage = createLegacyPackageFromLearningPath({
+const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
   version: '1.0',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
+  type: 'surah',
   surahs: [surahAlFilRecord],
   ayat: surahAlFilAyat,
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,
-});
+  assets: { images: [], audio: [] },
+  metadata: {
+    totalLevels: surahAlFilLevels.length,
+    totalDuration: surahAlFilLevels.reduce((total, level) => total + level.durationMinutes, 0),
+    language: 'en',
+    targetAudience: 'family',
+  },
+};
 
 export default surahAlFilPackage;

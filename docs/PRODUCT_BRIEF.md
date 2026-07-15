@@ -1,99 +1,141 @@
-# Quran Habit App - Product Brief
+# Quran Habit App — Product Brief
 
 ## Vision
 
-Build a daily Quran habit app for Muslims aged 12+, adults, and families.
+Help Muslims aged 12+, adults, and families build a sustainable daily relationship with the Quran through memorization, understanding, and active recall.
 
-The product helps users memorize, understand, and emotionally connect with Quran through short guided sessions.
+## Positioning
 
-## One-line pitch
+A memorization-first Quran habit companion with trusted explanations, structured exercises, offline lessons, and scholar-reviewed publishing.
 
-A gamified Quran companion that helps Muslims build a daily habit of memorizing and understanding Quran, one ayah at a time.
+## Initial Quran edition
 
-## Target Users
+The MVP uses:
 
-Primary:
-- Muslim teens aged 12+
-- Muslim adults who want to reconnect with Quran
-- Families learning together
+```text
+Hafs ʿan ʿAsim
+```
 
-Secondary:
-- Parents guiding children
-- New Muslims
-- Muslims who can recite but do not understand meanings deeply
+The architecture remains edition-aware so another complete edition can be added later without mixing text, word tokens, fonts, audio, or exercise data.
 
-## Core Problem
+## Initial content
 
-Many Muslims want a stronger relationship with Quran but struggle with:
-- consistency
-- memorization
-- understanding Arabic words
-- connecting ayat to meaning
-- knowing where to start
-- keeping Quran as a daily habit
+Start with Surah Al-Fil and its five ayat, arranged into four short levels:
 
-## Product Solution
+1. context + Ayah 1;
+2. Ayah 2;
+3. Ayat 3–4;
+4. Ayah 5 + full-surah review.
 
-The app breaks Quran learning into small daily missions:
-1. Read/listen to one ayah
-2. Understand the translation
-3. Explore key Arabic words
-4. Learn short tafsir/context
-5. Practice with an interactive quiz
-6. Earn progress and continue the habit
+## Quran navigation
 
-## Product Inspiration
+Learners should eventually browse the same canonical content by:
 
-Inspired by:
-- Duolingo for habit and progression
-- Deepstash for bite-sized cards
-- Quran learning apps for recitation
-- Islamic storytelling for context
-- family learning products
+- Surah;
+- Juz;
+- Hizb;
+- current learning path;
+- downloaded lessons;
+- due or unfinished practice.
 
-## MVP Theme
+Juz and hizb are navigation indexes over Quran ranges. They do not replace the Surah/ayah model.
 
-Start with Surah Al-Fil.
+## Core user experience
 
-Why Surah Al-Fil:
-- short surah
-- 5 ayat only
-- strong story/context
-- good for visual explanation
-- good for word-by-word learning
-- easy to complete as MVP
+A new-learning level follows an authored sequence:
 
-## MVP User Journey
+```text
+optional visual/context hook
+-> listen and read the ayah
+-> translation for non-Arabic learners
+-> selected word meanings
+-> concise trusted tafsir
+-> guided repetition and recall
+-> memorization exercise
+-> one or two understanding exercises
+-> reviewed wisdom or summary
+-> completion
+```
 
-1. User opens app.
-2. User sees Surah Al-Fil roadmap.
-3. User starts Ayah 1.
-4. User reads Arabic and translation.
-5. User explores important words.
-6. User reads a short tafsir/context card.
-7. User answers 1-3 quiz questions.
-8. User completes lesson.
-9. Progress is saved.
-10. User continues to next ayah.
+The Quran passage remains the center of the experience. Visuals support the lesson but do not replace the Quran.
 
-## Design Tone
+## Memorization experience
 
-The app should feel:
-- trusted
-- calm
-- modern
-- premium
-- spiritual
-- family-friendly
-- not childish-only
+The app should emphasize:
 
-## MVP Success
+- repeat and reveal;
+- missing-word completion;
+- ordering words or segments;
+- continuation selection;
+- word-to-meaning matching;
+- short writing exercises;
+- review across multiple ayat.
 
-MVP is successful when a user can complete all 5 ayat of Surah Al-Fil through:
-- roadmap
-- guided ayah lessons
-- word meanings
-- tafsir/context
-- quizzes
-- local progress
-- completion reward
+Speech recognition and advanced SRS are later features.
+
+## Language behavior
+
+The app separates:
+
+- interface language;
+- study/explanation language;
+- translation resource;
+- tafsir resource;
+- transliteration preference.
+
+Arabic Quran text is always primary. Translation and transliteration are optional learning aids.
+
+## Audio
+
+Recitation is a first-class resource.
+
+The first production-shaped audio experience should use:
+
+- one approved Hafs reciter;
+- ayah-level playback;
+- repeat controls;
+- local caching or package download;
+- source and license metadata.
+
+Multiple reciters, word timings, and voice evaluation come later.
+
+## Offline behavior
+
+Learners should be able to download a complete lesson package containing the required:
+
+- lesson data;
+- Hafs ayah references/text dependency;
+- translations;
+- tafsir/context;
+- exercises;
+- audio;
+- images/SVG/animation assets.
+
+Downloads must be versioned, checksum-verified, validated, and activated atomically.
+
+## Content Studio direction
+
+Lessons must not remain hardcoded.
+
+A future Studio will allow authorized authors, editors, and shaykh reviewers to:
+
+- choose Quran ranges;
+- compose steps;
+- attach trusted resources;
+- create exercises;
+- preview learner output;
+- request changes;
+- approve;
+- publish immutable package versions.
+
+The mobile app should consume published packages, not editable Studio database rows.
+
+## Product principles
+
+1. Religious accuracy before speed.
+2. Memorization outcomes before decorative gamification.
+3. One primary learning objective per step.
+4. Short sessions with low cognitive load.
+5. Offline-first where practical.
+6. Positive progress without guilt-based punishment.
+7. Architecture compatible with future Studio publishing.

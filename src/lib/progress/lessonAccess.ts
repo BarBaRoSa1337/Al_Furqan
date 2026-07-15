@@ -1,7 +1,6 @@
-import { Lesson, Level } from '../../types/content';
+import { Level } from '../../types/content';
 
-export type LessonAccessState = 'completed' | 'active' | 'locked';
-export type LevelAccessState = LessonAccessState;
+export type LevelAccessState = 'completed' | 'active' | 'locked';
 
 export function getLevelAccessState(
   levels: Level[],
@@ -38,35 +37,4 @@ export function isLevelAccessible(
   levelId: string
 ): boolean {
   return getLevelAccessState(levels, completedLevelIds, levelId) !== 'locked';
-}
-
-export function getLessonAccessState(
-  lessons: Lesson[],
-  completedLessonIds: string[],
-  lessonId: string
-): LessonAccessState {
-  const lessonIndex = lessons.findIndex((lesson) => lesson.id === lessonId);
-
-  if (lessonIndex === -1) {
-    return 'locked';
-  }
-
-  if (completedLessonIds.includes(lessonId)) {
-    return 'completed';
-  }
-
-  if (lessonIndex === 0) {
-    return 'active';
-  }
-
-  const previousLesson = lessons[lessonIndex - 1];
-  return completedLessonIds.includes(previousLesson.id) ? 'active' : 'locked';
-}
-
-export function isLessonAccessible(
-  lessons: Lesson[],
-  completedLessonIds: string[],
-  lessonId: string
-): boolean {
-  return getLessonAccessState(lessons, completedLessonIds, lessonId) !== 'locked';
 }

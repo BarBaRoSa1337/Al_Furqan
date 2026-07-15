@@ -1,149 +1,255 @@
-# Architecture Overview
+# Architecture Overview — Hafs, Memorization, Offline Packages, and Studio Readiness
 
-## Core Principle
+## Core principle
 
-Schema-first content.
+Schema-first, repository-driven, package-delivered Quran learning.
 
-The app should render structured Quran learning content from versioned packages.
+Do not hardcode lessons in UI routes or components.
 
-Do not hardcode lessons inside screens.
+## Learner hierarchy
 
-## Content Hierarchy
+```text
+Roadmap -> Surah -> Level -> Step -> Block/Activity
+```
 
-Roadmap -> Surah -> Level -> Step -> Block
+## Architectural layers
 
-Layers:
+### 1. Canonical Quran layer
 
-- Canonical Quran content: `SurahRecord`, `AyahRecord`, translations, tafsir, word meanings, sources.
-- Learning curriculum: `LearningPath`, `Level`, `LevelStep`, `LevelBlock`.
-- Learner state: level progress, question attempts, XP, streak.
+Owns:
+
+- `QuranEdition`;
+- `SurahRecord`;
+- `AyahRecord`;
+- `WordToken`;
+- `QuranPosition`;
+- `QuranRange`;
+- `QuranDivision`;
+- source/version/checksum metadata.
 
 Rules:
 
+- MVP edition is Hafs ʿan ʿAsim.
+- Canonical Arabic text lives only here.
 - `SurahRecord` never owns levels.
-- Levels reference ayat by `AyahRef`; Quran Arabic is stored only in canonical ayah records.
-- Difficulty belongs to `Level`.
-- Context and tafsir are distinct block families.
+- Juz/hizb/rubʿ are range indexes, not guessed Surah properties.
+- Exact division boundaries must be source-backed.
 
-## Recommended Folders
+### 2. Resource layer
 
+Owns:
+
+- translations;
+- tafsir entries;
+- word glosses;
+- reviewed context;
+- reciters;
+- recitation tracks;
+- media assets;
+- source and license records.
+
+Resources declare locale, edition compatibility where applicable, source, version, and review state.
+
+### 3. Curriculum layer
+
+Owns:
+
+- `LearningPath`;
+- `Level`;
+- `LevelStep`;
+- `LevelBlock`;
+- `LearningActivity`;
+- knowledge references;
+- completion rules.
+
+Levels reference canonical ayat and resources. They do not duplicate Quran payloads.
+
+### 4. Learner-state layer
+
+Owns:
+
+- current level and step;
+- completed levels and steps;
+- question/activity attempts;
+- best results;
+- XP and streak;
+- completion receipts;
+- package-independent progress.
+
+Progress remains valid when a content package is updated, subject to explicit migration rules.
+
+### 5. Distribution layer
+
+Owns:
+
+- `ContentPackageManifest`;
+- package files;
+- checksums;
+- package staging;
+- validation;
+- atomic activation;
+- installed package registry;
+- rollback.
+
+The app renders only active, validated packages.
+
+### 6. Studio publishing contract
+
+Owns:
+
+- draft/publishable DTOs;
+- publication workflow;
+- role capabilities;
+- validation diagnostics;
+- immutable package compilation;
+- content revision history identifiers.
+
+The complete Studio is a later application. The shared contract is part of the current foundation.
+
+## Suggested folders
+
+Adapt to the existing repository rather than moving working files unnecessarily.
+
+```text
 src/
-  app/
-    _layout.tsx
-    index.tsx
-    roadmap.tsx
-    lesson/[levelId].tsx
-    complete/[levelId].tsx
-
-  components/
-    lesson/
-      StepRenderer.tsx
-      LevelBlockRenderer.tsx
-      BlockRenderer.tsx
-      blocks/
-        QuranAyahBlock.tsx
-        TranslationBlock.tsx
-        WordExplorerBlock.tsx
-        TafsirCardBlock.tsx
-        StoryCardBlock.tsx
-        ImageBlock.tsx
-        AudioBlock.tsx
-        QuestionBlock.tsx
-        SummaryBlock.tsx
-
-    quiz/
-      MultipleChoiceQuestion.tsx
-      FillBlankQuestion.tsx
-      MatchQuestion.tsx
-
-    roadmap/
-      RoadmapNode.tsx
-
-    ui/
-      Button.tsx
-      Card.tsx
-      ProgressBar.tsx
-      Screen.tsx
+  domain/
+    quran/
+      edition.ts
+      records.ts
+      divisions.ts
+    curriculum/
+      levels.ts
+      blocks.ts
+      activities.ts
+    media/
+      recitation.ts
+      assets.ts
+    packages/
+      manifest.ts
+    studio/
+      publication.ts
 
   content/
+    canonical/
+      hafs/
+        surahs/
+        ayat/
+        words/
+        divisions/
     packages/
-      al-fil.v1.ts
+      surah-al-fil/
     sources/
-      quranText.ts
-      translations.ts
-      tafsir.ts
     assets/
 
   lib/
     content/
       repository.ts
-      legacyAdapter.ts
       packageValidator.ts
+      packageCompiler.ts
+    quran/
+      quranRepository.ts
+      divisionIndex.ts
+    activities/
+      activityEngine.ts
+      evaluators/
+    packages/
+      packageManager.ts
+      packageStorage.ts
+      packageDownloader.ts
+    media/
+      recitationRepository.ts
+      assetResolver.ts
     progress/
       storage.ts
-    quiz/
-      quizEngine.ts
-    i18n/
-      localizedText.ts
 
-  types/
-    content.ts
-    quiz.ts
-    progress.ts
+  components/
+    lesson/
+      StepRenderer.tsx
+      LevelBlockRenderer.tsx
+    activities/
+      RecallThenReveal.tsx
+      MissingToken.tsx
+      OrderTokens.tsx
+      MatchWordMeaning.tsx
+      TypeMissingText.tsx
+    audio/
+      AyahRecitationPlayer.tsx
+```
 
-## Main Modules
+## Key repository APIs
 
-### Content Repository
+### Quran repository
 
-Responsible for loading local packages, exposing canonical records, exposing learning path/level APIs, and validating package structure.
+```ts
+getEdition(id)
+getSurahById(id)
+getSurahByNumber(number)
+getAyahByRef(ref, editionId)
+getAyatByRefs(refs, editionId)
+getWordToken(id)
+listDivisions(kind, editionId)
+getDivision(kind, number, editionId)
+listSurahsInDivision(kind, number, editionId)
+getDivisionsForAyah(ref, editionId)
+```
 
-### Lesson Player
+### Curriculum repository
 
-Responsible for rendering level steps, tracking current step, gating required questions, and completing levels.
+```ts
+getCurrentLearningPath()
+getLevelById(id)
+getNextLevel(id)
+getLevelsForSurah(surahId)
+```
 
-### Step / Block Renderers
+### Package manager
 
-`StepRenderer` renders `LevelStep`.
-`LevelBlockRenderer` resolves `AyahRef`/tafsir refs against canonical content and renders native question blocks.
-`LevelBlockRenderer` also renders canonical context, word explorer, and summary blocks directly.
-`BlockRenderer` is isolated compatibility for legacy lesson-shaped blocks and is not used by the active level flow.
+```ts
+listInstalledPackages()
+stagePackage(source)
+validateStagedPackage(id)
+activateStagedPackage(id)
+rollbackPackage(id)
+removePackage(id)
+```
 
-### Quiz Engine
+### Activity engine
 
-Responsible for:
-- checking answers
-- calculating score
-- giving feedback
-- returning completion status
+```ts
+evaluateActivity(activity, answer, context)
+validateActivity(activity, packageContext)
+```
 
-### Progress Store
+## Data flow
 
-MVP uses local persistence.
+```text
+Published package
+-> package staging
+-> checksum verification
+-> schema/content validation
+-> atomic activation
+-> repositories
+-> roadmap/level session
+-> blocks and activities
+-> progress storage
+```
 
-Tracks:
-- completed levels
-- completed steps
-- quiz scores
-- XP
-- streak
-- current level
+## Compatibility strategy
 
-Backend comes later.
+- Preserve the active level session controller.
+- Preserve serialized progress mutations and completion receipts.
+- Add adapters only at repository boundaries.
+- Do not mass-rename working routes/components.
+- Keep old installed/built-in package identifiers readable until migration tests prove safe.
+- Package updates must not reset learner progress.
 
-## Data Flow
+## Backend decision
 
-Content Package -> Content Repository -> Roadmap -> Level Player -> Step Renderer -> Level Block Renderer -> Progress Store -> Completion Screen
+No production backend is required for this milestone.
 
-## MVP Backend Decision
+Use:
 
-No backend for MVP.
-
-Use local storage first.
-
-Add Supabase later for:
-- auth
-- family accounts
-- multi-device sync
-- parent dashboard
-- analytics
-- subscriptions
+- local built-in Al-Fil package;
+- local/mock downloadable package fixture;
+- deterministic package compiler/export;
+- interfaces that a future Studio/API can call.

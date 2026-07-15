@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import Screen from '../components/ui/Screen';
+import ProgressBar from '../components/ui/ProgressBar';
 import RoadmapNode, { NodeStatus } from '../components/roadmap/RoadmapNode';
 import { getContentRepository } from '../lib/content/repository';
-import { getAppProgress } from '../lib/progress/storage';
+import { getAppProgress, getProgressRecoveryWarning } from '../lib/progress/storage';
 import { getLevelAccessState } from '../lib/progress/lessonAccess';
 import { AppProgress, DEFAULT_PROGRESS } from '../types/progress';
 
@@ -19,15 +20,26 @@ export default function RoadmapScreen() {
 
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const loadProgress = async () => {
-    const p = await getAppProgress();
-    setProgress(p);
+    try {
+      const p = await getAppProgress();
+      setProgress(p);
+      setWarning(getProgressRecoveryWarning()?.message ?? null);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Progress could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadProgress();
+      void loadProgress();
     }, [])
   );
 
@@ -74,6 +86,10 @@ export default function RoadmapScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Text style={styles.description}>{learningPath.description}</Text>
+        <ProgressBar current={progress.completedLevelIds.filter(id => learningPath.levelIds.includes(id)).length} total={levels.length} label="Path progress" />
+        {warning ? <Text style={styles.warning}>{warning}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {loading ? <Text style={styles.loading}>Loading progress...</Text> : null}
 
         <View style={styles.roadmap}>
           {levels.map((level, idx) => {
@@ -130,5 +146,8 @@ const styles = StyleSheet.create({
   statText: { fontSize: 14, fontWeight: '700', color: '#D35400' },
   scroll: { padding: 20, paddingBottom: 60 },
   description: { fontSize: 15, color: '#444', lineHeight: 22, marginBottom: 24, fontStyle: 'italic', textAlign: 'center' },
+  warning: { backgroundColor: '#FCF3CF', color: '#7D6608', borderRadius: 10, padding: 12, marginTop: 16, lineHeight: 20 },
+  error: { backgroundColor: '#FDEDEC', color: '#922B21', borderRadius: 10, padding: 12, marginTop: 16, lineHeight: 20 },
+  loading: { color: '#5D6D7E', textAlign: 'center', marginTop: 16 },
   roadmap: { paddingHorizontal: 10 },
 });

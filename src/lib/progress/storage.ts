@@ -1,23 +1,31 @@
-// Local progress storage — AsyncStorage backed level progress with XP and streaks.
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LearningPath, Level } from '../../types/content';
 import {
   AppProgress,
-  DEFAULT_PROGRESS,
+  CompletionReceipt,
+  createDefaultProgress,
   LearningPathProgress,
   LevelProgress,
+  ProgressRecoveryWarning,
+  ProgressSnapshotV2,
   QuestionAttempt,
   XP_REWARDS,
   XPRecord,
 } from '../../types/progress';
 
 const KEYS = {
+  SNAPSHOT: 'qlp_progress_v2',
+  APP_PROGRESS: 'qlp_app_progress',
   LEVEL_PREFIX: 'qlp_level_',
   PATH_PREFIX: 'qlp_path_',
-  APP_PROGRESS: 'qlp_app_progress',
   LEGACY_LESSON_PREFIX: 'qlp_lesson_',
   LEGACY_PACKAGE_PREFIX: 'qlp_package_',
+  CORRUPT_PREFIX: 'qlp_progress_corrupt_',
 } as const;
+
+const LEGACY_PATH_IDS: Record<string, string> = {
+  'surah-al-fil-v1': 'surah-al-fil-path-v1',
+};
 
 interface LegacyAppProgress extends Partial<AppProgress> {
   completedLessonIds?: string[];
@@ -31,16 +39,6 @@ interface LegacyStoredProgress {
   completed?: boolean;
   startedAt?: string | Date;
   completedAt?: string | Date;
-  currentBlockIndex?: number;
-  blockProgress?: Record<string, unknown>;
-}
-
-export interface LevelCompletionResult {
-  progress: AppProgress;
-  alreadyCompleted: boolean;
-  learningPathJustCompleted: boolean;
-  awardedLevelXp: number;
-  awardedLearningPathXp: number;
 }
 
 export interface RecordQuestionAttemptInput {
@@ -51,182 +49,54 @@ export interface RecordQuestionAttemptInput {
   correct: boolean;
 }
 
-export type LessonCompletionResult = LevelCompletionResult & {
-  packageJustCompleted: boolean;
-  awardedLessonXp: number;
-  awardedPackageXp: number;
-};
+export class ProgressStorageError extends Error {
+  constructor(message: string, readonly cause?: unknown) {
+    super(message);
+    this.name = 'ProgressStorageError';
+  }
+}
+
+let mutationQueue: Promise<void> = Promise.resolve();
+let recoveryWarning: ProgressRecoveryWarning | null = null;
 
 export async function getAppProgress(): Promise<AppProgress> {
-  try {
-    const raw = await AsyncStorage.getItem(KEYS.APP_PROGRESS);
-    if (!raw) return { ...DEFAULT_PROGRESS };
-    const normalized = normalizeProgress(JSON.parse(raw) as LegacyAppProgress);
-
-    if (raw.includes('completedLessonIds') || raw.includes('completedPackageIds') || raw.includes('currentLessonId')) {
-      await saveAppProgress(normalized);
-    }
-
-    return normalized;
-  } catch {
-    return { ...DEFAULT_PROGRESS };
-  }
+  const snapshot = await readAfterMutations();
+  return snapshot.app;
 }
 
-function normalizeProgress(progress: LegacyAppProgress): AppProgress {
-  return {
-    ...DEFAULT_PROGRESS,
-    ...progress,
-    streak: {
-      ...DEFAULT_PROGRESS.streak,
-      ...progress.streak,
-    },
-    xpHistory: progress.xpHistory ?? [],
-    completedLevelIds: progress.completedLevelIds ?? progress.completedLessonIds ?? [],
-    completedLearningPathIds: progress.completedLearningPathIds ?? progress.completedPackageIds ?? [],
-    currentLevelId: progress.currentLevelId ?? progress.currentLessonId,
-  };
+export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
+  const snapshot = await readAfterMutations();
+  return snapshot.levels[levelId] ?? null;
 }
 
-async function saveAppProgress(progress: AppProgress): Promise<void> {
-  await AsyncStorage.setItem(KEYS.APP_PROGRESS, JSON.stringify(progress));
+export async function getLastCompletionReceipt(levelId?: string): Promise<CompletionReceipt | null> {
+  const snapshot = await readAfterMutations();
+  const receipt = snapshot.lastCompletionReceipt;
+  return receipt && (!levelId || receipt.levelId === levelId) ? receipt : null;
 }
 
-export async function addXP(amount: number, reason: string): Promise<AppProgress> {
-  const progress = await getAppProgress();
-  const record: XPRecord = { amount, reason, earnedAt: new Date().toISOString() };
-  const updated: AppProgress = {
-    ...progress,
-    xp: progress.xp + amount,
-    xpHistory: [...progress.xpHistory, record],
-  };
-  await saveAppProgress(updated);
-  return updated;
+export function getProgressRecoveryWarning(): ProgressRecoveryWarning | null {
+  return recoveryWarning;
 }
 
-export async function updateStreak(): Promise<AppProgress> {
-  const progress = await getAppProgress();
-  const today = new Date().toISOString().split('T')[0];
-  const last = progress.streak.lastActiveDate;
-
-  if (last === today) return progress;
-
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-  const newStreak = last === yesterdayStr ? progress.streak.currentStreak + 1 : 1;
-
-  const updated: AppProgress = {
-    ...progress,
-    streak: {
-      currentStreak: newStreak,
-      longestStreak: Math.max(newStreak, progress.streak.longestStreak),
-      lastActiveDate: today,
-    },
-  };
-  await saveAppProgress(updated);
-  return updated;
-}
-
-export async function markLevelCompleted(
-  levelId: string,
-  learningPathId: string,
-  totalPathLevels: number
-): Promise<LevelCompletionResult> {
-  const existingLevel = await getStoredLevelProgress(levelId);
-  const alreadyCompleted = existingLevel?.completed === true;
-  const now = new Date().toISOString();
-
-  const levelProgress: LevelProgress = {
-    levelId,
-    pathId: learningPathId,
-    completed: true,
-    startedAt: existingLevel?.startedAt ?? now,
-    completedAt: now,
-    currentStepId: existingLevel?.currentStepId,
-    completedStepIds: existingLevel?.completedStepIds ?? [],
-    questionAttempts: existingLevel?.questionAttempts ?? [],
-  };
-  await AsyncStorage.setItem(KEYS.LEVEL_PREFIX + levelId, JSON.stringify(levelProgress));
-
-  let appProgress = await getAppProgress();
-  const learningPathAlreadyCompleted = appProgress.completedLearningPathIds.includes(learningPathId);
-
-  if (!appProgress.completedLevelIds.includes(levelId)) {
-    appProgress = {
-      ...appProgress,
-      completedLevelIds: [...appProgress.completedLevelIds, levelId],
-      currentLevelId: levelId,
-      lastActiveAt: now,
+export async function startLevel(levelId: string, pathId: string, initialStepId: string): Promise<LevelProgress> {
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString();
+    const existing = snapshot.levels[levelId];
+    const progress = existing ?? {
+      levelId,
+      pathId,
+      completed: false,
+      startedAt: now,
+      currentStepId: initialStepId,
+      completedStepIds: [],
+      questionAttempts: [],
     };
-  }
-
-  const completedInPath = await getCompletedLevelIdsForPath(learningPathId);
-  const learningPathJustCompleted =
-    completedInPath.length >= totalPathLevels && !learningPathAlreadyCompleted;
-
-  if (learningPathJustCompleted) {
-    appProgress = {
-      ...appProgress,
-      completedLearningPathIds: [...appProgress.completedLearningPathIds, learningPathId],
-    };
-  }
-
-  await saveAppProgress(appProgress);
-  await updateLearningPathProgress(learningPathId, completedInPath.length, totalPathLevels);
-
-  let awardedLevelXp = 0;
-  let awardedLearningPathXp = 0;
-
-  if (!alreadyCompleted) {
-    await addXP(XP_REWARDS.LEVEL_COMPLETE, `Completed level: ${levelId}`);
-    awardedLevelXp = XP_REWARDS.LEVEL_COMPLETE;
-    await updateStreak();
-  }
-
-  if (learningPathJustCompleted) {
-    await addXP(XP_REWARDS.LEARNING_PATH_COMPLETE, `Completed learning path: ${learningPathId}`);
-    awardedLearningPathXp = XP_REWARDS.LEARNING_PATH_COMPLETE;
-  }
-
-  return {
-    progress: await getAppProgress(),
-    alreadyCompleted,
-    learningPathJustCompleted,
-    awardedLevelXp,
-    awardedLearningPathXp,
-  };
-}
-
-export async function startLevel(
-  levelId: string,
-  pathId: string,
-  initialStepId: string
-): Promise<LevelProgress> {
-  const existing = await getStoredLevelProgress(levelId);
-  const now = new Date().toISOString();
-  const progress: LevelProgress = existing ?? {
-    levelId,
-    pathId,
-    completed: false,
-    startedAt: now,
-    currentStepId: initialStepId,
-    completedStepIds: [],
-    questionAttempts: [],
-  };
-
-  if (!existing) {
-    await saveLevelProgress(progress);
-  }
-
-  const appProgress = await getAppProgress();
-  await saveAppProgress({
-    ...appProgress,
-    currentLevelId: levelId,
-    lastActiveAt: now,
+    snapshot.levels[levelId] = progress;
+    snapshot.app.currentLevelId = levelId;
+    snapshot.app.lastActiveAt = now;
+    return progress;
   });
-
-  return progress;
 }
 
 export async function completeLevelStep(
@@ -235,179 +105,340 @@ export async function completeLevelStep(
   stepId: string,
   nextStepId?: string
 ): Promise<LevelProgress> {
-  const existing = await getStoredLevelProgress(levelId);
-  const now = new Date().toISOString();
-  const progress: LevelProgress = {
-    levelId,
-    pathId,
-    completed: existing?.completed ?? false,
-    startedAt: existing?.startedAt ?? now,
-    completedAt: existing?.completedAt,
-    currentStepId: nextStepId,
-    completedStepIds: existing?.completedStepIds.includes(stepId)
-      ? existing.completedStepIds
-      : [...(existing?.completedStepIds ?? []), stepId],
-    questionAttempts: existing?.questionAttempts ?? [],
-  };
-
-  await saveLevelProgress(progress);
-  return progress;
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString();
+    const existing = snapshot.levels[levelId];
+    const progress: LevelProgress = {
+      levelId,
+      pathId,
+      completed: existing?.completed ?? false,
+      startedAt: existing?.startedAt ?? now,
+      completedAt: existing?.completedAt,
+      currentStepId: nextStepId,
+      completedStepIds: existing?.completedStepIds.includes(stepId)
+        ? existing.completedStepIds
+        : [...(existing?.completedStepIds ?? []), stepId],
+      questionAttempts: existing?.questionAttempts ?? [],
+    };
+    snapshot.levels[levelId] = progress;
+    return progress;
+  });
 }
 
-export async function recordQuestionAttempt(
-  input: RecordQuestionAttemptInput
-): Promise<QuestionAttempt> {
-  const existing = await getStoredLevelProgress(input.levelId);
-  const now = new Date().toISOString();
-  const attempt: QuestionAttempt = {
-    questionId: input.questionId,
-    levelId: input.levelId,
-    selectedAnswer: input.selectedAnswer,
-    correct: input.correct,
-    attemptedAt: now,
-  };
-  const progress: LevelProgress = {
-    levelId: input.levelId,
-    pathId: input.pathId,
-    completed: existing?.completed ?? false,
-    startedAt: existing?.startedAt ?? now,
-    completedAt: existing?.completedAt,
-    currentStepId: existing?.currentStepId,
-    completedStepIds: existing?.completedStepIds ?? [],
-    questionAttempts: [...(existing?.questionAttempts ?? []), attempt],
-  };
-
-  await saveLevelProgress(progress);
-  return attempt;
+export async function recordQuestionAttempt(input: RecordQuestionAttemptInput): Promise<QuestionAttempt> {
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString();
+    const existing = snapshot.levels[input.levelId];
+    const attempt: QuestionAttempt = {
+      questionId: input.questionId,
+      levelId: input.levelId,
+      selectedAnswer: input.selectedAnswer,
+      correct: input.correct,
+      attemptedAt: now,
+    };
+    snapshot.levels[input.levelId] = {
+      levelId: input.levelId,
+      pathId: input.pathId,
+      completed: existing?.completed ?? false,
+      startedAt: existing?.startedAt ?? now,
+      completedAt: existing?.completedAt,
+      currentStepId: existing?.currentStepId,
+      completedStepIds: existing?.completedStepIds ?? [],
+      questionAttempts: [...(existing?.questionAttempts ?? []), attempt],
+    };
+    return attempt;
+  });
 }
 
-export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
-  return getStoredLevelProgress(levelId);
-}
-
-async function saveLevelProgress(progress: LevelProgress): Promise<void> {
-  await AsyncStorage.setItem(KEYS.LEVEL_PREFIX + progress.levelId, JSON.stringify(progress));
-}
-
-async function getStoredLevelProgress(levelId: string): Promise<LevelProgress | null> {
-  const raw = await AsyncStorage.getItem(KEYS.LEVEL_PREFIX + levelId);
-  if (raw) return JSON.parse(raw) as LevelProgress;
-
-  const legacyRaw = await AsyncStorage.getItem(KEYS.LEGACY_LESSON_PREFIX + levelId);
-  if (!legacyRaw) return null;
-
-  const legacy = JSON.parse(legacyRaw) as LegacyStoredProgress;
-  if (!legacy.completed) return null;
-
-  return {
-    levelId,
-    pathId: legacy.packageId ?? '',
-    completed: true,
-    startedAt: toIsoString(legacy.startedAt),
-    completedAt: toIsoString(legacy.completedAt),
-    completedStepIds: [],
-    questionAttempts: [],
-  };
-}
-
-async function getCompletedLevelIdsForPath(learningPathId: string): Promise<string[]> {
-  const keys = await AsyncStorage.getAllKeys();
-  const levelKeys = keys.filter(key => key.startsWith(KEYS.LEVEL_PREFIX));
-  const completed: string[] = [];
-
-  for (const key of levelKeys) {
-    const raw = await AsyncStorage.getItem(key);
-    if (!raw) continue;
-    const progress = JSON.parse(raw) as LevelProgress;
-    if (progress.pathId === learningPathId && progress.completed) {
-      completed.push(progress.levelId);
-    }
+export async function completeLevel(level: Level, path: LearningPath): Promise<CompletionReceipt> {
+  if (level.pathId !== path.id || !path.levelIds.includes(level.id)) {
+    throw new ProgressStorageError(`Level "${level.id}" does not belong to path "${path.id}"`);
   }
 
-  const legacyKeys = keys.filter(key => key.startsWith(KEYS.LEGACY_LESSON_PREFIX));
-  for (const key of legacyKeys) {
-    const raw = await AsyncStorage.getItem(key);
-    if (!raw) continue;
-    const legacy = JSON.parse(raw) as LegacyStoredProgress;
-    const legacyLevelId = legacy.lessonId ?? key.replace(KEYS.LEGACY_LESSON_PREFIX, '');
-    if (legacy.packageId === learningPathId && legacy.completed && !completed.includes(legacyLevelId)) {
-      completed.push(legacyLevelId);
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString();
+    const existing = snapshot.levels[level.id] ?? null;
+    if (!isLevelReadyForCompletion(level, existing)) {
+      throw new ProgressStorageError(`Level "${level.id}" is not ready for completion`);
     }
-  }
 
-  return completed;
+    const alreadyCompleted = existing?.completed === true;
+    snapshot.levels[level.id] = {
+      ...existing!,
+      completed: true,
+      completedAt: existing?.completedAt ?? now,
+    };
+
+    if (!snapshot.app.completedLevelIds.includes(level.id)) {
+      snapshot.app.completedLevelIds.push(level.id);
+    }
+
+    const learningPathAlreadyCompleted = snapshot.app.completedLearningPathIds.includes(path.id);
+    const learningPathComplete = path.levelIds.every(levelId => snapshot.levels[levelId]?.completed === true);
+    const learningPathJustCompleted = learningPathComplete && !learningPathAlreadyCompleted;
+    if (learningPathJustCompleted) snapshot.app.completedLearningPathIds.push(path.id);
+
+    const awardedLevelXp = alreadyCompleted ? 0 : XP_REWARDS.LEVEL_COMPLETE;
+    const awardedLearningPathXp = learningPathJustCompleted ? XP_REWARDS.LEARNING_PATH_COMPLETE : 0;
+    if (awardedLevelXp > 0) addXpToSnapshot(snapshot, awardedLevelXp, `Completed level: ${level.id}`, now);
+    if (awardedLearningPathXp > 0) addXpToSnapshot(snapshot, awardedLearningPathXp, `Completed learning path: ${path.id}`, now);
+    if (!alreadyCompleted) updateStreakInSnapshot(snapshot, new Date());
+
+    const currentIndex = path.levelIds.indexOf(level.id);
+    snapshot.app.currentLevelId = path.levelIds[currentIndex + 1] ?? level.id;
+    snapshot.app.lastActiveAt = now;
+
+    const receipt: CompletionReceipt = {
+      id: `${level.id}:${now}`,
+      levelId: level.id,
+      learningPathId: path.id,
+      alreadyCompleted,
+      learningPathJustCompleted,
+      awardedLevelXp,
+      awardedLearningPathXp,
+      completedAt: now,
+    };
+    snapshot.lastCompletionReceipt = receipt;
+    return receipt;
+  });
 }
 
-async function updateLearningPathProgress(
-  learningPathId: string,
-  completedCount: number,
-  totalCount: number
-): Promise<void> {
-  const key = KEYS.PATH_PREFIX + learningPathId;
-  const raw = await AsyncStorage.getItem(key);
-  const existing = raw ? (JSON.parse(raw) as LearningPathProgress) : null;
-  const now = new Date().toISOString();
-  const levels = await getStoredLevelProgressesForPath(learningPathId);
-
-  const progress: LearningPathProgress = {
-    learningPathId,
-    totalLevels: totalCount,
-    completedLevels: completedCount,
-    overallProgress: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
-    levels,
-    startedAt: existing?.startedAt ?? now,
-    completedAt: completedCount >= totalCount ? now : existing?.completedAt,
-  };
-
-  await AsyncStorage.setItem(key, JSON.stringify(progress));
+export async function addXP(amount: number, reason: string): Promise<AppProgress> {
+  return mutateSnapshot(snapshot => {
+    addXpToSnapshot(snapshot, amount, reason, new Date().toISOString());
+    return snapshot.app;
+  });
 }
 
-async function getStoredLevelProgressesForPath(learningPathId: string): Promise<LevelProgress[]> {
-  const keys = await AsyncStorage.getAllKeys();
-  const levelKeys = keys.filter(key => key.startsWith(KEYS.LEVEL_PREFIX));
-  const levels: LevelProgress[] = [];
+export async function updateStreak(): Promise<AppProgress> {
+  return mutateSnapshot(snapshot => {
+    updateStreakInSnapshot(snapshot, new Date());
+    return snapshot.app;
+  });
+}
 
-  for (const key of levelKeys) {
-    const raw = await AsyncStorage.getItem(key);
-    if (!raw) continue;
-    const progress = JSON.parse(raw) as LevelProgress;
-    if (progress.pathId === learningPathId) {
-      levels.push(progress);
-    }
-  }
-
-  return levels;
+export function isLevelReadyForCompletion(level: Level, progress: LevelProgress | null): boolean {
+  if (!progress) return false;
+  if (progress.completed) return true;
+  const allStepsCompleted = level.steps.every(step => progress.completedStepIds.includes(step.id));
+  const requiredQuestionIds = level.steps.flatMap(step =>
+    step.blocks.filter(block => block.type === 'question').map(block => block.id)
+  );
+  return allStepsCompleted && requiredQuestionIds.every(questionId =>
+    progress.questionAttempts.some(attempt => attempt.questionId === questionId && attempt.correct)
+  );
 }
 
 export async function isLevelCompleted(levelId: string): Promise<boolean> {
-  const progress = await getStoredLevelProgress(levelId);
-  return progress?.completed === true;
-}
-
-export async function getLearningPathProgress(learningPathId: string): Promise<LearningPathProgress | null> {
-  try {
-    const raw = await AsyncStorage.getItem(KEYS.PATH_PREFIX + learningPathId);
-    return raw ? JSON.parse(raw) as LearningPathProgress : null;
-  } catch {
-    return null;
-  }
+  return (await getLevelProgress(levelId))?.completed === true;
 }
 
 export async function getCompletedLevelIds(): Promise<string[]> {
-  const progress = await getAppProgress();
-  return progress.completedLevelIds;
+  return (await getAppProgress()).completedLevelIds;
+}
+
+export async function getLearningPathProgress(path: LearningPath): Promise<LearningPathProgress> {
+  const snapshot = await readAfterMutations();
+  const levels = path.levelIds.flatMap(levelId => snapshot.levels[levelId] ? [snapshot.levels[levelId]] : []);
+  const completedLevels = levels.filter(level => level.completed).length;
+  const timestamps = levels.map(level => level.startedAt).sort();
+  return {
+    learningPathId: path.id,
+    totalLevels: path.levelIds.length,
+    completedLevels,
+    overallProgress: path.levelIds.length > 0 ? Math.round((completedLevels / path.levelIds.length) * 100) : 0,
+    levels,
+    startedAt: timestamps[0] ?? new Date().toISOString(),
+    completedAt: completedLevels === path.levelIds.length
+      ? levels.map(level => level.completedAt).filter((value): value is string => Boolean(value)).sort().at(-1)
+      : undefined,
+  };
 }
 
 export async function resetProgress(): Promise<void> {
+  await enqueueMutation(async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const keysToRemove = keys.filter(isProgressKey);
+      if (keysToRemove.length > 0) await AsyncStorage.multiRemove(keysToRemove);
+      recoveryWarning = null;
+    } catch (error) {
+      throw new ProgressStorageError('Could not reset progress', error);
+    }
+  });
+}
+
+function addXpToSnapshot(snapshot: ProgressSnapshotV2, amount: number, reason: string, earnedAt: string): void {
+  const record: XPRecord = { amount, reason, earnedAt };
+  snapshot.app.xp += amount;
+  snapshot.app.xpHistory.push(record);
+}
+
+function updateStreakInSnapshot(snapshot: ProgressSnapshotV2, date: Date): void {
+  const today = localDateKey(date);
+  if (snapshot.app.streak.lastActiveDate === today) return;
+  const yesterday = new Date(date);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const currentStreak = snapshot.app.streak.lastActiveDate === localDateKey(yesterday)
+    ? snapshot.app.streak.currentStreak + 1
+    : 1;
+  snapshot.app.streak = {
+    currentStreak,
+    longestStreak: Math.max(currentStreak, snapshot.app.streak.longestStreak),
+    lastActiveDate: today,
+  };
+}
+
+async function readAfterMutations(): Promise<ProgressSnapshotV2> {
+  return enqueueMutation(loadSnapshot);
+}
+
+function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV2) => T): Promise<T> {
+  return enqueueMutation(async () => {
+    const snapshot = await loadSnapshot();
+    const result = mutation(snapshot);
+    await writeSnapshot(snapshot);
+    return result;
+  });
+}
+
+function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+  const result = mutationQueue.then(operation, operation);
+  mutationQueue = result.then(() => undefined, () => undefined);
+  return result;
+}
+
+async function loadSnapshot(): Promise<ProgressSnapshotV2> {
+  try {
+    const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as unknown;
+        if (isProgressSnapshot(parsed)) return parsed;
+      } catch {
+        // Quarantined below.
+      }
+      const quarantineKey = `${KEYS.CORRUPT_PREFIX}${Date.now()}`;
+      await AsyncStorage.setItem(quarantineKey, raw);
+      await AsyncStorage.removeItem(KEYS.SNAPSHOT);
+      recoveryWarning = { code: 'corrupt_v2', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
+      return createEmptySnapshot();
+    }
+    return migrateLegacyProgress();
+  } catch (error) {
+    if (error instanceof ProgressStorageError) throw error;
+    throw new ProgressStorageError('Could not load progress', error);
+  }
+}
+
+async function migrateLegacyProgress(): Promise<ProgressSnapshotV2> {
   const keys = await AsyncStorage.getAllKeys();
-  const toRemove = keys.filter(key =>
-    key.startsWith(KEYS.LEVEL_PREFIX) ||
-    key.startsWith(KEYS.PATH_PREFIX) ||
-    key.startsWith(KEYS.LEGACY_LESSON_PREFIX) ||
-    key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) ||
-    key === KEYS.APP_PROGRESS
+  const oldKeys = keys.filter(key => key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX));
+  if (oldKeys.length === 0) return createEmptySnapshot();
+
+  const snapshot = createEmptySnapshot();
+  let skippedRecords = 0;
+  const entries = await AsyncStorage.multiGet(oldKeys);
+  entries.forEach(([key, raw]) => {
+    if (!raw) return;
+    try {
+      if (key === KEYS.APP_PROGRESS) {
+        snapshot.app = normalizeLegacyAppProgress(JSON.parse(raw) as LegacyAppProgress);
+        return;
+      }
+      if (key.startsWith(KEYS.LEVEL_PREFIX)) {
+        const level = normalizeLevelProgress(JSON.parse(raw) as LevelProgress);
+        snapshot.levels[level.levelId] = level;
+        return;
+      }
+      if (key.startsWith(KEYS.LEGACY_LESSON_PREFIX)) {
+        const legacy = JSON.parse(raw) as LegacyStoredProgress;
+        if (!legacy.completed) return;
+        const levelId = legacy.lessonId ?? key.slice(KEYS.LEGACY_LESSON_PREFIX.length);
+        if (!snapshot.levels[levelId]) {
+          snapshot.levels[levelId] = {
+            levelId,
+            pathId: mapLegacyPathId(legacy.packageId ?? ''),
+            completed: true,
+            startedAt: toIsoString(legacy.startedAt),
+            completedAt: toIsoString(legacy.completedAt),
+            completedStepIds: [],
+            questionAttempts: [],
+          };
+        }
+      }
+    } catch {
+      skippedRecords += 1;
+    }
+  });
+
+  Object.values(snapshot.levels).forEach(level => {
+    if (level.completed && !snapshot.app.completedLevelIds.includes(level.levelId)) snapshot.app.completedLevelIds.push(level.levelId);
+  });
+  snapshot.app.completedLearningPathIds = snapshot.app.completedLearningPathIds.map(mapLegacyPathId);
+  await writeSnapshot(snapshot);
+  await AsyncStorage.multiRemove(oldKeys);
+  if (skippedRecords > 0) recoveryWarning = { code: 'partial_legacy_migration', message: `${skippedRecords} invalid legacy progress record(s) were skipped.` };
+  return snapshot;
+}
+
+function normalizeLegacyAppProgress(progress: LegacyAppProgress): AppProgress {
+  const defaults = createDefaultProgress();
+  return {
+    ...defaults,
+    ...progress,
+    streak: { ...defaults.streak, ...progress.streak },
+    xpHistory: progress.xpHistory ?? [],
+    completedLevelIds: progress.completedLevelIds ?? progress.completedLessonIds ?? [],
+    completedLearningPathIds: (progress.completedLearningPathIds ?? progress.completedPackageIds ?? []).map(mapLegacyPathId),
+    currentLevelId: progress.currentLevelId ?? progress.currentLessonId,
+  };
+}
+
+function normalizeLevelProgress(progress: LevelProgress): LevelProgress {
+  return {
+    ...progress,
+    pathId: mapLegacyPathId(progress.pathId),
+    completedStepIds: progress.completedStepIds ?? [],
+    questionAttempts: progress.questionAttempts ?? [],
+  };
+}
+
+async function writeSnapshot(snapshot: ProgressSnapshotV2): Promise<void> {
+  try {
+    await AsyncStorage.setItem(KEYS.SNAPSHOT, JSON.stringify(snapshot));
+  } catch (error) {
+    throw new ProgressStorageError('Could not save progress', error);
+  }
+}
+
+function createEmptySnapshot(): ProgressSnapshotV2 {
+  return { schemaVersion: 2, app: createDefaultProgress(), levels: {} };
+}
+
+function isProgressSnapshot(value: unknown): value is ProgressSnapshotV2 {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ProgressSnapshotV2>;
+  if (candidate.schemaVersion !== 2 || !candidate.app || !candidate.levels || typeof candidate.levels !== 'object') return false;
+  const app = candidate.app;
+  if (typeof app.xp !== 'number' || !Array.isArray(app.xpHistory) || !Array.isArray(app.completedLevelIds) || !Array.isArray(app.completedLearningPathIds)) return false;
+  if (!app.streak || typeof app.streak.currentStreak !== 'number' || typeof app.streak.longestStreak !== 'number' || typeof app.streak.lastActiveDate !== 'string') return false;
+  return Object.values(candidate.levels).every(level =>
+    Boolean(level) &&
+    typeof level.levelId === 'string' &&
+    typeof level.pathId === 'string' &&
+    typeof level.completed === 'boolean' &&
+    Array.isArray(level.completedStepIds) &&
+    Array.isArray(level.questionAttempts)
   );
-  if (toRemove.length > 0) await AsyncStorage.multiRemove(toRemove);
+}
+
+function isProgressKey(key: string): boolean {
+  return key === KEYS.SNAPSHOT || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
+}
+
+function mapLegacyPathId(id: string): string {
+  return LEGACY_PATH_IDS[id] ?? id;
 }
 
 function toIsoString(value: string | Date | undefined): string {
@@ -415,55 +446,9 @@ function toIsoString(value: string | Date | undefined): string {
   return typeof value === 'string' ? value : value.toISOString();
 }
 
-export async function markLessonCompleted(
-  lessonId: string,
-  packageId: string,
-  totalPackageLessons: number
-): Promise<LessonCompletionResult> {
-  const result = await markLevelCompleted(lessonId, packageId, totalPackageLessons);
-  return {
-    ...result,
-    packageJustCompleted: result.learningPathJustCompleted,
-    awardedLessonXp: result.awardedLevelXp,
-    awardedPackageXp: result.awardedLearningPathXp,
-  };
+function localDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
-
-export async function isLessonCompleted(lessonId: string): Promise<boolean> {
-  return isLevelCompleted(lessonId);
-}
-
-export async function getCompletedLessonIds(): Promise<string[]> {
-  return getCompletedLevelIds();
-}
-
-export async function getPackageProgress(packageId: string): Promise<LearningPathProgress | null> {
-  return getLearningPathProgress(packageId);
-}
-
-export class LocalProgressStorage {
-  async markLevelCompleted(levelId: string, learningPathId: string): Promise<void> {
-    await markLevelCompleted(levelId, learningPathId, 7);
-  }
-  async markLessonCompleted(lessonId: string, packageId: string): Promise<void> {
-    await markLessonCompleted(lessonId, packageId, 7);
-  }
-  async isLevelCompleted(levelId: string): Promise<boolean> {
-    return isLevelCompleted(levelId);
-  }
-  async isLessonCompleted(lessonId: string): Promise<boolean> {
-    return isLessonCompleted(lessonId);
-  }
-  async clearProgress(): Promise<void> {
-    return resetProgress();
-  }
-  async getPackageProgress(packageId: string): Promise<LearningPathProgress | null> {
-    return getPackageProgress(packageId);
-  }
-}
-
-export function getProgressStorage(): LocalProgressStorage {
-  return new LocalProgressStorage();
-}
-
-export default LocalProgressStorage;

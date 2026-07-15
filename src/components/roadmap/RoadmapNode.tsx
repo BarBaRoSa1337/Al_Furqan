@@ -37,6 +37,9 @@ const RoadmapNode: React.FC<RoadmapNodeProps> = ({
       {!isLast && <View style={[styles.connector, isLocked && styles.connectorLocked]} />}
 
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, ${status}`}
+        accessibilityState={{ disabled: isLocked, selected: status === 'active' }}
         style={styles.row}
         onPress={() => !isLocked && onPress(id)}
         activeOpacity={isLocked ? 1 : 0.8}

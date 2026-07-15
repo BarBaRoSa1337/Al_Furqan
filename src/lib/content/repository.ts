@@ -7,7 +7,6 @@ import {
   ContentPackage,
   ContentSource,
   LearningPath,
-  Lesson,
   Level,
   RoadmapSort,
   SurahRecord,
@@ -17,7 +16,6 @@ import { validatePackage } from './packageValidator';
 
 class ContentRepositoryImpl implements ContentRepository {
   private _packages: ContentPackage[] = [];
-  private _lessons: Lesson[] = [];
   private _sources: ContentPackage['sources'] = [];
   private _surahs: SurahRecord[] = [];
   private _ayat: AyahRecord[] = [];
@@ -36,7 +34,7 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   private _registerPackage(pkg: ContentPackage): void {
-    const validation = validatePackage(pkg);
+    const validation = validatePackage(pkg, { mode: __DEV__ ? 'development' : 'production' });
     if (!validation.valid) {
       throw new Error(`Invalid content package "${pkg.id}": ${validation.errors.join('; ')}`);
     }
@@ -46,11 +44,6 @@ class ContentRepositoryImpl implements ContentRepository {
 
     if (this._packages.some(p => p.id === pkg.id)) return;
     this._packages.push(pkg);
-    pkg.lessons?.forEach(lesson => {
-      if (!this._lessons.some(l => l.id === lesson.id)) {
-        this._lessons.push(lesson);
-      }
-    });
     pkg.sources.forEach(source => {
       if (!this._sources.some(s => s.id === source.id)) {
         this._sources.push(source);
@@ -80,7 +73,6 @@ class ContentRepositoryImpl implements ContentRepository {
 
   // ContentRepository interface
   get packages(): ContentPackage[] { return this._packages; }
-  get lessons(): Lesson[] { return this._lessons; }
   get sources(): ContentPackage['sources'] { return this._sources; }
   get surahs(): SurahRecord[] { return this._surahs; }
   get ayat(): AyahRecord[] { return this._ayat; }
@@ -90,10 +82,6 @@ class ContentRepositoryImpl implements ContentRepository {
   // Queries
   getPackageById(id: string): ContentPackage | undefined {
     return this._packages.find(p => p.id === id);
-  }
-
-  getLessonById(id: string): Lesson | undefined {
-    return this._lessons.find(l => l.id === id);
   }
 
   getSourceById(id: string): ContentSource | undefined {
@@ -184,30 +172,7 @@ class ContentRepositoryImpl implements ContentRepository {
     return [...this._surahs].sort((a, b) => a.surahNumber - b.surahNumber);
   }
 
-  getLessonsByPackageId(packageId: string): Lesson[] {
-    return this._lessons.filter(l => l.packageId === packageId);
-  }
-
-  getNextLesson(currentLessonId: string): Lesson | undefined {
-    const lesson = this.getLessonById(currentLessonId);
-    if (!lesson) return undefined;
-    const packageLessons = this.getLessonsByPackageId(lesson.packageId);
-    const idx = packageLessons.findIndex(l => l.id === currentLessonId);
-    if (idx === -1 || idx >= packageLessons.length - 1) return undefined;
-    return packageLessons[idx + 1];
-  }
-
-  getPreviousLesson(currentLessonId: string): Lesson | undefined {
-    const lesson = this.getLessonById(currentLessonId);
-    if (!lesson) return undefined;
-    const packageLessons = this.getLessonsByPackageId(lesson.packageId);
-    const idx = packageLessons.findIndex(l => l.id === currentLessonId);
-    if (idx <= 0) return undefined;
-    return packageLessons[idx - 1];
-  }
-
   getAllPackages(): ContentPackage[] { return [...this._packages]; }
-  getAllLessons(): Lesson[] { return [...this._lessons]; }
 }
 
 // Singleton

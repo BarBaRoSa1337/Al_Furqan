@@ -51,6 +51,29 @@ export interface LearningPathProgress {
   completedAt?: string;
 }
 
+export interface CompletionReceipt {
+  id: string;
+  levelId: string;
+  learningPathId: string;
+  alreadyCompleted: boolean;
+  learningPathJustCompleted: boolean;
+  awardedLevelXp: number;
+  awardedLearningPathXp: number;
+  completedAt: string;
+}
+
+export interface ProgressSnapshotV2 {
+  schemaVersion: 2;
+  app: AppProgress;
+  levels: Record<string, LevelProgress>;
+  lastCompletionReceipt?: CompletionReceipt;
+}
+
+export interface ProgressRecoveryWarning {
+  code: 'corrupt_v2' | 'partial_legacy_migration';
+  message: string;
+}
+
 export const DEFAULT_PROGRESS: AppProgress = {
   xp: 0,
   xpHistory: [],
@@ -63,6 +86,17 @@ export const DEFAULT_PROGRESS: AppProgress = {
   completedLearningPathIds: [],
   lastActiveAt: new Date().toISOString(),
 };
+
+export function createDefaultProgress(): AppProgress {
+  return {
+    ...DEFAULT_PROGRESS,
+    xpHistory: [],
+    streak: { ...DEFAULT_PROGRESS.streak },
+    completedLevelIds: [],
+    completedLearningPathIds: [],
+    lastActiveAt: new Date().toISOString(),
+  };
+}
 
 export const XP_REWARDS = {
   LEVEL_COMPLETE: 20,

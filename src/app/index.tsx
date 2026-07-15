@@ -19,7 +19,7 @@ export default function IndexScreen() {
     <View style={styles.container}>
       <Text style={styles.logo}>📖</Text>
       <Text style={styles.title}>QuranDo</Text>
-      <ActivityIndicator color="#1B4F72" style={{ marginTop: 24 }} />
+      <ActivityIndicator color="#1B4F72" style={styles.spinner} />
     </View>
   );
 }
@@ -32,6 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: { fontSize: 64, marginBottom: 12 },
+  spinner: { marginTop: 24 },
   title: {
     fontSize: 32,
     fontWeight: '800',

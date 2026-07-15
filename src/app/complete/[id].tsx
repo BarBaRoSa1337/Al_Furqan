@@ -1,135 +1,132 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getContentRepository } from '../../lib/content/repository';
-import { getAppProgress, markLevelCompleted } from '../../lib/progress/storage';
-import { isLevelAccessible } from '../../lib/progress/lessonAccess';
-import Screen from '../../components/ui/Screen';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
-import ConfettiCannon from 'react-native-confetti-cannon';
+import Screen from '../../components/ui/Screen';
+import { getContentRepository } from '../../lib/content/repository';
+import { getLastCompletionReceipt, getLevelProgress } from '../../lib/progress/storage';
+import { CompletionReceipt } from '../../types/progress';
 
 export default function CompleteScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const levelId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const repo = getContentRepository();
-  const level = repo.getLevelById(id as string);
-  const path = level ? repo.getCurrentLearningPath() : undefined;
-
-  const [saving, setSaving] = useState(true);
-  const [awardedLessonXp, setAwardedLessonXp] = useState(0);
-  const [awardedPackageXp, setAwardedPackageXp] = useState(0);
-  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
-  const [accessResolved, setAccessResolved] = useState(false);
+  const level = levelId ? repo.getLevelById(levelId) : undefined;
+  const nextLevel = level ? repo.getNextLevel(level.id) : undefined;
+  const [receipt, setReceipt] = useState<CompletionReceipt | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function saveProgress() {
-      if (!level || !path) {
-        setAccessResolved(true);
-        setSaving(false);
+    let cancelled = false;
+    async function loadCompletion() {
+      if (!level) {
+        setLoading(false);
         return;
       }
-
-      const progress = await getAppProgress();
-      const levels = repo.getLevelsForLearningPath(path.id);
-      const accessible = isLevelAccessible(levels, progress.completedLevelIds, level.id);
-
-      if (!accessible) {
-        router.replace('/roadmap');
-        return;
+      try {
+        const [progress, storedReceipt] = await Promise.all([
+          getLevelProgress(level.id),
+          getLastCompletionReceipt(level.id),
+        ]);
+        if (!progress?.completed) {
+          router.replace('/roadmap');
+          return;
+        }
+        if (!cancelled) {
+          setReceipt(storedReceipt);
+          setLoading(false);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setError(cause instanceof Error ? cause.message : 'Completion could not be loaded.');
+          setLoading(false);
+        }
       }
-
-      const result = await markLevelCompleted(
-        level.id,
-        path.id,
-        levels.length
-      );
-      setAwardedLessonXp(result.awardedLevelXp);
-      setAwardedPackageXp(result.awardedLearningPathXp);
-      setAlreadyCompleted(result.alreadyCompleted);
-      setAccessResolved(true);
-      setSaving(false);
     }
-    saveProgress();
-  }, [level, path, repo, router]);
+    void loadCompletion();
+    return () => { cancelled = true; };
+  }, [levelId, router]);
 
   if (!level) {
     return (
       <Screen style={styles.center}>
-        <Text>Level not found.</Text>
-        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={{ marginTop: 20 }} />
+        <Text style={styles.errorTitle}>Level not found.</Text>
+        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
       </Screen>
     );
   }
 
-  if (!accessResolved || saving) {
+  if (loading) {
     return (
-      <Screen backgroundColor="#1B4F72" style={styles.center}>
+      <Screen backgroundColor="#1B4F72" statusBarStyle="light-content" style={styles.center}>
         <ActivityIndicator color="#FFFFFF" />
-        <Text style={styles.loadingText}>Saving progress...</Text>
+        <Text style={styles.loadingText}>Loading completion...</Text>
       </Screen>
     );
   }
 
-  const handleContinue = () => {
-    router.replace('/roadmap');
-  };
+  if (error) {
+    return (
+      <Screen style={styles.center}>
+        <Text style={styles.errorTitle}>Progress unavailable</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
+      </Screen>
+    );
+  }
+
+  const awardedLevelXp = receipt?.awardedLevelXp ?? 0;
+  const awardedPathXp = receipt?.awardedLearningPathXp ?? 0;
 
   return (
-    <Screen backgroundColor="#1B4F72">
-      {!saving && <ConfettiCannon count={100} origin={{ x: -10, y: 0 }} fadeOut={true} />}
-
+    <Screen backgroundColor="#1B4F72" statusBarStyle="light-content" edges={['top', 'bottom', 'left', 'right']}>
+      {receipt && !receipt.alreadyCompleted ? <ConfettiCannon count={100} origin={{ x: -10, y: 0 }} fadeOut /> : null}
       <View style={styles.content}>
-        <Text style={styles.title}>Alhamdulillah! 🎉</Text>
+        <Text style={styles.title}>Alhamdulillah!</Text>
         <Text style={styles.subtitle}>You completed {level.title}</Text>
-
         <Card style={styles.statsCard}>
           <Text style={styles.rewardTitle}>Rewards Earned</Text>
           <View style={styles.rewardRow}>
-            <Text style={styles.rewardIcon}>⭐</Text>
+            <Text style={styles.rewardIcon}>★</Text>
             <View style={styles.rewardInfo}>
-              <Text style={styles.rewardText}>
-                {alreadyCompleted ? 'Already counted earlier' : 'Level Completed'}
-              </Text>
-              <Text style={styles.rewardXp}>
-                +{awardedLessonXp} XP
-                {awardedPackageXp > 0 ? `  •  +${awardedPackageXp} package XP` : ''}
-              </Text>
+              <Text style={styles.rewardText}>{receipt?.alreadyCompleted ? 'Already counted earlier' : 'Level completed'}</Text>
+              <Text style={styles.rewardXp}>+{awardedLevelXp} XP{awardedPathXp > 0 ? `  •  +${awardedPathXp} path XP` : ''}</Text>
             </View>
           </View>
-          {alreadyCompleted ? (
-            <Text style={styles.repeatNote}>
-              This level was already completed. Progress reopened without duplicate XP.
-            </Text>
-          ) : null}
+          {!receipt ? <Text style={styles.repeatNote}>Completion already saved.</Text> : null}
         </Card>
       </View>
-
       <View style={styles.footer}>
-        <Button
-          title="Continue"
-          onPress={handleContinue}
-          size="lg"
-          variant="secondary"
-        />
+        {nextLevel ? (
+          <Button title="Start Next Level" onPress={() => router.replace(`/lesson/${nextLevel.id}`)} size="lg" variant="secondary" />
+        ) : null}
+        <Button title="Back to Roadmap" onPress={() => router.replace('/roadmap')} size="md" variant="ghost" textStyle={styles.roadmapButtonText} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { justifyContent: 'center', alignItems: 'center' },
+  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   loadingText: { marginTop: 12, color: '#D6EAF8', fontSize: 14 },
+  errorTitle: { color: '#7B241C', fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  errorText: { color: '#5D6D7E', fontSize: 14, lineHeight: 21, marginTop: 8, textAlign: 'center' },
+  stateButton: { marginTop: 20 },
   content: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 36, fontWeight: '800', color: '#FFF', marginBottom: 10, textAlign: 'center' },
+  title: { fontSize: 36, fontWeight: '800', color: '#FFFFFF', marginBottom: 10, textAlign: 'center' },
   subtitle: { fontSize: 18, color: '#D6EAF8', textAlign: 'center', marginBottom: 40 },
-  statsCard: { width: '100%', backgroundColor: '#FFF', padding: 24, borderRadius: 20 },
-  rewardTitle: { fontSize: 14, fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  statsCard: { width: '100%', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 20 },
+  rewardTitle: { fontSize: 14, fontWeight: '700', color: '#68737D', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
   rewardRow: { flexDirection: 'row', alignItems: 'center' },
-  rewardIcon: { fontSize: 32, marginRight: 16 },
+  rewardIcon: { fontSize: 32, marginRight: 16, color: '#D4AC0D' },
   rewardInfo: { flex: 1 },
-  rewardText: { fontSize: 16, fontWeight: '700', color: '#333' },
+  rewardText: { fontSize: 16, fontWeight: '700', color: '#273746' },
   rewardXp: { fontSize: 15, color: '#1E8449', fontWeight: '700', marginTop: 4 },
   repeatNote: { marginTop: 16, fontSize: 13, color: '#5D6D7E', lineHeight: 20 },
-  footer: { padding: 24 },
+  footer: { padding: 24, gap: 10 },
+  roadmapButtonText: { color: '#FFFFFF' },
 });

@@ -7,43 +7,58 @@ interface Props {
   correctAnswer: string;
   explanation?: string;
   caseSensitive?: boolean;
-  onResult: (correct: boolean, answer: string) => void;
+  onResult: (correct: boolean, answer: string) => void | Promise<void>;
 }
 
 const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer, explanation, caseSensitive, onResult }) => {
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!answer.trim()) return;
     const userAnswer = caseSensitive ? answer.trim() : answer.trim().toLowerCase();
     const expected = caseSensitive ? correctAnswer : correctAnswer.toLowerCase();
     const isCorrect = userAnswer === expected;
-    setCorrect(isCorrect);
-    setSubmitted(true);
-    onResult(isCorrect, answer);
+    setSaving(true);
+    try {
+      await onResult(isCorrect, answer);
+      setCorrect(isCorrect);
+      setSubmitted(true);
+    } catch {
+      // Session displays persistence error; keep answer retryable.
+    } finally {
+      setSaving(false);
+    }
   };
 
   const displayText = blankText.replace('___', '_____');
+
+  const handleRetry = () => {
+    setAnswer('');
+    setSubmitted(false);
+    setCorrect(false);
+  };
 
   return (
     <View>
       <Text style={styles.question}>{question}</Text>
       <Text style={styles.blank}>{displayText}</Text>
       <TextInput
+        accessibilityLabel="Fill in the blank answer"
         style={[styles.input, submitted && (correct ? styles.inputCorrect : styles.inputWrong)]}
         value={answer}
         onChangeText={setAnswer}
-        editable={!submitted}
+        editable={!submitted && !saving}
         placeholder="Type your answer..."
         placeholderTextColor="#AAA"
         returnKeyType="done"
         onSubmitEditing={handleSubmit}
       />
       {!submitted ? (
-        <TouchableOpacity style={[styles.submit, !answer.trim() && styles.submitDisabled]} onPress={handleSubmit} disabled={!answer.trim()}>
-          <Text style={styles.submitText}>Check Answer</Text>
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled: !answer.trim() || saving, busy: saving }} style={[styles.submit, !answer.trim() && styles.submitDisabled]} onPress={handleSubmit} disabled={!answer.trim() || saving}>
+          <Text style={styles.submitText}>{saving ? 'Saving...' : 'Check Answer'}</Text>
         </TouchableOpacity>
       ) : (
         <View>
@@ -51,6 +66,11 @@ const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer
             {correct ? '✅ Correct!' : `❌ The answer is: ${correctAnswer}`}
           </Text>
           {explanation ? <Text style={styles.explanation}>{explanation}</Text> : null}
+          {!correct ? (
+            <TouchableOpacity accessibilityRole="button" style={styles.retry} onPress={handleRetry}>
+              <Text style={styles.retryText}>Try Again</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
     </View>
@@ -70,6 +90,8 @@ const styles = StyleSheet.create({
   resultCorrect: { color: '#1E8449' },
   resultWrong: { color: '#C0392B' },
   explanation: { fontSize: 14, color: '#555', lineHeight: 22, backgroundColor: '#F9F9F9', padding: 12, borderRadius: 8 },
+  retry: { borderWidth: 1, borderColor: '#1B4F72', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 12 },
+  retryText: { color: '#1B4F72', fontWeight: '700', fontSize: 15 },
 });
 
 export default FillBlankQuestion;

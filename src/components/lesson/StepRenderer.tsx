@@ -5,7 +5,7 @@ import LevelBlockRenderer from './LevelBlockRenderer';
 
 interface StepRendererProps {
   step: LevelStep;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
 }
 
 export default function StepRenderer({ step, onQuestionAnswer }: StepRendererProps) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, StatusBar } from 'react-native';
+import { View, StyleSheet, ViewStyle, StatusBar, StatusBarStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ScreenProps {
@@ -7,6 +7,7 @@ interface ScreenProps {
   style?: ViewStyle;
   backgroundColor?: string;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  statusBarStyle?: StatusBarStyle;
 }
 
 const Screen: React.FC<ScreenProps> = ({
@@ -14,10 +15,11 @@ const Screen: React.FC<ScreenProps> = ({
   style,
   backgroundColor = '#F5F0E8',
   edges = ['top', 'left', 'right'],
+  statusBarStyle = 'dark-content',
 }) => {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor }]} edges={edges}>
-      <StatusBar barStyle="dark-content" backgroundColor={backgroundColor} />
+      <StatusBar barStyle={statusBarStyle} backgroundColor={backgroundColor} />
       <View style={[styles.content, style]}>{children}</View>
     </SafeAreaView>
   );

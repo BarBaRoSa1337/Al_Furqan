@@ -15,7 +15,7 @@ import LevelQuestionBlock from './LevelQuestionBlock';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
 }
 
 const DEFAULT_TRANSLATION_LOCALE = 'en';
@@ -75,7 +75,13 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
 
   return (
     <Card variant="tafsir">
-      <TouchableOpacity onPress={() => setExpanded(value => !value)} activeOpacity={0.8}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Toggle tafsir"
+        accessibilityState={{ expanded }}
+        onPress={() => setExpanded(value => !value)}
+        activeOpacity={0.8}
+      >
         <View style={styles.tafsirHeader}>
           <Text style={styles.tafsirLabel}>Tafsir</Text>
           <Text style={styles.toggle}>{expanded ? '▲' : '▼'}</Text>

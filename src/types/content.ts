@@ -11,7 +11,6 @@ export interface ContentSource {
   publisher?: string;
   version: string;
   language: string;
-  reviewed?: boolean;
   reviewerStatus: ReviewerStatus;
   reviewerName?: string;
   reviewDate?: string;
@@ -21,27 +20,13 @@ export interface ContentSource {
 
 // ─── Core Quran Content ────────────────────────────────────────────────────
 
-export interface QuranText {
-  arabic: string;
-  transliteration?: string;
-  translation: string;
-  arabicSourceId: string;
-  translationSourceId: string;
-}
-
-export interface TafsirContent {
-  text: string;
-  sourceId: string;
-  explanation?: string;
-  context?: string;
-}
-
 export interface WordMeaning {
   arabic: string;
   transliteration: string;
   meaning: string;
   root?: string;
   sourceId: string;
+  reviewerStatus: ReviewerStatus;
 }
 
 export interface AyahRef {
@@ -181,23 +166,47 @@ export interface WordExplorerBlock {
   ayahRefs: AyahRef[];
 }
 
-export interface QuestionBlock {
+interface QuestionBlockBase {
   id: string;
   type: 'question';
   question: string;
-  questionType: 'multiple-choice' | 'true-false' | 'fill-blank' | 'match';
-  options?: string[];
-  blankText?: string;
-  matchPairs?: Array<{
-    id: string;
-    arabic: string;
-    meaning: string;
-  }>;
-  correctAnswer: string | number;
   explanation?: string;
   sourceIds: string[];
   reviewerStatus: ReviewerStatus;
 }
+
+export interface MultipleChoiceQuestionBlock extends QuestionBlockBase {
+  questionType: 'multiple-choice';
+  options: string[];
+  correctAnswer: number;
+}
+
+export interface TrueFalseQuestionBlock extends QuestionBlockBase {
+  questionType: 'true-false';
+  correctAnswer: 0 | 1;
+}
+
+export interface FillBlankQuestionBlock extends QuestionBlockBase {
+  questionType: 'fill-blank';
+  blankText: string;
+  correctAnswer: string;
+  caseSensitive?: boolean;
+}
+
+export interface MatchQuestionBlock extends QuestionBlockBase {
+  questionType: 'match';
+  matchPairs: Array<{
+    id: string;
+    arabic: string;
+    meaning: string;
+  }>;
+}
+
+export type QuestionBlock =
+  | MultipleChoiceQuestionBlock
+  | TrueFalseQuestionBlock
+  | FillBlankQuestionBlock
+  | MatchQuestionBlock;
 
 export interface SummaryLevelBlock {
   id: string;
@@ -208,140 +217,6 @@ export interface SummaryLevelBlock {
   reviewerStatus: ReviewerStatus;
 }
 
-// ─── Lesson Block Types ────────────────────────────────────────────────────
-
-export type LessonBlockType =
-  | 'ayah'
-  | 'tafsir'
-  | 'word-meaning'
-  | 'story'
-  | 'quiz'
-  | 'reflection'
-  | 'image'
-  | 'audio'
-  | 'summary';
-
-export interface LessonBlock {
-  id: string;
-  type: LessonBlockType;
-  content: unknown;
-  metadata?: Record<string, unknown>;
-}
-
-export interface AyahLessonBlock extends LessonBlock {
-  type: 'ayah';
-  content: {
-    quranText: QuranText;
-    wordBreakdown?: WordMeaning[];
-    audioUrl?: string;
-    imageUrls?: string[];
-  };
-}
-
-export interface TafsirLessonBlock extends LessonBlock {
-  type: 'tafsir';
-  content: {
-    tafsir: TafsirContent;
-    relatedAyahs?: string[];
-  };
-}
-
-export interface WordMeaningLessonBlock extends LessonBlock {
-  type: 'word-meaning';
-  content: {
-    words: WordMeaning[];
-    focusWordIndex?: number;
-  };
-}
-
-export interface StoryLessonBlock extends LessonBlock {
-  type: 'story';
-  content: {
-    title: string;
-    description: string;
-    imageUrl?: string;
-  };
-}
-
-export interface QuizLessonBlock extends LessonBlock {
-  type: 'quiz';
-  content: {
-    question: string;
-    type: 'multiple-choice' | 'true-false' | 'fill-blank' | 'match';
-    options?: string[];
-    correctAnswer: string | number;
-    explanation?: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-  };
-}
-
-export interface ImageLessonBlock extends LessonBlock {
-  type: 'image';
-  content: {
-    url: string;
-    caption?: string;
-    altText?: string;
-  };
-}
-
-export interface AudioLessonBlock extends LessonBlock {
-  type: 'audio';
-  content: {
-    url: string;
-    title?: string;
-    duration?: number;
-  };
-}
-
-export interface SummaryLessonBlock extends LessonBlock {
-  type: 'summary';
-  content: {
-    title: string;
-    points: string[];
-    arabicText?: string;
-  };
-}
-
-export interface ReflectionLessonBlock extends LessonBlock {
-  type: 'reflection';
-  content: {
-    prompt: string;
-    hint?: string;
-  };
-}
-
-// ─── Lesson ────────────────────────────────────────────────────────────────
-
-export interface Lesson {
-  id: string;
-  packageId: string;
-  title: string;
-  description?: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  durationMinutes?: number;
-  blocks: LessonBlock[];
-  prerequisites?: string[];
-  tags?: string[];
-  metadata?: {
-    ayahNumber?: number;
-    surahName?: string;
-    surahNumber?: number;
-    juzNumber?: number;
-    hizbNumber?: number;
-    isIntro?: boolean;
-    isFinalReview?: boolean;
-    sourceMetadata?: {
-      quranTextSourceId: string;
-      translationSourceId: string;
-      tafsirSourceId?: string;
-      wordMeaningSourceId?: string;
-      reviewerStatus: ReviewerStatus;
-      reviewerName?: string;
-      notes?: string;
-    };
-  };
-}
-
 // ─── Package ───────────────────────────────────────────────────────────────
 
 export interface ContentPackage {
@@ -350,20 +225,18 @@ export interface ContentPackage {
   title: string;
   description: string;
   type: 'surah' | 'juz' | 'topic' | 'course';
-  /** Temporary compatibility projection. New packages may omit this. */
-  lessons?: Lesson[];
   sources: ContentSource[];
-  surahs?: SurahRecord[];
-  ayat?: AyahRecord[];
-  learningPaths?: LearningPath[];
-  levels?: Level[];
+  surahs: SurahRecord[];
+  ayat: AyahRecord[];
+  learningPaths: LearningPath[];
+  levels: Level[];
   assets?: {
     images?: string[];
     audio?: string[];
     videos?: string[];
   };
   metadata: {
-    totalLessons: number;
+    totalLevels: number;
     totalDuration?: number;
     language: string;
     targetAudience: 'children' | 'teens' | 'adults' | 'family';
@@ -374,14 +247,12 @@ export interface ContentPackage {
 
 export interface ContentRepository {
   packages: ContentPackage[];
-  lessons: Lesson[];
   sources: ContentSource[];
   surahs: SurahRecord[];
   ayat: AyahRecord[];
   learningPaths: LearningPath[];
   levels: Level[];
   getPackageById(id: string): ContentPackage | undefined;
-  getLessonById(id: string): Lesson | undefined;
   getSourceById(id: string): ContentSource | undefined;
   getSurahById(id: string): SurahRecord | undefined;
   getLevelById(id: string): Level | undefined;
@@ -392,28 +263,4 @@ export interface ContentRepository {
   getCurrentLearningPath(): LearningPath | undefined;
   getLevelsForLearningPath(pathId: string, sort?: RoadmapSort): Level[];
   getSurahs(sort?: RoadmapSort): SurahRecord[];
-}
-
-// ─── Progress (legacy shape used in storage.ts) ───────────────────────────
-
-export interface LessonProgress {
-  lessonId: string;
-  packageId: string;
-  completed: boolean;
-  startedAt: Date;
-  completedAt?: Date;
-  score?: number;
-  attempts?: number;
-  currentBlockIndex?: number;
-  blockProgress?: Record<string, unknown>;
-}
-
-export interface PackageProgress {
-  packageId: string;
-  totalLessons: number;
-  completedLessons: number;
-  overallProgress: number;
-  lessons: LessonProgress[];
-  startedAt: Date;
-  completedAt?: Date;
 }

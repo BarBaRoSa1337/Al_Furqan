@@ -1,161 +1,173 @@
-# Implementation Tasks
+# Implementation Tasks — Next Foundation Milestone
 
-## Phase 0 - Repo Setup
+## Phase 0 — Inventory and baseline
 
-- Confirm Expo app runs.
-- Confirm TypeScript works.
-- Confirm Expo Router works.
-- Add folder structure.
-- Add base theme tokens.
-- Add Arabic font support if available.
-- Add RTL layout handling.
+- Read all project docs.
+- Inspect current types, repositories, package validator, progress storage, level session controller, activity/question renderers, asset system, and tests.
+- Confirm T1–T15 behavior remains active.
+- Run the existing validation suite before changes.
+- Record the baseline results.
 
-## Phase 1 - Types
+Do not redesign UI in this milestone.
 
-Create:
+## Phase 1 — Hafs edition and canonical positions
 
-- `src/types/content.ts`
-- `src/types/quiz.ts`
-- `src/types/progress.ts`
+Add or adapt:
 
-Define:
-- ContentSource
-- SurahRecord
-- AyahRecord
-- TranslationEntry
-- TafsirEntry
-- LearningPath
-- Level
-- LevelStep
-- LevelBlock
-- QuizQuestion
-- ProgressState
+- `QuranEdition`;
+- `QuranEditionId = 'hafs-an-asim'`;
+- `QuranPosition`;
+- `QuranRange`;
+- edition-aware `AyahRecord`;
+- edition-aware `WordToken`;
+- source version/checksum metadata.
 
-## Phase 2 - Content Repository
+Migrate the Al-Fil fixture to explicit Hafs references without duplicating Arabic text in levels.
 
-Create:
+## Phase 2 — Juz/Hizb/Rub indexing
 
-- `src/lib/content/repository.ts`
-- `src/lib/content/packageValidator.ts`
-- `src/lib/content/legacyAdapter.ts`
+Add:
 
-Functions:
-- getCurrentLearningPath()
-- getSurahById(id)
-- getLevelById(id)
-- getAyahByRef(ref)
-- getAyatByRefs(refs)
-- getNextLevel(id)
-- validatePackage(package)
+- `QuranDivisionKind`;
+- `QuranDivision`;
+- division index repository;
+- query methods by Juz/Hizb;
+- validation for ranges and references.
 
-## Phase 3 - Surah Al-Fil Package
+Do not import or invent a full dataset without a verified source.
 
-Create:
+Use verified existing data or a minimal source-backed fixture and document the limitation.
 
-- `src/content/packages/al-fil.v1.ts`
+## Phase 3 — Memorization activity model
 
-Include:
-- package metadata
-- source metadata
-- intro concept
-- 5 ayah concepts
-- final review concept
+Add the shared `LearningActivity` schema and pure evaluator contract.
 
-Content starts as canonical Surah/Ayah records plus LearningPath/Level curriculum. Quran/translation/tafsir fields must be source-attributed and review-marked.
+Implement learner-facing support for:
 
-## Phase 4 - Progress Store
+1. recall then reveal;
+2. complete missing token;
+3. order tokens/segments;
+4. match word meaning.
 
-Create:
+Add schema/evaluator support for:
 
-- `src/lib/progress/progressStore.ts`
+- choose continuation;
+- type missing text;
+- order ayat.
 
-Functions:
-- getProgress()
-- markStepComplete(levelId, stepId)
-- markLevelCompleted(levelId, pathId)
-- addXp(amount)
-- updateStreak()
-- resetProgress()
+Keep typed input optional/non-blocking in the first vertical slice.
 
-Use AsyncStorage or local equivalent.
+## Phase 4 — Activity integration
 
-## Phase 5 - Roadmap
+- Integrate activities into Level -> Step rendering.
+- Reuse the active level session controller.
+- Persist attempts through the existing atomic progress store.
+- Keep XP/completion idempotent.
+- Validate that required activities test taught knowledge.
+- Add accessibility labels and non-drag controls.
 
-Create:
+## Phase 5 — Audio resource foundation
 
-- `src/app/roadmap.tsx`
-- `src/components/roadmap/RoadmapNode.tsx`
+Add:
 
-Show:
-- Surah title
-- progress bar
-- nodes for levels
-- locked/unlocked/completed states
+- `Reciter`;
+- `RecitationTrack`;
+- edition compatibility;
+- source/license records;
+- checksum;
+- local/remote asset resolver;
+- repeat-ready player interface.
 
-## Phase 6 - Lesson Player
+If a working audio block already exists, adapt it. Otherwise implement a safe placeholder/player contract without fetching unapproved media.
 
-Create:
+## Phase 6 — Offline package manager foundation
 
-- `src/app/lesson/[levelId].tsx`
-- `src/components/lesson/StepRenderer.tsx`
-- `src/components/lesson/LevelBlockRenderer.tsx`
-- `src/components/lesson/LevelQuestionBlock.tsx`
+Add:
 
-Support:
-- step navigation
-- next button
-- required quiz step
-- completion gate
-- progress saving
+- manifest runtime schema;
+- installed-package registry;
+- staging directory abstraction;
+- checksum verification;
+- package validation;
+- atomic activation;
+- rollback;
+- cleanup of failed staging data.
 
-## Phase 7 - Blocks
+Test with a local fixture or mocked downloader. No real backend endpoint is required.
 
-Create block components:
+## Phase 7 — Studio-ready compiler contract
 
-- QuranAyahBlock
-- TranslationBlock
-- WordExplorerBlock
-- TafsirCardBlock
-- StoryCardBlock
-- ImageBlock
-- AudioBlock placeholder
-- QuestionBlock
-- SummaryBlock
+Add:
 
-## Phase 8 - Quiz
+- role and publication-state types;
+- publishable draft schema;
+- machine-readable validation diagnostics;
+- deterministic package compiler/export;
+- stable file ordering/content hash;
+- local Al-Fil fixture compile test.
 
-Create:
+Compiled output must be accepted by the same validator used by mobile.
 
-- `src/lib/quiz/quizEngine.ts`
-- `src/components/quiz/MultipleChoiceQuestion.tsx`
-- `src/components/quiz/FillBlankQuestion.tsx`
-- `src/components/quiz/MatchQuestion.tsx`
+Do not build a Studio UI or backend.
 
-Support:
-- answer selection
-- check answer
-- correct/incorrect feedback
-- score returned to progress
+## Phase 8 — Update the Al-Fil vertical slice
 
-## Phase 9 - Completion
+Update one complete level to include:
 
-Create:
+```text
+optional context
+-> Hafs Quran passage
+-> translation
+-> word explorer
+-> concise tafsir
+-> guided recall
+-> missing-token or ordering activity
+-> word-meaning/understanding activity
+-> reviewed summary
+-> completion
+```
 
-- `src/app/complete/[levelId].tsx`
+Keep the remaining levels working. Expand them only after the vertical slice passes.
 
-Show:
-- completed level
-- XP gained
-- streak
-- next level button
-- return to roadmap button
+## Phase 9 — Tests and release gates
 
-## Phase 10 - Polish
+Add or update tests for:
 
-- Improve spacing.
-- Improve Arabic rendering.
-- Add safe placeholder illustrations.
-- Add loading states.
-- Add error boundaries.
-- Add empty states.
-- Add package validation warnings.
+- Hafs edition resolution;
+- Surah/Juz/Hizb queries;
+- invalid division ranges;
+- activity evaluators;
+- independent matching/order randomization;
+- typed-answer normalization;
+- attempt persistence and resume;
+- package checksum failure;
+- incomplete package rejection;
+- atomic activation and rollback;
+- progress preservation;
+- deterministic compilation;
+- production rejection of non-approved or incompatible content;
+- accessibility smoke tests.
+
+Run:
+
+- format check;
+- lint;
+- typecheck;
+- focused tests;
+- full tests;
+- content validation;
+- production build.
+
+Use the repository's current package manager and command names.
+
+## Required completion report
+
+Report:
+
+1. files changed;
+2. type/schema migrations;
+3. storage/package migrations;
+4. compatibility strategy;
+5. tests and commands run;
+6. unresolved source/data limitations;
+7. deferred Studio/backend/audio work.

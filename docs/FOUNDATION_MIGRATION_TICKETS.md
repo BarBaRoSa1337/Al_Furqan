@@ -1,41 +1,174 @@
 # Foundation Migration Tickets
 
-## T1 Progress naming/storage
-Status: done.
-Scope: app progress writes `completedLevelIds`, `completedLearningPathIds`, `currentLevelId`; level/path records use `qlp_level_*` and `qlp_path_*`.
-Compat: old `completedLessonIds`, `completedPackageIds`, `currentLessonId`, `qlp_lesson_*`, and `qlp_package_*` are read for migration only.
+## Completed foundation
 
-## T2 Native level questions
-Status: done.
-Scope: `question` level blocks render via `LevelQuestionBlock`, using quiz widgets directly.
-Compat: legacy `QuizLessonBlock` remains only for old `BlockRenderer` callers.
+T1–T15 are complete and must remain working:
 
-## T3 Remove unused legacy components
-Status: done.
-Scope: deleted old `LessonRenderer` and unused `components/roadmap/RoadmapScreen`.
-Compat: active routes keep their existing visual structure.
+- progress naming/storage migration;
+- native level questions;
+- legacy renderer removal;
+- direct level flow;
+- source validation;
+- resumable level progress;
+- question attempts;
+- canonical block rendering;
+- completion/validator hardening;
+- test foundation;
+- atomic Progress V2;
+- production content gate;
+- level session controller;
+- legacy model removal;
+- SDK/mobile quality.
 
-## T4 Direct level flow
-Status: done.
-Scope: roadmap, lesson, and completion routes read `LearningPath` and `Level` directly.
-Compat: temporary content adapter remains for legacy package fields and non-question block rendering.
+Refer to repository history for the full completed-ticket detail.
 
-## T5 Source validation
-Status: done.
-Scope: package validator checks source references from surah metadata, ayat, tafsir, translations, learning paths, and level blocks.
-Compat: draft review states warn; missing source IDs fail validation.
+## T16 — Hafs edition identity and canonical positions
 
-## T6 Resumable level progress
-Status: done.
-Scope: entering a level creates/resumes `LevelProgress`; completing a step saves its ID and the next current step ID; path progress mirrors stored levels.
-Compat: legacy completed lesson records still migrate into read-only level progress.
+Status: planned.
 
-## T7 Question attempts
-Status: done.
-Scope: every submitted native quiz answer is stored in `LevelProgress.questionAttempts` with answer, result, and timestamp.
-Compat: no XP, analytics, or retry policy is introduced yet.
+Scope:
 
-## T8 Native canonical block rendering
-Status: done.
-Scope: `LevelBlockRenderer` renders canonical ayah, tafsir, context, word explorer, question, and summary blocks directly from repository records.
-Compat: `BlockRenderer` remains isolated for legacy package consumers; active level flow no longer imports it.
+- add explicit `hafs-an-asim` edition;
+- edition-aware ayat and word tokens;
+- Quran position/range types;
+- source version/checksum metadata;
+- migrate Al-Fil package references.
+
+Compatibility:
+
+- preserve existing stable ayah and level IDs where possible;
+- add repository adapters rather than changing routes.
+
+## T17 — Juz/Hizb/Rub indexes
+
+Status: planned.
+
+Scope:
+
+- division records and indexes;
+- queries by division;
+- source-backed minimal fixture or verified dataset integration;
+- validation of ranges and references.
+
+Compatibility:
+
+- Surah roadmap remains primary;
+- no UI redesign required.
+
+## T18 — Memorization activity domain
+
+Status: planned.
+
+Scope:
+
+- shared activity schema;
+- stable token/segment answer references;
+- knowledge references;
+- review/source metadata;
+- pure evaluators.
+
+Compatibility:
+
+- existing native questions remain readable or are adapted through one activity boundary;
+- no duplicate competing engines.
+
+## T19 — Memorization activity UI and persistence
+
+Status: planned.
+
+Scope:
+
+- recall/reveal;
+- missing token;
+- token/segment ordering;
+- word-meaning matching;
+- optional typed missing text;
+- attempt persistence through Progress V2.
+
+Compatibility:
+
+- retain idempotent XP and existing completion receipts.
+
+## T20 — Audio resource foundation
+
+Status: planned.
+
+Scope:
+
+- reciter/track records;
+- Hafs compatibility;
+- source/license/checksum;
+- local/remote resolution;
+- repeat-ready player contract.
+
+Compatibility:
+
+- no unapproved audio fetch;
+- lesson remains usable without optional audio unless explicitly marked required.
+
+## T21 — Offline package manifest and installer
+
+Status: planned.
+
+Scope:
+
+- manifest schema;
+- staging;
+- checksums;
+- validation;
+- atomic activation;
+- rollback;
+- installed registry;
+- fixture downloader tests.
+
+Compatibility:
+
+- built-in and downloaded packages share repository APIs;
+- progress remains separate.
+
+## T22 — Studio publishing contract
+
+Status: planned.
+
+Scope:
+
+- roles;
+- publication states;
+- publishable schemas;
+- structured diagnostics;
+- deterministic compiler/export.
+
+Compatibility:
+
+- no Studio UI/backend;
+- compiler output matches mobile package schema.
+
+## T23 — Al-Fil production-shaped vertical slice
+
+Status: planned.
+
+Scope:
+
+- explicit Hafs edition;
+- division discoverability;
+- guided memorization;
+- memory activity;
+- understanding activity;
+- reviewed summary;
+- package/export fixture.
+
+Compatibility:
+
+- preserve current roadmap and level access behavior.
+
+## T24 — Release hardening
+
+Status: planned.
+
+Scope:
+
+- migration tests;
+- activity security/correctness tests;
+- package failure/rollback tests;
+- production content/edition gates;
+- accessibility and build validation.

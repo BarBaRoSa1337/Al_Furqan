@@ -1,138 +1,149 @@
-# Quran Habit App - Agent Instructions
+# Quran Habit App — Agent Instructions
 
-You are coding a mobile-first Quran learning MVP for adults, teens, and families.
+## Read first
 
-The app helps users build a daily Quran habit through:
-- ayah-by-ayah learning
-- memorization support
-- word meanings
-- short tafsir cards
-- story/context cards
-- interactive quizzes
-- streaks, XP, and progress
+Before editing code, read:
 
-This is NOT a generic quiz app.
-This is a trusted Islamic learning product.
+1. `docs/PRODUCT_BRIEF.md`
+2. `docs/MVP_SCOPE.md`
+3. `docs/ARCHITECTURE_OVERVIEW.md`
+4. `docs/QURAN_EDITION_AND_DIVISIONS.md`
+5. `docs/MEMORIZATION_ACTIVITIES.md`
+6. `docs/OFFLINE_CONTENT_PACKAGES.md`
+7. `docs/STUDIO_PUBLISHING.md`
+8. `docs/CONTENT_GOVERNANCE.md`
+9. `docs/FOUNDATION_MIGRATION_TICKETS.md`
+10. `docs/IMPLEMENTATION_TASKS.md`
 
-## Product Positioning
+Inspect the repository before proposing new folders or replacing working architecture.
 
-A gamified Quran companion for Muslims aged 12+ and families.  
-The app helps users memorize, understand, and reflect on Quran daily through short guided sessions.
+## Product
 
-## MVP Scope
+Build a calm, trusted, mobile-first Quran learning application for Muslims aged 12+, adults, and families.
 
-Build the foundation using only Surah Al-Fil, 5 ayat.
+The product helps learners:
 
-MVP includes:
-- roadmap screen
-- Surah Al-Fil intro
-- 5 ayah lessons
-- word explorer
-- tafsir/context cards
-- basic quiz types
-- local progress
-- XP/streak placeholder
-- completion screen
+- build a daily Quran habit;
+- memorize short passages;
+- understand translations and selected words;
+- learn concise, source-backed tafsir and context;
+- practice with active-recall exercises;
+- continue offline.
 
-Do NOT build:
-- authentication
-- backend
-- payment
-- AI-generated tafsir
-- voice recognition
-- full Quran
-- parent dashboard
-- complex social/gamification features
-- dynamic content CMS
+The MVP uses **Hafs ʿan ʿAsim** only.
 
-## Technical Direction
+## Current architecture
 
-Use:
-- Expo
-- React Native
-- TypeScript
-- Expo Router
-- local JSON/TypeScript content packages
-- AsyncStorage or local storage for progress
-- component-driven architecture
+The active learning hierarchy is:
 
-Prefer:
-- schema-first content
-- reusable lesson renderer
-- content repository pattern
-- no hardcoded lesson UI
-- no Quran text inside React components
+```text
+Roadmap -> Surah -> Level -> Step -> Block
+```
 
-## Architecture Rule
+The domain is divided into:
 
-The UI never owns Quran content.
+1. canonical Quran content;
+2. learning curriculum;
+3. media and recitation resources;
+4. downloadable content packages;
+5. learner progress and attempts;
+6. a future Studio publishing contract.
 
-The UI only renders trusted, versioned, reviewed content packages.
+Existing foundation tickets T1–T15 are complete. Preserve the working roadmap, level session controller, canonical block renderer, content validator, progress migration, and test foundation.
 
-## Religious Content Rules
+## Hard rules
 
-Never invent Quran text, tafsir, or religious claims.
+- Expo + React Native + strict TypeScript.
+- Arabic Quran text is canonical data, never UI copy.
+- Do not hardcode lessons in route or component files.
+- Do not let `SurahRecord` own levels.
+- Levels reference canonical ayat.
+- Juz, hizb, and rubʿ are range/index records, not fields guessed from a surah.
+- Hafs text, word tokens, audio, and memorization data must be edition-compatible.
+- Translation, tafsir, context, word meanings, summaries, and questions require source IDs and review state.
+- Draft or merely reviewed religious content must not ship in production.
+- Canonical Quran text must not be editable by a future Studio.
+- Interactive behavior must come from approved schemas and evaluators, never arbitrary executable lesson code.
+- Content package activation must be validated and atomic.
+- Learner progress must remain separate from downloadable content packages.
+- Use the repository's existing package manager and scripts.
+- Add dependencies only when necessary and explain why.
 
-All Quranic content must include source metadata:
-- Quran Arabic source
-- translation source
-- tafsir source
-- reviewer status
+## UX sequence
 
-Child/family-friendly explanations must be derived from trusted tafsir and marked as draft until reviewed.
+A normal new-learning level should support this authored order:
 
-Do not depict:
-- Allah
-- prophets
-- angels
-- unseen matters
-- sacred events in a disrespectful way
+```text
+optional orientation
+-> listen/read Quran
+-> translation when needed
+-> selected word meanings
+-> concise tafsir
+-> guided memorization
+-> memory exercise
+-> one or two understanding exercises
+-> reviewed wisdom/summary
+-> completion
+```
 
-Use respectful Islamic wording.
+Array order is the sequencing mechanism. Do not create a complex sequencing engine.
 
-## Coding Rules
+## Memorization-first scope
 
-- Use TypeScript strictly.
-- Create small reusable components.
-- Keep business logic out of screens.
-- Keep content in `src/content`.
-- Keep progress logic in `src/lib/progress`.
-- Keep rendering logic in `src/components/lesson`.
-- Do not hardcode Surah Al-Fil directly in route files.
-- Add graceful fallbacks for missing images/audio.
-- Audio should be supported in schema but can be placeholder in MVP.
+Prioritize these reusable activities:
 
-## Initial Folder Structure
+- recall then reveal;
+- complete a missing token;
+- order words or short segments;
+- choose the correct continuation;
+- match Arabic words to meanings;
+- type missing text with an explicit comparison policy;
+- order short ayat in a review level.
 
-src/
-  app/
-  components/
-    lesson/
-    roadmap/
-    quiz/
-    ui/
-  content/
-    packages/
-    sources/
-    assets/
-  lib/
-    content/
-    progress/
-    quiz/
-    i18n/
-  types/
+Questions must reference knowledge taught earlier in the level.
 
-docs/
-  PRODUCT_BRIEF.md
-  ARCHITECTURE_OVERVIEW.md
-  CONTENT_GOVERNANCE.md
-  MVP_SCOPE.md
-  IMPLEMENTATION_TASKS.md
+## Offline and Studio direction
 
-## First Goal
+The mobile app consumes immutable, versioned, validated packages.
 
-Build one complete vertical slice:
+The future flow is:
 
-Roadmap -> Surah Al-Fil Intro -> Ayah 1 Lesson -> Quiz -> Completion -> Progress saved locally.
+```text
+Studio draft
+-> editorial review
+-> shaykh review
+-> technical validation
+-> immutable package
+-> storage/CDN
+-> mobile download
+-> staged validation
+-> atomic activation
+```
 
-After that, duplicate the pattern for Ayat 2-5.
+Do not build the complete Studio or backend in the current milestone. Build the shared package contract, validators, and export boundary first.
+
+## Current milestone non-goals
+
+Do not add:
+
+- Warsh support or an edition switcher;
+- full-Quran import without a verified source and explicit task;
+- voice recognition;
+- AI-generated religious explanations;
+- adaptive SRS;
+- leaderboards;
+- social features;
+- subscriptions;
+- a complete Studio web application;
+- unrelated UI redesign.
+
+## Completion report
+
+After implementation, report:
+
+1. files changed;
+2. migrations introduced;
+3. backward-compatibility behavior;
+4. tests and validation run;
+5. known risks;
+6. deferred work.

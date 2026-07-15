@@ -13,6 +13,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
 }
 
 const VARIANT_STYLES: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
@@ -38,12 +39,16 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
   textStyle,
+  accessibilityLabel,
 }) => {
   const v = VARIANT_STYLES[variant];
   const s = SIZE_STYLES[size];
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
@@ -55,7 +60,7 @@ const Button: React.FC<ButtonProps> = ({
           borderRadius: s.radius,
           borderWidth: v.border ? 1.5 : 0,
           borderColor: v.border ?? 'transparent',
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled || loading ? 0.5 : 1,
         },
         style,
       ]}

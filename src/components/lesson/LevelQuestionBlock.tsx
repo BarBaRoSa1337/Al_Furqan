@@ -7,7 +7,7 @@ import MatchQuestion from '../quiz/MatchQuestion';
 
 interface LevelQuestionBlockProps {
   block: QuestionBlock;
-  onAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void;
+  onAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
 }
 
 export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlockProps) {
@@ -17,7 +17,22 @@ export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlo
         <Text style={styles.badge}>Quiz</Text>
         <MultipleChoiceQuestion
           question={block.question}
-          options={(block.options ?? []).map((text, index) => ({ id: String(index), text }))}
+          options={block.options.map((text, index) => ({ id: String(index), text }))}
+          correctOptionId={String(block.correctAnswer)}
+          explanation={block.explanation}
+          onResult={(correct, selectedAnswer) => onAnswer?.(block.id, selectedAnswer, correct)}
+        />
+      </View>
+    );
+  }
+
+  if (block.questionType === 'true-false') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.badge}>Quiz</Text>
+        <MultipleChoiceQuestion
+          question={block.question}
+          options={['True', 'False'].map((text, index) => ({ id: String(index), text }))}
           correctOptionId={String(block.correctAnswer)}
           explanation={block.explanation}
           onResult={(correct, selectedAnswer) => onAnswer?.(block.id, selectedAnswer, correct)}
@@ -32,8 +47,9 @@ export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlo
         <Text style={styles.badge}>Quiz</Text>
         <FillBlankQuestion
           question={block.question}
-          blankText={block.question}
+          blankText={block.blankText ?? block.question}
           correctAnswer={String(block.correctAnswer)}
+          caseSensitive={block.caseSensitive}
           explanation={block.explanation}
           onResult={(correct, selectedAnswer) => onAnswer?.(block.id, selectedAnswer, correct)}
         />
@@ -47,19 +63,14 @@ export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlo
         <Text style={styles.badge}>Quiz</Text>
         <MatchQuestion
           question={block.question}
-          pairs={[]}
+          pairs={block.matchPairs ?? []}
           onResult={(correct, score) => onAnswer?.(block.id, score, correct)}
         />
       </View>
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.badge}>Quiz</Text>
-      <Text style={styles.unsupported}>Question type not supported yet.</Text>
-    </View>
-  );
+  return null;
 }
 
 const styles = StyleSheet.create({

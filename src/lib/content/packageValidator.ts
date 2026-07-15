@@ -1,6 +1,13 @@
-// Package Validator — validates content package structure
+import {
+  AyahRecord,
+  AyahRef,
+  ContentPackage,
+  Level,
+  ReviewerStatus,
+  SurahRecord,
+} from '../../types/content';
 
-import { AyahRecord, ContentPackage, Lesson, LessonBlock, Level, SurahRecord } from '../../types/content';
+export type ValidationMode = 'development' | 'production';
 
 export interface ValidationResult {
   valid: boolean;
@@ -8,311 +15,211 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-export function validatePackage(pkg: ContentPackage): ValidationResult {
+export function validatePackage(
+  pkg: ContentPackage,
+  options: { mode?: ValidationMode } = {}
+): ValidationResult {
+  const mode = options.mode ?? 'development';
   const errors: string[] = [];
   const warnings: string[] = [];
 
   if (!pkg.id) errors.push('Package missing id');
   if (!pkg.version) errors.push('Package missing version');
   if (!pkg.title) errors.push('Package missing title');
-  if (!pkg.sources || pkg.sources.length === 0) errors.push('Package has no sources defined');
-  if (!pkg.surahs || pkg.surahs.length === 0) errors.push('Package has no canonical surahs');
-  if (!pkg.ayat || pkg.ayat.length === 0) errors.push('Package has no canonical ayat');
-  if (!pkg.learningPaths || pkg.learningPaths.length === 0) errors.push('Package has no learning paths');
-  if (!pkg.levels || pkg.levels.length === 0) errors.push('Package has no levels');
-
-  if (pkg.lessons && pkg.metadata.totalLessons !== pkg.lessons.length) {
-    warnings.push(
-      `metadata.totalLessons (${pkg.metadata.totalLessons}) does not match actual lesson count (${pkg.lessons.length})`
-    );
+  if (pkg.sources.length === 0) errors.push('Package has no sources');
+  if (pkg.surahs.length === 0) errors.push('Package has no canonical surahs');
+  if (pkg.ayat.length === 0) errors.push('Package has no canonical ayat');
+  if (pkg.learningPaths.length === 0) errors.push('Package has no learning paths');
+  if (pkg.levels.length === 0) errors.push('Package has no levels');
+  if (pkg.metadata.totalLevels !== pkg.levels.length) {
+    errors.push(`metadata.totalLevels (${pkg.metadata.totalLevels}) does not match level count (${pkg.levels.length})`);
   }
 
-  pkg.lessons?.forEach(lesson => {
-    const lessonResult = validateLesson(lesson, pkg.id);
-    errors.push(...lessonResult.errors);
-    warnings.push(...lessonResult.warnings);
-  });
+  validateUniqueIds('source', pkg.sources.map(source => source.id), errors);
+  validateUniqueIds('surah', pkg.surahs.map(surah => surah.id), errors);
+  validateUniqueIds('ayah', pkg.ayat.map(ayah => ayah.id), errors);
+  validateUniqueIds('ayah ref', pkg.ayat.map(ayah => refKey(ayah.ref)), errors);
+  validateUniqueIds('learning path', pkg.learningPaths.map(path => path.id), errors);
+  validateUniqueIds('level', pkg.levels.map(level => level.id), errors);
 
-  pkg.surahs?.forEach(surah => {
-    const surahResult = validateSurah(surah, pkg);
-    errors.push(...surahResult.errors);
-    warnings.push(...surahResult.warnings);
-  });
-
-  pkg.ayat?.forEach(ayah => {
-    const ayahResult = validateAyahRecord(ayah, pkg);
-    errors.push(...ayahResult.errors);
-    warnings.push(...ayahResult.warnings);
-  });
-
-  validateUniqueIds('surah', pkg.surahs?.map(surah => surah.id) ?? [], errors);
-  validateUniqueIds('ayah', pkg.ayat?.map(ayah => ayah.id) ?? [], errors);
-  validateUniqueIds('learning path', pkg.learningPaths?.map(path => path.id) ?? [], errors);
-  validateUniqueIds('level', pkg.levels?.map(level => level.id) ?? [], errors);
-
-  pkg.levels?.forEach(level => {
-    const levelResult = validateLevel(level, pkg);
-    errors.push(...levelResult.errors);
-    warnings.push(...levelResult.warnings);
-  });
-
-  pkg.learningPaths?.forEach(path => {
+  pkg.sources.forEach(source => validateReviewStatus(`Source "${source.id}"`, source.reviewerStatus, mode, errors, warnings));
+  pkg.surahs.forEach(surah => validateSurah(surah, pkg, mode, errors, warnings));
+  pkg.ayat.forEach(ayah => validateAyah(ayah, pkg, mode, errors, warnings));
+  pkg.learningPaths.forEach(path => {
+    validateUniqueIds(`level in path "${path.id}"`, path.levelIds, errors);
+    validateUniqueIds(`surah in path "${path.id}"`, path.surahIds, errors);
     path.levelIds.forEach(levelId => {
-      if (!pkg.levels?.some(level => level.id === levelId)) {
-        errors.push(`LearningPath "${path.id}" references missing level "${levelId}"`);
-      }
+      const level = pkg.levels.find(candidate => candidate.id === levelId);
+      if (!level) errors.push(`LearningPath "${path.id}" references missing level "${levelId}"`);
+      if (level && level.pathId !== path.id) errors.push(`Level "${levelId}" has pathId "${level.pathId}" instead of "${path.id}"`);
     });
     path.surahIds.forEach(surahId => {
-      if (!pkg.surahs?.some(surah => surah.id === surahId)) {
-        errors.push(`LearningPath "${path.id}" references missing surah "${surahId}"`);
-      }
+      if (!pkg.surahs.some(surah => surah.id === surahId)) errors.push(`LearningPath "${path.id}" references missing surah "${surahId}"`);
     });
-    path.sourceMetadata.sourceIds.forEach(sourceId => {
-      if (!hasSource(pkg, sourceId)) {
-        errors.push(`LearningPath "${path.id}" references unknown source "${sourceId}"`);
-      }
-    });
-    path.levelIds.forEach(levelId => {
-      const level = pkg.levels?.find(candidate => candidate.id === levelId);
-      if (level && level.pathId !== path.id) {
-        errors.push(`LearningPath "${path.id}" includes level "${levelId}" with pathId "${level.pathId}"`);
-      }
-    });
+    validateSourceIds(`LearningPath "${path.id}"`, path.sourceMetadata.sourceIds, pkg, errors);
+    validateReviewStatus(`LearningPath "${path.id}"`, path.sourceMetadata.reviewerStatus, mode, errors, warnings);
   });
-
-  pkg.sources.forEach(source => {
-    if (!source.reviewerStatus) {
-      warnings.push(`Source "${source.id}" is missing reviewerStatus`);
-    }
-  });
+  pkg.levels.forEach(level => validateLevel(level, pkg, mode, errors, warnings));
 
   return { valid: errors.length === 0, errors, warnings };
 }
 
-function validateSurah(surah: SurahRecord, pkg: ContentPackage): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const prefix = `Surah "${surah.id}":`;
-
-  if (!surah.id) errors.push(`${prefix} missing id`);
-  if (!surah.surahNumber) errors.push(`${prefix} missing surahNumber`);
-  if (!surah.ayahCount) errors.push(`${prefix} missing ayahCount`);
-  if (!surah.sourceMetadata?.quranTextSourceId) {
-    errors.push(`${prefix} missing quranTextSourceId`);
-  } else if (!hasSource(pkg, surah.sourceMetadata.quranTextSourceId)) {
-    errors.push(`${prefix} quranTextSourceId references unknown source "${surah.sourceMetadata.quranTextSourceId}"`);
-  }
-  surah.sourceMetadata?.translationSourceIds.forEach(sourceId => {
-    if (!hasSource(pkg, sourceId)) errors.push(`${prefix} translationSourceIds references unknown source "${sourceId}"`);
-  });
-  surah.sourceMetadata?.tafsirSourceIds.forEach(sourceId => {
-    if (!hasSource(pkg, sourceId)) errors.push(`${prefix} tafsirSourceIds references unknown source "${sourceId}"`);
-  });
-  if (surah.sourceMetadata?.reviewerStatus !== 'approved') {
-    warnings.push(`${prefix} sourceMetadata reviewerStatus is "${surah.sourceMetadata?.reviewerStatus}"`);
-  }
-
-  return { valid: errors.length === 0, errors, warnings };
+function validateSurah(
+  surah: SurahRecord,
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[]
+): void {
+  const label = `Surah "${surah.id}"`;
+  const actualAyahCount = pkg.ayat.filter(ayah => ayah.ref.surahNumber === surah.surahNumber).length;
+  if (actualAyahCount !== surah.ayahCount) errors.push(`${label} declares ${surah.ayahCount} ayat but package contains ${actualAyahCount}`);
+  validateSourceIds(label, [
+    surah.sourceMetadata.quranTextSourceId,
+    ...surah.sourceMetadata.translationSourceIds,
+    ...surah.sourceMetadata.tafsirSourceIds,
+  ], pkg, errors);
+  validateReviewStatus(label, surah.sourceMetadata.reviewerStatus, mode, errors, warnings);
 }
 
-function validateAyahRecord(ayah: AyahRecord, pkg: ContentPackage): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const prefix = `Ayah "${ayah.id}":`;
-
-  if (!ayah.id) errors.push(`${prefix} missing id`);
-  if (!ayah.ref?.surahNumber || !ayah.ref?.ayahNumber) errors.push(`${prefix} missing ref`);
-  if (!ayah.arabicText?.text) errors.push(`${prefix} missing arabic text`);
-  if (!ayah.arabicText?.sourceId) errors.push(`${prefix} missing arabic sourceId`);
-  if (ayah.arabicText?.sourceId && !hasSource(pkg, ayah.arabicText.sourceId)) {
-    errors.push(`${prefix} arabic sourceId references unknown source "${ayah.arabicText.sourceId}"`);
-  }
-  if (!ayah.translations || ayah.translations.length === 0) {
-    errors.push(`${prefix} missing translations`);
-  }
-  ayah.translations?.forEach(translation => {
-    if (!translation.sourceId) errors.push(`${prefix} translation "${translation.id}" missing sourceId`);
-    if (translation.sourceId && !hasSource(pkg, translation.sourceId)) {
-      errors.push(`${prefix} translation "${translation.id}" references unknown source "${translation.sourceId}"`);
-    }
-    if (!translation.reviewerStatus) errors.push(`${prefix} translation "${translation.id}" missing reviewerStatus`);
+function validateAyah(
+  ayah: AyahRecord,
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[]
+): void {
+  const label = `Ayah "${ayah.id}"`;
+  if (!ayah.arabicText.text) errors.push(`${label} missing Arabic text`);
+  validateSourceIds(label, [ayah.arabicText.sourceId], pkg, errors);
+  validateReviewStatus(`${label} Arabic text`, ayah.arabicText.reviewerStatus, mode, errors, warnings);
+  if (ayah.translations.length === 0) errors.push(`${label} missing translations`);
+  validateUniqueIds(`translation in ${label}`, ayah.translations.map(entry => entry.id), errors);
+  validateUniqueIds(`tafsir in ${label}`, ayah.tafsirEntries.map(entry => entry.id), errors);
+  ayah.translations.forEach(entry => {
+    validateSourceIds(`Translation "${entry.id}"`, [entry.sourceId], pkg, errors);
+    validateReviewStatus(`Translation "${entry.id}"`, entry.reviewerStatus, mode, errors, warnings);
   });
-  ayah.tafsirEntries?.forEach(entry => {
-    if (!entry.sourceId) errors.push(`${prefix} tafsir "${entry.id}" missing sourceId`);
-    if (entry.sourceId && !hasSource(pkg, entry.sourceId)) {
-      errors.push(`${prefix} tafsir "${entry.id}" references unknown source "${entry.sourceId}"`);
-    }
-    if (!entry.reviewerStatus) errors.push(`${prefix} tafsir "${entry.id}" missing reviewerStatus`);
-    if (entry.reviewerStatus !== 'approved') {
-      warnings.push(`${prefix} tafsir "${entry.id}" reviewerStatus is "${entry.reviewerStatus}"`);
-    }
+  ayah.tafsirEntries.forEach(entry => {
+    validateSourceIds(`Tafsir "${entry.id}"`, [entry.sourceId], pkg, errors);
+    validateReviewStatus(`Tafsir "${entry.id}"`, entry.reviewerStatus, mode, errors, warnings);
   });
-
-  return { valid: errors.length === 0, errors, warnings };
+  ayah.wordMeanings?.forEach((entry, index) => {
+    const wordLabel = `${label} wordMeaning[${index}]`;
+    validateSourceIds(wordLabel, [entry.sourceId], pkg, errors);
+    validateReviewStatus(wordLabel, entry.reviewerStatus, mode, errors, warnings);
+  });
 }
 
-function validateLevel(level: Level, pkg: ContentPackage): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const prefix = `Level "${level.id}":`;
-  const ayat = pkg.ayat ?? [];
+function validateLevel(
+  level: Level,
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[]
+): void {
+  const label = `Level "${level.id}"`;
+  const path = pkg.learningPaths.find(candidate => candidate.id === level.pathId);
+  const surah = pkg.surahs.find(candidate => candidate.id === level.surahId);
+  if (!path) errors.push(`${label} references missing path "${level.pathId}"`);
+  if (path && !path.levelIds.includes(level.id)) errors.push(`${label} is absent from path "${path.id}"`);
+  if (!surah) errors.push(`${label} references missing surah "${level.surahId}"`);
+  if (path && !path.surahIds.includes(level.surahId)) errors.push(`${label} surah is absent from path "${path.id}"`);
+  if (level.durationMinutes < 5 || level.durationMinutes > 8) errors.push(`${label} duration must be 5-8 minutes`);
+  if (level.steps.length === 0) errors.push(`${label} has no steps`);
+  validateUniqueIds(`step in ${label}`, level.steps.map(step => step.id), errors);
+  validateUniqueIds(`block in ${label}`, level.steps.flatMap(step => step.blocks.map(block => block.id)), errors);
+  validateUniqueIds(`ayah ref in ${label}`, level.ayahRefs.map(refKey), errors);
+  level.ayahRefs.forEach(ref => validateAyahRef(label, ref, pkg, errors));
 
-  if (!level.id) errors.push(`${prefix} missing id`);
-  if (!level.pathId) errors.push(`${prefix} missing pathId`);
-  if (!level.surahId) errors.push(`${prefix} missing surahId`);
-  if (!level.difficulty) errors.push(`${prefix} missing difficulty`);
-  if (!level.steps || level.steps.length === 0) errors.push(`${prefix} has no steps`);
-  if (!pkg.surahs?.some(surah => surah.id === level.surahId)) {
-    errors.push(`${prefix} references missing surah "${level.surahId}"`);
-  }
-
-  level.ayahRefs.forEach(ref => {
-    if (!findAyah(ayat, ref)) {
-      errors.push(`${prefix} references missing ayah ${ref.surahNumber}:${ref.ayahNumber}`);
-    }
+  level.unlockRules?.requiresLevelIds?.forEach(requiredId => {
+    if (!path?.levelIds.includes(requiredId)) errors.push(`${label} unlock rule references level outside its path: "${requiredId}"`);
   });
 
   level.steps.forEach(step => {
-    if (!step.id) errors.push(`${prefix} has step missing id`);
-    if (!step.blocks || step.blocks.length === 0) errors.push(`${prefix} step "${step.id}" has no blocks`);
+    if (step.blocks.length === 0) errors.push(`${label} step "${step.id}" has no blocks`);
     step.blocks.forEach(block => {
-      if (!block.id) errors.push(`${prefix} step "${step.id}" has block missing id`);
-      if ((block.type === 'ayah_ref' || block.type === 'tafsir_ref') && !findAyah(ayat, block.ayahRef)) {
-        errors.push(`${prefix} block "${block.id}" references missing ayah`);
+      const blockLabel = `${label} block "${block.id}"`;
+      if (block.type === 'ayah_ref' || block.type === 'tafsir_ref') {
+        validateBlockAyahRef(blockLabel, block.ayahRef, level, pkg, errors);
       }
       if (block.type === 'tafsir_ref') {
-        const ayah = findAyah(ayat, block.ayahRef);
-        if (!ayah?.tafsirEntries.some(entry => entry.id === block.tafsirEntryId)) {
-          errors.push(`${prefix} block "${block.id}" references missing tafsir entry "${block.tafsirEntryId}"`);
-        }
+        const ayah = findAyah(pkg, block.ayahRef);
+        if (!ayah?.tafsirEntries.some(entry => entry.id === block.tafsirEntryId)) errors.push(`${blockLabel} references missing tafsir "${block.tafsirEntryId}"`);
       }
-      if (block.type === 'question') {
-        if ((block.questionType === 'multiple-choice' || block.questionType === 'true-false') && (!block.options || block.options.length < 2)) {
-          errors.push(`${prefix} question block "${block.id}" needs at least two options`);
-        }
-        if (typeof block.correctAnswer === 'number' && (!block.options || block.correctAnswer < 0 || block.correctAnswer >= block.options.length)) {
-          errors.push(`${prefix} question block "${block.id}" has an invalid correctAnswer index`);
-        }
-        if (block.questionType === 'fill-blank' && !block.blankText?.includes('___')) {
-          errors.push(`${prefix} fill-blank block "${block.id}" needs blankText containing ___`);
-        }
-        if (block.questionType === 'match' && (!block.matchPairs || block.matchPairs.length < 2)) {
-          errors.push(`${prefix} match block "${block.id}" needs at least two matchPairs`);
-        }
+      if (block.type === 'word_explorer') {
+        if (block.ayahRefs.length === 0) errors.push(`${blockLabel} has no ayah refs`);
+        block.ayahRefs.forEach(ref => validateBlockAyahRef(blockLabel, ref, level, pkg, errors));
       }
-      if ('reviewerStatus' in block && !block.reviewerStatus) {
-        errors.push(`${prefix} block "${block.id}" missing reviewerStatus`);
+      if (block.type === 'context' || block.type === 'question' || block.type === 'summary') {
+        validateSourceIds(blockLabel, block.sourceIds, pkg, errors);
+        validateReviewStatus(blockLabel, block.reviewerStatus, mode, errors, warnings);
       }
-      if ('sourceIds' in block && block.sourceIds.length === 0) {
-        errors.push(`${prefix} block "${block.id}" missing sourceIds`);
-      }
-      if ('sourceIds' in block) {
-        block.sourceIds.forEach(sourceId => {
-          if (!hasSource(pkg, sourceId)) {
-            errors.push(`${prefix} block "${block.id}" references unknown source "${sourceId}"`);
-          }
-        });
-      }
+      if (block.type === 'question') validateQuestion(blockLabel, block, errors);
     });
   });
+}
 
-  return { valid: errors.length === 0, errors, warnings };
+function validateQuestion(label: string, block: Extract<Level['steps'][number]['blocks'][number], { type: 'question' }>, errors: string[]): void {
+  if (block.questionType === 'multiple-choice') {
+    if (block.options.length < 2) errors.push(`${label} needs at least two options`);
+    if (!Number.isInteger(block.correctAnswer) || block.correctAnswer < 0 || block.correctAnswer >= block.options.length) errors.push(`${label} has invalid correctAnswer index`);
+  }
+  if (block.questionType === 'true-false' && block.correctAnswer !== 0 && block.correctAnswer !== 1) errors.push(`${label} true-false answer must be 0 or 1`);
+  if (block.questionType === 'fill-blank' && !block.blankText.includes('___')) errors.push(`${label} blankText must contain ___`);
+  if (block.questionType === 'match') {
+    if (block.matchPairs.length < 2) errors.push(`${label} needs at least two match pairs`);
+    validateUniqueIds(`match pair in ${label}`, block.matchPairs.map(pair => pair.id), errors);
+    validateUniqueIds(`match meaning in ${label}`, block.matchPairs.map(pair => pair.meaning), errors);
+  }
+}
+
+function validateBlockAyahRef(label: string, ref: AyahRef, level: Level, pkg: ContentPackage, errors: string[]): void {
+  validateAyahRef(label, ref, pkg, errors);
+  if (!level.ayahRefs.some(candidate => sameRef(candidate, ref))) errors.push(`${label} references ayah outside level.ayahRefs: ${refKey(ref)}`);
+}
+
+function validateAyahRef(label: string, ref: AyahRef, pkg: ContentPackage, errors: string[]): void {
+  if (!findAyah(pkg, ref)) errors.push(`${label} references missing ayah ${refKey(ref)}`);
+}
+
+function validateSourceIds(label: string, sourceIds: string[], pkg: ContentPackage, errors: string[]): void {
+  if (sourceIds.length === 0) errors.push(`${label} has no source IDs`);
+  sourceIds.forEach(sourceId => {
+    if (!pkg.sources.some(source => source.id === sourceId)) errors.push(`${label} references unknown source "${sourceId}"`);
+  });
+}
+
+function validateReviewStatus(
+  label: string,
+  status: ReviewerStatus,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[]
+): void {
+  if (status === 'approved') return;
+  const message = `${label} reviewerStatus is "${status}"`;
+  if (mode === 'production') errors.push(message);
+  else warnings.push(message);
 }
 
 function validateUniqueIds(kind: string, ids: string[], errors: string[]): void {
   const seen = new Set<string>();
   ids.forEach(id => {
+    if (!id) errors.push(`Missing ${kind} id`);
     if (seen.has(id)) errors.push(`Duplicate ${kind} id "${id}"`);
     seen.add(id);
   });
 }
 
-function findAyah(ayat: AyahRecord[], ref: { surahNumber: number; ayahNumber: number }): AyahRecord | undefined {
-  return ayat.find(ayah => ayah.ref.surahNumber === ref.surahNumber && ayah.ref.ayahNumber === ref.ayahNumber);
+function findAyah(pkg: ContentPackage, ref: AyahRef): AyahRecord | undefined {
+  return pkg.ayat.find(ayah => sameRef(ayah.ref, ref));
 }
 
-function hasSource(pkg: ContentPackage, sourceId: string): boolean {
-  return pkg.sources.some(source => source.id === sourceId);
+function sameRef(a: AyahRef, b: AyahRef): boolean {
+  return a.surahNumber === b.surahNumber && a.ayahNumber === b.ayahNumber;
 }
 
-function validateLesson(lesson: Lesson, packageId: string): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const prefix = `Lesson "${lesson.id}":`;
-
-  if (!lesson.id) errors.push(`${prefix} missing id`);
-  if (lesson.packageId !== packageId) errors.push(`${prefix} packageId mismatch`);
-  if (!lesson.title) errors.push(`${prefix} missing title`);
-  if (!lesson.blocks || lesson.blocks.length === 0) errors.push(`${prefix} has no blocks`);
-  if (!lesson.metadata?.sourceMetadata) {
-    errors.push(`${prefix} missing sourceMetadata`);
-  } else {
-    if (!lesson.metadata.sourceMetadata.quranTextSourceId) {
-      errors.push(`${prefix} sourceMetadata missing quranTextSourceId`);
-    }
-    if (!lesson.metadata.sourceMetadata.translationSourceId) {
-      errors.push(`${prefix} sourceMetadata missing translationSourceId`);
-    }
-    if (!lesson.metadata.sourceMetadata.reviewerStatus) {
-      errors.push(`${prefix} sourceMetadata missing reviewerStatus`);
-    }
-    if (lesson.metadata.sourceMetadata.reviewerStatus !== 'approved') {
-      warnings.push(
-        `${prefix} content reviewerStatus is "${lesson.metadata.sourceMetadata.reviewerStatus}"`
-      );
-    }
-  }
-
-  lesson.blocks.forEach(block => {
-    const blockResult = validateBlock(block, lesson.id);
-    errors.push(...blockResult.errors);
-    warnings.push(...blockResult.warnings);
-  });
-
-  return { valid: errors.length === 0, errors, warnings };
-}
-
-function validateBlock(block: LessonBlock, lessonId: string): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const prefix = `Block "${block.id}" in lesson "${lessonId}":`;
-
-  if (!block.id) errors.push(`${prefix} missing id`);
-  if (!block.type) errors.push(`${prefix} missing type`);
-  if (block.content === undefined || block.content === null) {
-    errors.push(`${prefix} missing content`);
-  }
-
-  if (block.type === 'ayah') {
-    const content = block.content as {
-      quranText?: {
-        arabic?: string;
-        translation?: string;
-        arabicSourceId?: string;
-        translationSourceId?: string;
-      };
-      wordBreakdown?: Array<{ sourceId?: string }>;
-    };
-    if (!content?.quranText?.arabic) errors.push(`${prefix} ayah block missing arabic text`);
-    if (!content?.quranText?.translation) errors.push(`${prefix} ayah block missing translation`);
-    if (!content?.quranText?.arabicSourceId) {
-      errors.push(`${prefix} ayah block missing arabicSourceId`);
-    }
-    if (!content?.quranText?.translationSourceId) {
-      errors.push(`${prefix} ayah block missing translationSourceId`);
-    }
-    content.wordBreakdown?.forEach((word, index) => {
-      if (!word.sourceId) {
-        errors.push(`${prefix} wordBreakdown[${index}] missing sourceId`);
-      }
-    });
-  }
-
-  if (block.type === 'tafsir') {
-    const content = block.content as { tafsir?: { text?: string; sourceId?: string } };
-    if (!content?.tafsir?.text) errors.push(`${prefix} tafsir block missing text`);
-    if (!content?.tafsir?.sourceId) errors.push(`${prefix} tafsir block missing sourceId`);
-  }
-
-  return { valid: errors.length === 0, errors, warnings };
+function refKey(ref: AyahRef): string {
+  return `${ref.surahNumber}:${ref.ayahNumber}`;
 }
