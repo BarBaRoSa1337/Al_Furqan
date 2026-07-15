@@ -85,7 +85,7 @@ export default function LessonPlayerScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {session.warning ? <Text style={styles.warning}>{session.warning.message}</Text> : null}
         {session.error ? <Text style={styles.errorBanner}>{session.error}</Text> : null}
-        <StepRenderer step={session.step} onQuestionAnswer={session.answerQuestion} />
+        <StepRenderer step={session.step} onQuestionAnswer={session.answerQuestion} onActivityAnswer={session.answerActivity} />
       </ScrollView>
 
       <View style={styles.footer}>

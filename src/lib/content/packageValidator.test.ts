@@ -26,3 +26,13 @@ test('rejects duplicate block IDs and word explorer refs outside level', () => {
   expect(result.errors.some(error => error.includes('Duplicate block'))).toBe(true);
   expect(result.errors.some(error => error.includes('outside level.ayahRefs'))).toBe(true);
 });
+
+test('rejects canonical records with an unavailable Quran edition', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  pkg.ayat[0].editionId = 'unknown-edition' as never;
+
+  const result = validatePackage(pkg);
+
+  expect(result.valid).toBe(false);
+  expect(result.errors.some(error => error.includes('unknown edition'))).toBe(true);
+});

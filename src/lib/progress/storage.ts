@@ -9,6 +9,7 @@ import {
   ProgressRecoveryWarning,
   ProgressSnapshotV2,
   QuestionAttempt,
+  ActivityAttempt,
   XP_REWARDS,
   XPRecord,
 } from '../../types/progress';
@@ -48,6 +49,7 @@ export interface RecordQuestionAttemptInput {
   selectedAnswer: string | number;
   correct: boolean;
 }
+export interface RecordActivityAttemptInput { levelId: string; pathId: string; activityId: string; answer: unknown; correct: boolean; evaluationVersion: string; }
 
 export class ProgressStorageError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -91,6 +93,7 @@ export async function startLevel(levelId: string, pathId: string, initialStepId:
       currentStepId: initialStepId,
       completedStepIds: [],
       questionAttempts: [],
+      activityAttempts: [],
     };
     snapshot.levels[levelId] = progress;
     snapshot.app.currentLevelId = levelId;
@@ -119,6 +122,7 @@ export async function completeLevelStep(
         ? existing.completedStepIds
         : [...(existing?.completedStepIds ?? []), stepId],
       questionAttempts: existing?.questionAttempts ?? [],
+      activityAttempts: existing?.activityAttempts ?? [],
     };
     snapshot.levels[levelId] = progress;
     return progress;
@@ -145,7 +149,17 @@ export async function recordQuestionAttempt(input: RecordQuestionAttemptInput): 
       currentStepId: existing?.currentStepId,
       completedStepIds: existing?.completedStepIds ?? [],
       questionAttempts: [...(existing?.questionAttempts ?? []), attempt],
+      activityAttempts: existing?.activityAttempts ?? [],
     };
+    return attempt;
+  });
+}
+
+export async function recordActivityAttempt(input: RecordActivityAttemptInput): Promise<ActivityAttempt> {
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString(); const existing = snapshot.levels[input.levelId];
+    const attempt: ActivityAttempt = { activityId: input.activityId, levelId: input.levelId, answer: input.answer, correct: input.correct, attemptedAt: now, evaluationVersion: input.evaluationVersion };
+    snapshot.levels[input.levelId] = { levelId: input.levelId, pathId: input.pathId, completed: existing?.completed ?? false, startedAt: existing?.startedAt ?? now, completedAt: existing?.completedAt, currentStepId: existing?.currentStepId, completedStepIds: existing?.completedStepIds ?? [], questionAttempts: existing?.questionAttempts ?? [], activityAttempts: [...(existing?.activityAttempts ?? []), attempt] };
     return attempt;
   });
 }
@@ -224,9 +238,12 @@ export function isLevelReadyForCompletion(level: Level, progress: LevelProgress 
   const requiredQuestionIds = level.steps.flatMap(step =>
     step.blocks.filter(block => block.type === 'question').map(block => block.id)
   );
+  const requiredActivityIds = level.steps.flatMap(step => step.blocks
+    .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
+    .map(block => block.activity.id));
   return allStepsCompleted && requiredQuestionIds.every(questionId =>
     progress.questionAttempts.some(attempt => attempt.questionId === questionId && attempt.correct)
-  );
+  ) && requiredActivityIds.every(activityId => progress.activityAttempts.some(attempt => attempt.activityId === activityId && attempt.correct));
 }
 
 export async function isLevelCompleted(levelId: string): Promise<boolean> {
@@ -364,6 +381,7 @@ async function migrateLegacyProgress(): Promise<ProgressSnapshotV2> {
             completedAt: toIsoString(legacy.completedAt),
             completedStepIds: [],
             questionAttempts: [],
+            activityAttempts: [],
           };
         }
       }
@@ -401,6 +419,7 @@ function normalizeLevelProgress(progress: LevelProgress): LevelProgress {
     pathId: mapLegacyPathId(progress.pathId),
     completedStepIds: progress.completedStepIds ?? [],
     questionAttempts: progress.questionAttempts ?? [],
+    activityAttempts: progress.activityAttempts ?? [],
   };
 }
 
@@ -429,7 +448,7 @@ function isProgressSnapshot(value: unknown): value is ProgressSnapshotV2 {
     typeof level.pathId === 'string' &&
     typeof level.completed === 'boolean' &&
     Array.isArray(level.completedStepIds) &&
-    Array.isArray(level.questionAttempts)
+    Array.isArray(level.questionAttempts) && Array.isArray(level.activityAttempts)
   );
 }
 

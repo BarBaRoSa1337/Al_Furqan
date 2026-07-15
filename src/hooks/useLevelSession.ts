@@ -7,6 +7,7 @@ import {
   getAppProgress,
   getProgressRecoveryWarning,
   recordQuestionAttempt,
+  recordActivityAttempt,
   startLevel,
 } from '../lib/progress/storage';
 import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../types/progress';
@@ -79,6 +80,12 @@ export function useLevelSession(levelId: string | undefined) {
     if (!saved) throw new Error('Answer could not be saved. Please try again.');
   }
 
+  async function answerActivity(activityId: string, answer: unknown, correct: boolean): Promise<void> {
+    if (!level || !path || operationLocked.current) return;
+    const saved = await runExclusive(async () => { await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId, answer, correct, evaluationVersion: '1' }); });
+    if (!saved) throw new Error('Activity could not be saved. Please try again.');
+  }
+
   async function advance(): Promise<CompletionReceipt | null> {
     if (!level || !path || !step || !canProceed || operationLocked.current) return null;
     let receipt: CompletionReceipt | null = null;
@@ -124,6 +131,7 @@ export function useLevelSession(levelId: string | undefined) {
     error,
     warning,
     answerQuestion,
+    answerActivity,
     advance,
     clearError: () => setError(null),
   };

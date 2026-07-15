@@ -110,6 +110,7 @@ function readyProgress(level: Level): LevelProgress {
     questionAttempts: level.steps.flatMap(step => step.blocks
       .filter(block => block.type === 'question')
       .map(block => ({ questionId: block.id, levelId: level.id, selectedAnswer: 0, correct: true, attemptedAt: now }))),
+    activityAttempts: [],
   };
 }
 

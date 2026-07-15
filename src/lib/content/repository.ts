@@ -6,10 +6,15 @@ import {
   ContentRepository,
   ContentPackage,
   ContentSource,
+  QuranEdition,
+  QuranEditionId,
+  QuranDivision,
+  QuranDivisionKind,
   LearningPath,
   Level,
   RoadmapSort,
   SurahRecord,
+  WordToken,
 } from '../../types/content';
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { validatePackage } from './packageValidator';
@@ -17,8 +22,11 @@ import { validatePackage } from './packageValidator';
 class ContentRepositoryImpl implements ContentRepository {
   private _packages: ContentPackage[] = [];
   private _sources: ContentPackage['sources'] = [];
+  private _editions: QuranEdition[] = [];
   private _surahs: SurahRecord[] = [];
   private _ayat: AyahRecord[] = [];
+  private _wordTokens: WordToken[] = [];
+  private _divisions: QuranDivision[] = [];
   private _learningPaths: LearningPath[] = [];
   private _levels: Level[] = [];
   private _initialized = false;
@@ -49,6 +57,9 @@ class ContentRepositoryImpl implements ContentRepository {
         this._sources.push(source);
       }
     });
+    pkg.editions.forEach(edition => {
+      if (!this._editions.some(candidate => candidate.id === edition.id)) this._editions.push(edition);
+    });
     pkg.surahs?.forEach(surah => {
       if (!this._surahs.some(s => s.id === surah.id)) {
         this._surahs.push(surah);
@@ -58,6 +69,12 @@ class ContentRepositoryImpl implements ContentRepository {
       if (!this._ayat.some(a => a.id === ayah.id)) {
         this._ayat.push(ayah);
       }
+    });
+    pkg.wordTokens.forEach(token => {
+      if (!this._wordTokens.some(candidate => candidate.id === token.id)) this._wordTokens.push(token);
+    });
+    pkg.divisions.forEach(division => {
+      if (!this._divisions.some(candidate => candidate.id === division.id)) this._divisions.push(division);
     });
     pkg.learningPaths?.forEach(path => {
       if (!this._learningPaths.some(p => p.id === path.id)) {
@@ -74,8 +91,11 @@ class ContentRepositoryImpl implements ContentRepository {
   // ContentRepository interface
   get packages(): ContentPackage[] { return this._packages; }
   get sources(): ContentPackage['sources'] { return this._sources; }
+  get editions(): QuranEdition[] { return this._editions; }
   get surahs(): SurahRecord[] { return this._surahs; }
   get ayat(): AyahRecord[] { return this._ayat; }
+  get wordTokens(): WordToken[] { return this._wordTokens; }
+  get divisions(): QuranDivision[] { return this._divisions; }
   get learningPaths(): LearningPath[] { return this._learningPaths; }
   get levels(): Level[] { return this._levels; }
 
@@ -88,8 +108,16 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._sources.find(source => source.id === id);
   }
 
+  getEdition(id: QuranEditionId): QuranEdition | undefined {
+    return this._editions.find(edition => edition.id === id);
+  }
+
   getSurahById(id: string): SurahRecord | undefined {
     return this._surahs.find(surah => surah.id === id);
+  }
+
+  getSurahByNumber(number: number): SurahRecord | undefined {
+    return this._surahs.find(surah => surah.surahNumber === number);
   }
 
   getLevelById(id: string): Level | undefined {
@@ -100,16 +128,45 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._learningPaths.find(path => path.id === id);
   }
 
-  getAyahByRef(ref: AyahRef): AyahRecord | undefined {
+  getAyahByRef(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim'): AyahRecord | undefined {
     return this._ayat.find(
-      ayah => ayah.ref.surahNumber === ref.surahNumber && ayah.ref.ayahNumber === ref.ayahNumber
+      ayah => ayah.editionId === editionId && ayah.ref.surahNumber === ref.surahNumber && ayah.ref.ayahNumber === ref.ayahNumber
     );
   }
 
-  getAyatByRefs(refs: AyahRef[]): AyahRecord[] {
+  getAyatByRefs(refs: AyahRef[], editionId: QuranEditionId = 'hafs-an-asim'): AyahRecord[] {
     return refs
-      .map(ref => this.getAyahByRef(ref))
+      .map(ref => this.getAyahByRef(ref, editionId))
       .filter((ayah): ayah is AyahRecord => Boolean(ayah));
+  }
+
+  getWordToken(id: string): WordToken | undefined {
+    return this._wordTokens.find(token => token.id === id);
+  }
+
+  listDivisions(kind: QuranDivisionKind, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision[] {
+    return this._divisions.filter(division => division.kind === kind && division.editionId === editionId)
+      .sort((a, b) => a.number - b.number);
+  }
+
+  getDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision | undefined {
+    return this.listDivisions(kind, editionId).find(division => division.number === number);
+  }
+
+  listAyahRefsInDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): AyahRef[] {
+    const division = this.getDivision(kind, number, editionId);
+    if (!division) return [];
+    return this._ayat.filter(ayah => ayah.editionId === editionId && isRefInRange(ayah.ref, division.range))
+      .map(ayah => ayah.ref);
+  }
+
+  listSurahsInDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): SurahRecord[] {
+    const numbers = new Set(this.listAyahRefsInDivision(kind, number, editionId).map(ref => ref.surahNumber));
+    return this._surahs.filter(surah => numbers.has(surah.surahNumber));
+  }
+
+  getDivisionsForAyah(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision[] {
+    return this._divisions.filter(division => division.editionId === editionId && isRefInRange(ref, division.range));
   }
 
   getNextLevel(levelId: string): Level | undefined {
@@ -186,3 +243,11 @@ export function getContentRepository(): ContentRepositoryImpl {
 }
 
 export default ContentRepositoryImpl;
+
+function isRefInRange(ref: AyahRef, range: { start: AyahRef; end: AyahRef }): boolean {
+  return compareRefs(ref, range.start) >= 0 && compareRefs(ref, range.end) <= 0;
+}
+
+function compareRefs(a: AyahRef, b: AyahRef): number {
+  return a.surahNumber - b.surahNumber || a.ayahNumber - b.ayahNumber;
+}

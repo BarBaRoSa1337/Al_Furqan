@@ -3,8 +3,11 @@ import {
   AyahRef,
   ContentPackage,
   Level,
+  QuranEditionId,
+  QuranDivision,
   ReviewerStatus,
   SurahRecord,
+  WordToken,
 } from '../../types/content';
 
 export type ValidationMode = 'development' | 'production';
@@ -27,6 +30,7 @@ export function validatePackage(
   if (!pkg.version) errors.push('Package missing version');
   if (!pkg.title) errors.push('Package missing title');
   if (pkg.sources.length === 0) errors.push('Package has no sources');
+  if (pkg.editions.length === 0) errors.push('Package has no Quran editions');
   if (pkg.surahs.length === 0) errors.push('Package has no canonical surahs');
   if (pkg.ayat.length === 0) errors.push('Package has no canonical ayat');
   if (pkg.learningPaths.length === 0) errors.push('Package has no learning paths');
@@ -36,15 +40,25 @@ export function validatePackage(
   }
 
   validateUniqueIds('source', pkg.sources.map(source => source.id), errors);
+  validateUniqueIds('edition', pkg.editions.map(edition => edition.id), errors);
   validateUniqueIds('surah', pkg.surahs.map(surah => surah.id), errors);
   validateUniqueIds('ayah', pkg.ayat.map(ayah => ayah.id), errors);
-  validateUniqueIds('ayah ref', pkg.ayat.map(ayah => refKey(ayah.ref)), errors);
+  validateUniqueIds('ayah ref', pkg.ayat.map(ayah => `${ayah.editionId}:${refKey(ayah.ref)}`), errors);
+  validateUniqueIds('word token', pkg.wordTokens.map(token => token.id), errors);
+  validateUniqueIds('division', pkg.divisions.map(division => division.id), errors);
+  validateUniqueIds('division key', pkg.divisions.map(division => `${division.editionId}:${division.kind}:${division.number}`), errors);
   validateUniqueIds('learning path', pkg.learningPaths.map(path => path.id), errors);
   validateUniqueIds('level', pkg.levels.map(level => level.id), errors);
 
   pkg.sources.forEach(source => validateReviewStatus(`Source "${source.id}"`, source.reviewerStatus, mode, errors, warnings));
+  pkg.editions.forEach(edition => {
+    validateSourceIds(`Edition "${edition.id}"`, [edition.textSourceId], pkg, errors);
+    if (!edition.version) errors.push(`Edition "${edition.id}" missing version`);
+  });
   pkg.surahs.forEach(surah => validateSurah(surah, pkg, mode, errors, warnings));
   pkg.ayat.forEach(ayah => validateAyah(ayah, pkg, mode, errors, warnings));
+  pkg.wordTokens.forEach(token => validateWordToken(token, pkg, errors));
+  pkg.divisions.forEach(division => validateDivision(division, pkg, errors));
   pkg.learningPaths.forEach(path => {
     validateUniqueIds(`level in path "${path.id}"`, path.levelIds, errors);
     validateUniqueIds(`surah in path "${path.id}"`, path.surahIds, errors);
@@ -90,8 +104,12 @@ function validateAyah(
   warnings: string[]
 ): void {
   const label = `Ayah "${ayah.id}"`;
+  if (!pkg.editions.some(edition => edition.id === ayah.editionId)) errors.push(`${label} references unknown edition "${ayah.editionId}"`);
   if (!ayah.arabicText.text) errors.push(`${label} missing Arabic text`);
-  validateSourceIds(label, [ayah.arabicText.sourceId], pkg, errors);
+  if (!ayah.sourceVersion) errors.push(`${label} missing sourceVersion`);
+  if (!/^[a-f0-9]{64}$/i.test(ayah.checksum)) errors.push(`${label} has invalid checksum`);
+  if (ayah.arabicText.sourceId !== ayah.sourceId) errors.push(`${label} Arabic source does not match canonical source`);
+  validateSourceIds(label, [ayah.sourceId], pkg, errors);
   validateReviewStatus(`${label} Arabic text`, ayah.arabicText.reviewerStatus, mode, errors, warnings);
   if (ayah.translations.length === 0) errors.push(`${label} missing translations`);
   validateUniqueIds(`translation in ${label}`, ayah.translations.map(entry => entry.id), errors);
@@ -108,7 +126,33 @@ function validateAyah(
     const wordLabel = `${label} wordMeaning[${index}]`;
     validateSourceIds(wordLabel, [entry.sourceId], pkg, errors);
     validateReviewStatus(wordLabel, entry.reviewerStatus, mode, errors, warnings);
+    if (entry.wordTokenId && !ayah.wordTokenIds.includes(entry.wordTokenId)) {
+      errors.push(`${wordLabel} token is absent from ${label}`);
+    }
   });
+  if (ayah.wordTokenIds.length === 0) errors.push(`${label} missing word tokens`);
+  validateUniqueIds(`word token in ${label}`, ayah.wordTokenIds, errors);
+}
+
+function validateWordToken(token: WordToken, pkg: ContentPackage, errors: string[]): void {
+  const label = `WordToken "${token.id}"`;
+  if (!pkg.editions.some(edition => edition.id === token.editionId)) errors.push(`${label} references unknown edition "${token.editionId}"`);
+  if (!token.arabicText) errors.push(`${label} missing Arabic text`);
+  if (!Number.isInteger(token.position) || token.position < 1) errors.push(`${label} has invalid position`);
+  if (!token.sourceVersion) errors.push(`${label} missing sourceVersion`);
+  validateSourceIds(label, [token.sourceId], pkg, errors);
+  const ayah = pkg.ayat.find(candidate => candidate.editionId === token.editionId && sameRef(candidate.ref, token.ayahRef));
+  if (!ayah) errors.push(`${label} references unavailable ayah ${refKey(token.ayahRef)}`);
+  if (ayah && !ayah.wordTokenIds.includes(token.id)) errors.push(`${label} is absent from ayah "${ayah.id}"`);
+}
+
+function validateDivision(division: QuranDivision, pkg: ContentPackage, errors: string[]): void {
+  const label = `Division "${division.id}"`;
+  if (!pkg.editions.some(edition => edition.id === division.editionId)) errors.push(`${label} references unknown edition "${division.editionId}"`);
+  if (!Number.isInteger(division.number) || division.number < 1) errors.push(`${label} has invalid number`);
+  if (!division.sourceVersion) errors.push(`${label} missing sourceVersion`);
+  validateSourceIds(label, [division.sourceId], pkg, errors);
+  if (comparePositions(division.range.start, division.range.end) > 0) errors.push(`${label} starts after its end`);
 }
 
 function validateLevel(
@@ -213,7 +257,11 @@ function validateUniqueIds(kind: string, ids: string[], errors: string[]): void 
 }
 
 function findAyah(pkg: ContentPackage, ref: AyahRef): AyahRecord | undefined {
-  return pkg.ayat.find(ayah => sameRef(ayah.ref, ref));
+  return pkg.ayat.find(ayah => ayah.editionId === defaultEditionId(pkg) && sameRef(ayah.ref, ref));
+}
+
+function defaultEditionId(pkg: ContentPackage): QuranEditionId | undefined {
+  return pkg.editions[0]?.id;
 }
 
 function sameRef(a: AyahRef, b: AyahRef): boolean {
@@ -222,4 +270,8 @@ function sameRef(a: AyahRef, b: AyahRef): boolean {
 
 function refKey(ref: AyahRef): string {
   return `${ref.surahNumber}:${ref.ayahNumber}`;
+}
+
+function comparePositions(a: AyahRef & { wordIndex?: number }, b: AyahRef & { wordIndex?: number }): number {
+  return a.surahNumber - b.surahNumber || a.ayahNumber - b.ayahNumber || (a.wordIndex ?? 0) - (b.wordIndex ?? 0);
 }

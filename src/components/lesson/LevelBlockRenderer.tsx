@@ -12,15 +12,17 @@ import {
 import { getContentRepository } from '../../lib/content/repository';
 import Card from '../ui/Card';
 import LevelQuestionBlock from './LevelQuestionBlock';
+import RecallThenRevealActivity from './RecallThenRevealActivity';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
   onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
+  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
 }
 
 const DEFAULT_TRANSLATION_LOCALE = 'en';
 
-export default function LevelBlockRenderer({ block, onQuestionAnswer }: LevelBlockRendererProps) {
+export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivityAnswer }: LevelBlockRendererProps) {
   const repo = getContentRepository();
 
   switch (block.type) {
@@ -41,6 +43,8 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer }: LevelBlo
     }
     case 'question':
       return <LevelQuestionBlock block={block} onAnswer={onQuestionAnswer} />;
+    case 'activity':
+      return block.activity.kind === 'recall_then_reveal' ? <RecallThenRevealActivity instruction={block.activity.instruction} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve()} /> : null;
     case 'summary':
       return <CanonicalSummaryBlock block={block} />;
     default:
@@ -50,7 +54,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer }: LevelBlo
 
 function CanonicalAyahBlock({ ayah, locale, repo }: { ayah: AyahRecord; locale?: string; repo: ContentRepository }) {
   const translation = ayah.translations.find(entry => entry.locale === (locale ?? DEFAULT_TRANSLATION_LOCALE)) ?? ayah.translations[0];
-  const arabicSource = repo.getSourceById(ayah.arabicText.sourceId);
+  const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
 
   return (

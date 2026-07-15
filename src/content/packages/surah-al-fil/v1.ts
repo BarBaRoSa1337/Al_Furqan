@@ -6,6 +6,8 @@ import {
   AyahRecord,
   ContentPackage,
   ContentSource,
+  QuranEdition,
+  WordToken,
   LearningPath,
   Level,
   SurahRecord,
@@ -14,6 +16,17 @@ import {
 const QURAN_ARABIC_SOURCE_ID = 'quran-arabic-madani';
 const TRANSLATION_SOURCE_ID = 'quran-translation-sahih-international';
 const TAFSIR_SOURCE_ID = 'tafsir-ibn-kathir-summarised';
+export const HAFS_AN_ASIM_ID = 'hafs-an-asim' as const;
+
+export const hafsAnAsimEdition: QuranEdition = {
+  id: HAFS_AN_ASIM_ID,
+  qiraah: 'asim',
+  riwayah: 'hafs',
+  displayName: 'Hafs an Asim',
+  textSourceId: QURAN_ARABIC_SOURCE_ID,
+  fontProfileId: 'madani-mushaf',
+  version: '1.0',
+};
 
 const quranArabicSource: ContentSource = {
   id: QURAN_ARABIC_SOURCE_ID,
@@ -100,7 +113,12 @@ const word = (arabic: string, transliteration: string, meaning: string, root?: s
 export const surahAlFilAyat: AyahRecord[] = [
   {
     id: '105:1',
+    editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 1 },
+    wordTokenIds: [],
+    sourceId: QURAN_ARABIC_SOURCE_ID,
+    sourceVersion: '1.0',
+    checksum: 'f91b44aa8aadad8e9e1e72724b15f9f679ae871914b1ee8bc481f9c3dbdef0b2',
     arabicText: {
       text: 'أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ ٱلْفِيلِ',
       sourceId: QURAN_ARABIC_SOURCE_ID,
@@ -132,7 +150,12 @@ export const surahAlFilAyat: AyahRecord[] = [
   },
   {
     id: '105:2',
+    editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 2 },
+    wordTokenIds: [],
+    sourceId: QURAN_ARABIC_SOURCE_ID,
+    sourceVersion: '1.0',
+    checksum: '4695b751b2752b02fc411f3481d552ffdbae4c6125c2feb1a96f84eff0ae01c3',
     arabicText: {
       text: 'أَلَمْ يَجْعَلْ كَيْدَهُمْ فِى تَضْلِيلٍ',
       sourceId: QURAN_ARABIC_SOURCE_ID,
@@ -157,7 +180,12 @@ export const surahAlFilAyat: AyahRecord[] = [
   },
   {
     id: '105:3',
+    editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 3 },
+    wordTokenIds: [],
+    sourceId: QURAN_ARABIC_SOURCE_ID,
+    sourceVersion: '1.0',
+    checksum: '28fc4a80e7e164328f51003c4b3639ff13538c783c7d7e12bb5aa947ffd34d69',
     arabicText: {
       text: 'وَأَرْسَلَ عَلَيْهِمْ طَيْرًا أَبَابِيلَ',
       sourceId: QURAN_ARABIC_SOURCE_ID,
@@ -181,7 +209,12 @@ export const surahAlFilAyat: AyahRecord[] = [
   },
   {
     id: '105:4',
+    editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 4 },
+    wordTokenIds: [],
+    sourceId: QURAN_ARABIC_SOURCE_ID,
+    sourceVersion: '1.0',
+    checksum: '3b4399b60633a76491e33e1c726c275f06eca86cdc6f3792bbe828eacbf2913e',
     arabicText: {
       text: 'تَرْمِيهِم بِحِجَارَةٍ مِّن سِجِّيلٍ',
       sourceId: QURAN_ARABIC_SOURCE_ID,
@@ -205,7 +238,12 @@ export const surahAlFilAyat: AyahRecord[] = [
   },
   {
     id: '105:5',
+    editionId: HAFS_AN_ASIM_ID,
     ref: { surahNumber: 105, ayahNumber: 5 },
+    wordTokenIds: [],
+    sourceId: QURAN_ARABIC_SOURCE_ID,
+    sourceVersion: '1.0',
+    checksum: '9f1e9227bc04511fbd0ad946f0d323d531fdb7fd0b38022d3db5b5f25630ecd2',
     arabicText: {
       text: 'فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُولٍ',
       sourceId: QURAN_ARABIC_SOURCE_ID,
@@ -227,6 +265,24 @@ export const surahAlFilAyat: AyahRecord[] = [
     ],
   },
 ];
+
+/** Temporary gloss compatibility: tokens become canonical IDs without changing rendered word cards. */
+export const surahAlFilWordTokens: WordToken[] = surahAlFilAyat.flatMap(ayah =>
+  (ayah.wordMeanings ?? []).map((meaning, index) => {
+    const id = `${ayah.id}:word:${index + 1}`;
+    meaning.wordTokenId = id;
+    ayah.wordTokenIds.push(id);
+    return {
+      id,
+      editionId: HAFS_AN_ASIM_ID,
+      ayahRef: ayah.ref,
+      position: index + 1,
+      arabicText: meaning.arabic,
+      sourceId: ayah.sourceId,
+      sourceVersion: ayah.sourceVersion,
+    };
+  })
+);
 
 export const surahAlFilLearningPath: LearningPath = {
   id: 'surah-al-fil-path-v1',
@@ -515,8 +571,12 @@ const surahAlFilPackage: ContentPackage = {
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
+  editions: [hafsAnAsimEdition],
   surahs: [surahAlFilRecord],
   ayat: surahAlFilAyat,
+  wordTokens: surahAlFilWordTokens,
+  // Division records require a verified external boundary source; none is bundled yet.
+  divisions: [],
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,

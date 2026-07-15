@@ -24,7 +24,7 @@ Refer to repository history for the full completed-ticket detail.
 
 ## T16 — Hafs edition identity and canonical positions
 
-Status: planned.
+Status: implemented.
 
 Scope:
 
@@ -34,6 +34,8 @@ Scope:
 - source version/checksum metadata;
 - migrate Al-Fil package references.
 
+Delivered: explicit `hafs-an-asim`, canonical ayah source/version/checksums, stable Al-Fil word-token IDs, edition-aware repository queries, and validation/tests. Word-gloss Arabic remains a temporary renderer compatibility field; canonical token IDs are now authoritative.
+
 Compatibility:
 
 - preserve existing stable ayah and level IDs where possible;
@@ -41,7 +43,7 @@ Compatibility:
 
 ## T17 — Juz/Hizb/Rub indexes
 
-Status: planned.
+Status: implemented (model/index only).
 
 Scope:
 
@@ -50,6 +52,8 @@ Scope:
 - source-backed minimal fixture or verified dataset integration;
 - validation of ranges and references.
 
+Limitation: repository has no verified division-boundary dataset. APIs return no division records until a source-backed fixture or dataset is installed; no Juz/Hizb/Rub values were guessed for Al-Fil.
+
 Compatibility:
 
 - Surah roadmap remains primary;
@@ -57,7 +61,7 @@ Compatibility:
 
 ## T18 — Memorization activity domain
 
-Status: planned.
+Status: implemented.
 
 Scope:
 
@@ -66,6 +70,8 @@ Scope:
 - knowledge references;
 - review/source metadata;
 - pure evaluators.
+
+Delivered: discriminated activity contract, stable ID answers, explicit typed comparison policy, pure evaluation, and taught-knowledge validation. UI/persistence integration remains T19.
 
 Compatibility:
 
@@ -172,3 +178,5 @@ Scope:
 - package failure/rollback tests;
 - production content/edition gates;
 - accessibility and build validation.
+
+

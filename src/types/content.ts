@@ -1,4 +1,5 @@
 // Content Types for Quran Habit App
+import type { LearningActivity } from './activities';
 
 // ─── Source & Governance ───────────────────────────────────────────────────
 
@@ -20,7 +21,22 @@ export interface ContentSource {
 
 // ─── Core Quran Content ────────────────────────────────────────────────────
 
+export type QuranEditionId = 'hafs-an-asim';
+
+export interface QuranEdition {
+  id: QuranEditionId;
+  qiraah: 'asim';
+  riwayah: 'hafs';
+  displayName: string;
+  textSourceId: string;
+  fontProfileId: string;
+  version: string;
+  checksum?: string;
+}
+
 export interface WordMeaning {
+  /** Stable canonical token reference. Arabic remains temporary renderer compatibility data. */
+  wordTokenId?: string;
   arabic: string;
   transliteration: string;
   meaning: string;
@@ -32,6 +48,37 @@ export interface WordMeaning {
 export interface AyahRef {
   surahNumber: number;
   ayahNumber: number;
+}
+
+export interface QuranPosition extends AyahRef {
+  wordIndex?: number;
+}
+
+export interface QuranRange {
+  start: QuranPosition;
+  end: QuranPosition;
+}
+
+export type QuranDivisionKind = 'juz' | 'hizb' | 'rub';
+
+export interface QuranDivision {
+  id: string;
+  editionId: QuranEditionId;
+  kind: QuranDivisionKind;
+  number: number;
+  range: QuranRange;
+  sourceId: string;
+  sourceVersion: string;
+}
+
+export interface WordToken {
+  id: string;
+  editionId: QuranEditionId;
+  ayahRef: AyahRef;
+  position: number;
+  arabicText: string;
+  sourceId: string;
+  sourceVersion: string;
 }
 
 export interface TranslationEntry {
@@ -53,12 +100,17 @@ export interface TafsirEntry {
 
 export interface AyahRecord {
   id: string;
+  editionId: QuranEditionId;
   ref: AyahRef;
   arabicText: {
     text: string;
     sourceId: string;
     reviewerStatus: ReviewerStatus;
   };
+  wordTokenIds: string[];
+  sourceId: string;
+  sourceVersion: string;
+  checksum: string;
   transliteration?: string;
   translations: TranslationEntry[];
   tafsirEntries: TafsirEntry[];
@@ -133,6 +185,7 @@ export type LevelBlock =
   | TafsirRefBlock
   | ContextBlock
   | WordExplorerBlock
+  | ActivityLevelBlock
   | QuestionBlock
   | SummaryLevelBlock;
 
@@ -164,6 +217,12 @@ export interface WordExplorerBlock {
   id: string;
   type: 'word_explorer';
   ayahRefs: AyahRef[];
+}
+
+export interface ActivityLevelBlock {
+  id: string;
+  type: 'activity';
+  activity: LearningActivity;
 }
 
 interface QuestionBlockBase {
@@ -226,8 +285,11 @@ export interface ContentPackage {
   description: string;
   type: 'surah' | 'juz' | 'topic' | 'course';
   sources: ContentSource[];
+  editions: QuranEdition[];
   surahs: SurahRecord[];
   ayat: AyahRecord[];
+  wordTokens: WordToken[];
+  divisions: QuranDivision[];
   learningPaths: LearningPath[];
   levels: Level[];
   assets?: {
@@ -248,16 +310,27 @@ export interface ContentPackage {
 export interface ContentRepository {
   packages: ContentPackage[];
   sources: ContentSource[];
+  editions: QuranEdition[];
   surahs: SurahRecord[];
   ayat: AyahRecord[];
+  wordTokens: WordToken[];
+  divisions: QuranDivision[];
   learningPaths: LearningPath[];
   levels: Level[];
   getPackageById(id: string): ContentPackage | undefined;
   getSourceById(id: string): ContentSource | undefined;
+  getEdition(id: QuranEditionId): QuranEdition | undefined;
   getSurahById(id: string): SurahRecord | undefined;
+  getSurahByNumber(number: number): SurahRecord | undefined;
   getLevelById(id: string): Level | undefined;
-  getAyahByRef(ref: AyahRef): AyahRecord | undefined;
-  getAyatByRefs(refs: AyahRef[]): AyahRecord[];
+  getAyahByRef(ref: AyahRef, editionId?: QuranEditionId): AyahRecord | undefined;
+  getAyatByRefs(refs: AyahRef[], editionId?: QuranEditionId): AyahRecord[];
+  getWordToken(id: string): WordToken | undefined;
+  listDivisions(kind: QuranDivisionKind, editionId?: QuranEditionId): QuranDivision[];
+  getDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): QuranDivision | undefined;
+  listAyahRefsInDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): AyahRef[];
+  listSurahsInDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): SurahRecord[];
+  getDivisionsForAyah(ref: AyahRef, editionId?: QuranEditionId): QuranDivision[];
   getNextLevel(levelId: string): Level | undefined;
   getLearningPathById(id: string): LearningPath | undefined;
   getCurrentLearningPath(): LearningPath | undefined;

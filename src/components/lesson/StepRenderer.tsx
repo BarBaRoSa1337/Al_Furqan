@@ -6,9 +6,10 @@ import LevelBlockRenderer from './LevelBlockRenderer';
 interface StepRendererProps {
   step: LevelStep;
   onQuestionAnswer?: (blockId: string, selectedAnswer: string | number, correct: boolean) => void | Promise<void>;
+  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
 }
 
-export default function StepRenderer({ step, onQuestionAnswer }: StepRendererProps) {
+export default function StepRenderer({ step, onQuestionAnswer, onActivityAnswer }: StepRendererProps) {
   return (
     <View>
       <Text style={styles.stepTitle}>{step.title}</Text>
@@ -17,6 +18,7 @@ export default function StepRenderer({ step, onQuestionAnswer }: StepRendererPro
           key={block.id}
           block={block}
           onQuestionAnswer={onQuestionAnswer}
+          onActivityAnswer={onActivityAnswer}
         />
       ))}
     </View>

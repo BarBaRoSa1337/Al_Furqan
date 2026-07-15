@@ -30,6 +30,15 @@ export interface QuestionAttempt {
   attemptedAt: string;
 }
 
+export interface ActivityAttempt {
+  activityId: string;
+  levelId: string;
+  answer: unknown;
+  correct: boolean;
+  attemptedAt: string;
+  evaluationVersion: string;
+}
+
 export interface LevelProgress {
   levelId: string;
   pathId: string;
@@ -39,6 +48,7 @@ export interface LevelProgress {
   currentStepId?: string;
   completedStepIds: string[];
   questionAttempts: QuestionAttempt[];
+  activityAttempts: ActivityAttempt[];
 }
 
 export interface LearningPathProgress {
