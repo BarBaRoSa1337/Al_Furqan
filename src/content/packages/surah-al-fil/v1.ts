@@ -44,9 +44,9 @@ const quranArabicSource: ContentSource = {
   publisher: 'King Fahd Quran Printing Complex',
   version: '1.0',
   language: 'ar',
-  reviewerStatus: 'approved',
-  reviewDate: '2024-01-01',
-  license: 'Public Domain',
+  reviewerStatus: 'draft',
+  license: 'Unverified - production distribution disabled',
+  notes: 'Canonical text provenance and public-app distribution rights require evidence-bound technical, scholarly, and legal approval.',
 };
 
 const quranTranslationSource: ContentSource = {
@@ -56,9 +56,9 @@ const quranTranslationSource: ContentSource = {
   publisher: 'Saheeh International',
   version: '1.0',
   language: 'en',
-  reviewerStatus: 'approved',
-  reviewDate: '2024-01-01',
-  license: 'Public Domain',
+  reviewerStatus: 'draft',
+  license: 'Unverified - production distribution disabled',
+  notes: 'No public-domain or public-app distribution evidence is attached. Keep this translation development-only.',
 };
 
 const tafsirSource: ContentSource = {
@@ -70,7 +70,7 @@ const tafsirSource: ContentSource = {
   language: 'en',
   reviewerStatus: 'draft',
   notes: 'Summaries pending scholar review before publication.',
-  license: 'Educational use',
+  license: 'Unverified - production distribution disabled',
 };
 
 const structureSource: ContentSource = {
@@ -80,7 +80,8 @@ const structureSource: ContentSource = {
   version: fullStructureSnapshot.source.version,
   language: 'en',
   reviewerStatus: 'draft',
-  notes: 'Deterministic full Hafs structure snapshot pending metadata review.',
+  notes: 'Development-only snapshot. Technical approval and permission for storage beyond provider cache limits are not attached.',
+  license: 'Provider terms require evidence review - production disabled',
 };
 
 const audioSource: ContentSource = {
@@ -90,8 +91,8 @@ const audioSource: ContentSource = {
   version: husaryAudioManifest.source.version,
   language: 'ar',
   reviewerStatus: 'draft',
-  notes: 'Ayah-level 64 kbps MP3 manifest and checksums imported from Quran Foundation. Distribution terms require final review.',
-  license: 'Pending provider license review',
+  notes: 'Development streaming only. QuranicAudio personal-use language does not establish public-app distribution or persistence rights.',
+  license: 'Unverified - persistence and production distribution disabled',
 };
 
 const sources = [quranArabicSource, quranTranslationSource, tafsirSource, structureSource, audioSource];
@@ -215,7 +216,7 @@ const husaryReciter: Reciter = {
   providerResourceId: husaryAudioManifest.reciter.providerResourceId,
   editionId: HAFS_AN_ASIM_ID,
   sourceId: AUDIO_SOURCE_ID,
-  license: 'Pending provider license review',
+  license: 'Unverified - development streaming only',
   reviewerStatus: 'draft',
 };
 
@@ -228,7 +229,7 @@ const husaryTracks: RecitationTrack[] = husaryAudioManifest.tracks.map(track => 
     editionId: HAFS_AN_ASIM_ID,
     ayahRef: { surahNumber, ayahNumber },
     sourceId: AUDIO_SOURCE_ID,
-    license: 'Pending provider license review',
+    license: 'Unverified - development streaming only',
     checksum: track.checksum,
     byteSize: track.byteSize,
     format: 'mp3',
@@ -966,9 +967,9 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '2.9',
+  version: '2.10',
   schemaVersion: 2,
-  revisionId: 'surah-al-fil-v1-r11',
+  revisionId: 'surah-al-fil-v1-r12',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
@@ -986,6 +987,11 @@ const surahAlFilPackage: ContentPackage = {
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,
+  governance: {
+    evidence: [],
+    approvals: [],
+    licenseGrants: [],
+  },
   metadata: {
     totalLevels: surahAlFilLevels.length,
     totalDuration: surahAlFilLevels.reduce((total, level) => total + level.durationMinutes, 0),

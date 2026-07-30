@@ -1,5 +1,6 @@
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { ContentPackage } from '../../types/content';
+import { createFullyApprovedPackage } from '../../test/approvedGovernanceFixture';
 import { validatePackage } from './packageValidator';
 import { getCoreLevelSteps, getPracticeLevelSteps } from './lessonSteps';
 
@@ -33,6 +34,25 @@ test('blocks draft religious content in production', () => {
   const result = validatePackage(surahAlFilPackage, { mode: 'production' });
   expect(result.valid).toBe(false);
   expect(result.errors.some(error => error.includes('reviewerStatus is "draft"'))).toBe(true);
+});
+
+test('accepts a fully evidenced package for public free distribution', () => {
+  const pkg = createFullyApprovedPackage(surahAlFilPackage);
+  const result = validatePackage(pkg, { mode: 'production', releaseProfile: 'public-free' });
+
+  expect(result.valid).toBe(true);
+  expect(result.diagnostics).toEqual([]);
+});
+
+test('rejects stale package approvals and commercial use not covered by a grant', () => {
+  const pkg = createFullyApprovedPackage(surahAlFilPackage);
+  pkg.description = `${pkg.description} changed`;
+
+  const publicResult = validatePackage(pkg, { mode: 'production', releaseProfile: 'public-free' });
+  const commercialResult = validatePackage(pkg, { mode: 'production', releaseProfile: 'commercial' });
+
+  expect(publicResult.diagnostics.some(item => item.code === 'approval_missing_or_stale')).toBe(true);
+  expect(commercialResult.diagnostics.some(item => item.code === 'license_grant_missing_or_insufficient')).toBe(true);
 });
 
 test('rejects duplicate block IDs and passage refs outside level', () => {
@@ -151,8 +171,8 @@ test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () 
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('2.9');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r11');
+  expect(surahAlFilPackage.version).toBe('2.10');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r12');
   expect(getCoreLevelSteps(surahAlFilPackage.levels[1]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',

@@ -1,5 +1,16 @@
 # Studio and Publishing Contract
 
+## Evidence-bound compilation
+
+Studio diagnostics preserve validator codes such as
+`approval_missing_or_stale`, `license_grant_missing_or_insufficient`, and
+`religious_citation_missing`. The compiler accepts repository-safe approval and
+license attestations but never accepts reviewer status as sufficient proof.
+
+Authors preview a deterministic package payload, obtain reviews against its
+SHA-256, attach the resulting attestations, and compile the immutable package.
+Any subsequent payload change requires new matching approvals.
+
 ## Decision
 
 A content Studio is needed so lessons do not remain hardcoded and authorized shaykhs can review learner-facing material.

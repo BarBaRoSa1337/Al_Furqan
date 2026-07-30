@@ -3,6 +3,38 @@
 This log records completed implementation milestones that change runtime
 behavior, data contracts, or release gates. Update it with each major change.
 
+## 2026-07-30 - Evidence-bound governance and licensed audio cache
+
+### Delivered
+
+- Added hash-bound approval attestations, hybrid evidence references, explicit
+  release profiles, platform/use rights, and provider retention contracts.
+- Added structured production diagnostics and the `content:audit` command.
+- Corrected unsupported public-domain/educational-use source claims to
+  unverified development-only declarations.
+- Added a learner-visible source and rights sheet to Profile.
+- Replaced eager audio caching with active-track policy resolution. Unlicensed
+  development audio now streams without persistence.
+- Added verified bounded caches for native and web. Web uses Cache Storage plus
+  IndexedDB; native uses versioned cache files and metadata.
+- Migrated Quran Foundation import scripts to the authenticated content API
+  endpoint and mandatory CLI credentials.
+
+### Release status
+
+Production remains blocked. Real reviewer attestations, exact tafsir
+citations, source licenses, and provider permissions have not been supplied.
+The audit reports these as explicit evidence, approval, citation, and rights
+blockers rather than relying only on draft flags.
+
+### Compatibility
+
+- Package schema v1 and v2 remain readable in development.
+- `ContentPackage.governance` and tafsir citations are additive fields.
+- Production package activation now requires the governance envelope.
+- The built-in Al-Fil package is `2.10`, revision `r12`.
+- Learner progress has no migration.
+
 ## 2026-07-30 - Full Hafs structure and Al-Husary audio foundation
 
 ### Delivered

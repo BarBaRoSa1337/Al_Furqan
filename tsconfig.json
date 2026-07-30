@@ -13,6 +13,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node16",
+    "moduleSuffixes": [
+      ".native",
+      ""
+    ],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

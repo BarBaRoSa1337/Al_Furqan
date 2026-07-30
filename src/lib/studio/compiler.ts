@@ -1,6 +1,7 @@
 import { validatePackage } from '../content/packageValidator';
 import { AyahRef, ContentPackage } from '../../types/content';
 import { CompiledContentPackage, ContentHasher, PublishablePackageDraft } from '../../types/studio';
+import { stableStringify } from '../content/governance';
 
 export function compilePackage(draft: PublishablePackageDraft, canonical: ContentPackage, hasher: ContentHasher): CompiledContentPackage {
   const diagnostics = [] as CompiledContentPackage['diagnostics'];
@@ -29,18 +30,17 @@ export function compilePackage(draft: PublishablePackageDraft, canonical: Conten
     recitationTracks: sortById(draft.curriculum.recitationTracks),
   };
   const validation = validatePackage(pkg, { mode: 'production' });
-  validation.errors.forEach(message => diagnostics.push({ code: 'package_invalid', message, path: 'package' }));
+  validation.diagnostics
+    .filter(item => item.severity === 'error')
+    .forEach(item => diagnostics.push({
+      code: item.code,
+      message: item.message,
+      path: item.path ?? 'package',
+    }));
   return { package: pkg, contentHash: hasher.hash(stableStringify(pkg)), diagnostics };
 }
 
 function sortById<T extends { id: string }>(items: T[]): T[] { return [...items].sort((a, b) => a.id.localeCompare(b.id)); }
 function sameRef(a: AyahRef, b: AyahRef): boolean { return a.surahNumber === b.surahNumber && a.ayahNumber === b.ayahNumber; }
 
-export function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  if (value && typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
+export { stableStringify };

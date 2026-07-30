@@ -5,8 +5,11 @@ import {
   QuranStructureSnapshot,
   stableStringify,
 } from '../src/lib/content/structureImporter';
+import {
+  DEFAULT_QF_CONTENT_API_BASE,
+  quranFoundationHeaders,
+} from './quran-foundation-client';
 
-const DEFAULT_API_BASE = 'https://api.quran.com/api/v4';
 const SOURCE_ID = 'quran-foundation-structure-v4';
 const EDITION_ID = 'hafs-an-asim';
 const CONCURRENCY = 8;
@@ -37,7 +40,7 @@ interface Pagination {
 }
 
 async function main() {
-  const apiBase = process.env.QURAN_API_BASE ?? DEFAULT_API_BASE;
+  const apiBase = process.env.QURAN_API_BASE ?? DEFAULT_QF_CONTENT_API_BASE;
   const retrievedAt = new Date().toISOString();
   const chaptersResponse = await getJson<{ chapters: ProviderChapter[] }>(`${apiBase}/chapters?language=en`);
   if (chaptersResponse.chapters.length !== 114) {
@@ -111,9 +114,7 @@ async function fetchChapterVerses(apiBase: string, chapter: number): Promise<Pro
 }
 
 async function getJson<T>(url: string): Promise<T> {
-  const headers: Record<string, string> = {};
-  if (process.env.QF_ACCESS_TOKEN) headers['x-auth-token'] = process.env.QF_ACCESS_TOKEN;
-  if (process.env.QF_CLIENT_ID) headers['x-client-id'] = process.env.QF_CLIENT_ID;
+  const headers = quranFoundationHeaders();
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {

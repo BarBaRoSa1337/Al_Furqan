@@ -12,7 +12,18 @@ import {
   WordToken,
 } from '../../types/content';
 import { RecitationTrack, Reciter } from '../../types/media';
+import {
+  ReleaseUsageProfile,
+  ValidationDiagnostic,
+} from '../../types/governance';
 import { validateActivity } from '../activities/activityEngine';
+import {
+  getPackagePayloadHash,
+  getSourceHash,
+  getStructureSnapshotHash,
+  grantCovers,
+  requiredRightsForSource,
+} from './governance';
 import { getLevelStepKind } from './stepKind';
 import { resolveLegacyWordTokenId } from './legacyPackageAdapter';
 
@@ -22,15 +33,18 @@ export interface ValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  diagnostics: ValidationDiagnostic[];
 }
 
 export function validatePackage(
   pkg: ContentPackage,
-  options: { mode?: ValidationMode } = {}
+  options: { mode?: ValidationMode; releaseProfile?: ReleaseUsageProfile } = {}
 ): ValidationResult {
   const mode = options.mode ?? 'development';
+  const releaseProfile = options.releaseProfile ?? 'public-free';
   const errors: string[] = [];
   const warnings: string[] = [];
+  const diagnostics: ValidationDiagnostic[] = [];
 
   if (!pkg.id) errors.push('Package missing id');
   if (!pkg.version) errors.push('Package missing version');
@@ -112,8 +126,165 @@ export function validatePackage(
     errors.push(`metadata.defaultLearningPathId references missing path "${pkg.metadata.defaultLearningPathId}"`);
   }
   pkg.levels.forEach(level => validateLevel(level, pkg, mode, errors, warnings));
+  validateGovernance(pkg, mode, releaseProfile, errors, warnings, diagnostics);
 
-  return { valid: errors.length === 0, errors, warnings };
+  errors.forEach(message => {
+    if (!diagnostics.some(item => item.severity === 'error' && item.message === message)) {
+      diagnostics.push({ code: diagnosticCode(message), severity: 'error', message });
+    }
+  });
+  warnings.forEach(message => {
+    if (!diagnostics.some(item => item.severity === 'warning' && item.message === message)) {
+      diagnostics.push({ code: diagnosticCode(message), severity: 'warning', message });
+    }
+  });
+  return { valid: errors.length === 0, errors, warnings, diagnostics };
+}
+
+function validateGovernance(
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  releaseProfile: ReleaseUsageProfile,
+  errors: string[],
+  warnings: string[],
+  diagnostics: ValidationDiagnostic[],
+): void {
+  const report = (
+    code: string,
+    message: string,
+    path?: string,
+    targetId?: string,
+  ) => {
+    const severity = mode === 'production' ? 'error' : 'warning';
+    diagnostics.push({ code, severity, message, path, targetId });
+    (severity === 'error' ? errors : warnings).push(message);
+  };
+  const governance = pkg.governance;
+  if (!governance) {
+    report('governance_missing', `Package "${pkg.id}" has no evidence-bound governance record`, 'governance', pkg.id);
+    return;
+  }
+
+  validateUniqueIds('evidence', governance.evidence.map(item => item.id), errors);
+  validateUniqueIds('approval attestation', governance.approvals.map(item => item.id), errors);
+  validateUniqueIds('license grant', governance.licenseGrants.map(item => item.id), errors);
+  governance.evidence.forEach(evidence => {
+    if (!evidence.reference) report('evidence_reference_missing', `Evidence "${evidence.id}" has no secure reference`, 'governance.evidence', evidence.id);
+    if (!/^[a-f0-9]{64}$/i.test(evidence.sha256)) report('evidence_hash_invalid', `Evidence "${evidence.id}" has an invalid SHA-256`, 'governance.evidence', evidence.id);
+    if (!isValidDate(evidence.capturedAt)) report('evidence_date_invalid', `Evidence "${evidence.id}" has an invalid capturedAt date`, 'governance.evidence', evidence.id);
+  });
+
+  const evidenceIds = new Set(governance.evidence.map(item => item.id));
+  governance.approvals.forEach(approval => {
+    if (!approval.reviewer.id || !approval.reviewer.displayName) {
+      report('approval_reviewer_missing', `Approval "${approval.id}" has no reviewer identity`, 'governance.approvals', approval.id);
+    }
+    if (!isValidDate(approval.reviewedAt)) {
+      report('approval_date_invalid', `Approval "${approval.id}" has an invalid reviewedAt date`, 'governance.approvals', approval.id);
+    }
+    if (!evidenceIds.has(approval.evidenceRefId)) {
+      report('approval_evidence_missing', `Approval "${approval.id}" references missing evidence "${approval.evidenceRefId}"`, 'governance.approvals', approval.id);
+    }
+  });
+  governance.licenseGrants.forEach(grant => {
+    if (!evidenceIds.has(grant.evidenceRefId)) {
+      report('license_evidence_missing', `License grant "${grant.id}" references missing evidence "${grant.evidenceRefId}"`, 'governance.licenseGrants', grant.id);
+    }
+    const licenseEvidence = governance.evidence.find(item => item.id === grant.evidenceRefId);
+    if (licenseEvidence && licenseEvidence.kind !== 'published_terms' && licenseEvidence.kind !== 'written_permission') {
+      report('license_evidence_kind_invalid', `License grant "${grant.id}" must reference published terms or written permission`, 'governance.licenseGrants', grant.id);
+    }
+    if (!pkg.sources.some(source => source.id === grant.sourceId)) {
+      report('license_source_missing', `License grant "${grant.id}" references unknown source "${grant.sourceId}"`, 'governance.licenseGrants', grant.id);
+    }
+    if (!isValidDate(grant.validFrom) || (grant.validUntil && !isValidDate(grant.validUntil))) {
+      report('license_date_invalid', `License grant "${grant.id}" has an invalid validity date`, 'governance.licenseGrants', grant.id);
+    }
+    if (grant.retention.kind === 'bounded' && (!Number.isInteger(grant.retention.maxAgeSeconds) || grant.retention.maxAgeSeconds <= 0)) {
+      report('license_retention_invalid', `License grant "${grant.id}" has an invalid cache retention`, 'governance.licenseGrants', grant.id);
+    }
+    const hasWrittenOverride = grant.providerTermsOverride && licenseEvidence?.kind === 'written_permission';
+    if (/quran-foundation/i.test(grant.sourceId)
+      && !hasWrittenOverride
+      && (grant.retention.kind !== 'bounded' || grant.retention.maxAgeSeconds > 7 * 24 * 60 * 60)) {
+      report('license_retention_exceeds_provider_terms', `License grant "${grant.id}" exceeds the default seven-day Quran Foundation retention limit`, 'governance.licenseGrants', grant.id);
+    }
+  });
+
+  const packageHash = getPackagePayloadHash(pkg);
+  const requiredPackageRoles = ['editorial', 'shaykh', 'technical'] as const;
+  requiredPackageRoles.forEach(role => {
+    const approval = governance.approvals.find(item => (
+      item.decision === 'approved'
+      && item.role === role
+      && item.target.kind === 'package_payload'
+      && item.target.id === pkg.id
+      && item.target.hash === packageHash
+    ));
+    if (!approval) {
+      report('approval_missing_or_stale', `Package "${pkg.id}" lacks a current ${role} approval for payload hash ${packageHash}`, 'governance.approvals', pkg.id);
+    }
+  });
+
+  const structureHash = getStructureSnapshotHash(pkg);
+  if (pkg.structureIndex?.length) {
+    const structureApproval = governance.approvals.find(item => (
+      item.decision === 'approved'
+      && item.role === 'technical'
+      && item.target.kind === 'structure_snapshot'
+      && item.target.id === `${pkg.editions[0]?.id ?? 'unknown'}:structure`
+      && item.target.hash === structureHash
+    ));
+    if (!structureApproval) {
+      report('structure_approval_missing_or_stale', `Structure snapshot lacks technical approval for hash ${structureHash}`, 'governance.approvals', pkg.id);
+    }
+  }
+
+  pkg.sources.forEach(source => {
+    const sourceHash = getSourceHash(source);
+    const legalApproval = governance.approvals.find(item => (
+      item.decision === 'approved'
+      && item.role === 'legal'
+      && item.target.kind === 'source'
+      && item.target.id === source.id
+      && item.target.hash === sourceHash
+    ));
+    if (!legalApproval) {
+      report('source_legal_approval_missing_or_stale', `Source "${source.id}" lacks legal approval for hash ${sourceHash}`, 'governance.approvals', source.id);
+    }
+
+    const tracks = pkg.recitationTracks.filter(track => track.sourceId === source.id);
+    const grant = governance.licenseGrants.find(candidate => grantCovers(candidate, {
+      sourceId: source.id,
+      profile: releaseProfile,
+      platforms: ['android', 'ios', 'web'],
+      rights: requiredRightsForSource(pkg, source.id, releaseProfile),
+      ...(tracks.length ? {
+        resourceIds: tracks.map(track => track.id),
+        contentHashes: tracks.map(track => track.checksum),
+      } : {}),
+    }));
+    if (!grant) {
+      report('license_grant_missing_or_insufficient', `Source "${source.id}" lacks an evidence-backed ${releaseProfile} grant for all declared app uses`, 'governance.licenseGrants', source.id);
+    }
+  });
+
+  pkg.ayat.flatMap(ayah => ayah.tafsirEntries).forEach(entry => {
+    if (!entry.citation?.sourceId || !entry.citation.locator) {
+      report('religious_citation_missing', `Tafsir "${entry.id}" lacks an exact source citation`, 'ayat.tafsirEntries', entry.id);
+    }
+  });
+}
+
+function diagnosticCode(message: string): string {
+  if (message.includes('reviewerStatus')) return 'review_status_unapproved';
+  if (message.includes('license')) return 'license_invalid';
+  if (message.includes('source')) return 'source_invalid';
+  return 'package_invalid';
+}
+
+function isValidDate(value: string): boolean {
+  return value.trim().length > 0 && Number.isFinite(new Date(value).getTime());
 }
 
 function validateLocalization(pkg: ContentPackage, errors: string[]): void {

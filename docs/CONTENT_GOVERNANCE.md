@@ -1,5 +1,8 @@
 # Content Governance
 
+The evidence-bound implementation and current provider status are documented in
+`docs/CONTENT_RIGHTS_AND_AUDIO_CACHE.md`.
+
 ## Golden rule
 
 Never publish Quran text, translation, tafsir, word meaning, context, activity, answer, summary, reflection, audio association, or derived explanation without trusted source metadata and the required review state.
@@ -12,7 +15,12 @@ type ReviewStatus = 'draft' | 'reviewed' | 'approved';
 
 - `draft`: development preview only;
 - `reviewed`: checked but not approved for learner release;
-- `approved`: allowed in production.
+- `approved`: eligible for evidence validation.
+
+`approved` is a legacy workflow/display state. Production additionally requires
+hash-bound attestations, reviewer identity, evidence references, and license
+grants covering the active release profile. A status change alone cannot
+publish content.
 
 Development may show warnings. Production must reject non-approved learner-facing religious content.
 

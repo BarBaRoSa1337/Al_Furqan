@@ -1,11 +1,13 @@
 import sourcePackage from '../../content/packages/surah-al-fil/v1';
 import { ContentPackage } from '../../types/content';
 import { PublishablePackageDraft } from '../../types/studio';
+import { createFullyApprovedPackage } from '../../test/approvedGovernanceFixture';
 import { compilePackage } from './compiler';
 
 function fixture(approved = false): { draft: PublishablePackageDraft; canonical: ContentPackage } {
-  const canonical = structuredClone(sourcePackage) as ContentPackage;
-  if (approved) approveFixtureContent(canonical);
+  const canonical = approved
+    ? createFullyApprovedPackage(sourcePackage)
+    : structuredClone(sourcePackage) as ContentPackage;
   const { editions, surahs, ayat, wordTokens, divisions, ...curriculum } = canonical;
   const draft: PublishablePackageDraft = {
     state: 'approved',
@@ -18,13 +20,11 @@ function fixture(approved = false): { draft: PublishablePackageDraft; canonical:
     },
     curriculum,
   };
+  if (approved) {
+    const preview = compilePackage(draft, canonical, { hash: () => 'preview' }).package;
+    draft.curriculum.governance = createFullyApprovedPackage(preview).governance;
+  }
   return { draft, canonical };
-}
-
-function approveFixtureContent(value: unknown): void {
-  if (!value || typeof value !== 'object') return;
-  if ('reviewerStatus' in value) (value as { reviewerStatus: string }).reviewerStatus = 'approved';
-  Object.values(value).forEach(approveFixtureContent);
 }
 
 test('compiles immutable canonical selections into deterministic package data', () => {
@@ -51,7 +51,7 @@ test('blocks draft religious content at the compiler publication boundary', () =
   const result = compilePackage(draft, canonical, { hash: () => 'fixture' });
 
   expect(result.diagnostics).toEqual(expect.arrayContaining([
-    expect.objectContaining({ code: 'package_invalid', path: 'package' }),
+    expect.objectContaining({ code: 'review_status_unapproved' }),
   ]));
   expect(result.diagnostics.some(item => item.message.includes('reviewerStatus is "draft"'))).toBe(true);
 });

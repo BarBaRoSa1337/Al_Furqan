@@ -1,5 +1,17 @@
 # Implementation Tasks — Next Foundation Milestone
 
+## Evidence governance milestone
+
+- [x] Add hash-bound approval and license contracts.
+- [x] Add structured production audit diagnostics.
+- [x] Quarantine sources with unsupported license claims.
+- [x] Add source-specific native and web audio cache policies.
+- [x] Move Quran Foundation importers to authenticated CLI use.
+- [ ] Attach verified MP3QuranNet permission evidence and exact resource scope.
+- [ ] Record editorial, shaykh, technical, and legal reviewer attestations.
+- [ ] Add exact edition/page/entry citations for authored tafsir summaries.
+- [ ] Supply application Privacy Policy and Terms before provider-backed release.
+
 ## Phase 0 — Inventory and baseline
 
 - Read all project docs.

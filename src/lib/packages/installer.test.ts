@@ -1,6 +1,6 @@
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
-import { ContentPackage } from '../../types/content';
 import { DownloadedContentPackage, PackageStore } from '../../types/packages';
+import { createFullyApprovedPackage } from '../../test/approvedGovernanceFixture';
 import { ContentPackageInstaller, PackageInstallError, hydrateInstalledPackages, validateManifest } from './installer';
 
 class MemoryStore implements PackageStore {
@@ -15,17 +15,8 @@ class MemoryStore implements PackageStore {
 }
 
 function fixture(version = '1.0.0', packageId = surahAlFilPackage.id): DownloadedContentPackage {
-  const content = structuredClone(surahAlFilPackage) as ContentPackage;
-  approveFixtureContent(content);
-  content.id = packageId;
-  content.version = version;
+  const content = createFullyApprovedPackage(surahAlFilPackage, { id: packageId, version });
   return { manifest: { packageId: content.id, version, files: [{ path: 'package.json', kind: 'curriculum', checksum: 'a'.repeat(64), required: true }] }, content };
-}
-
-function approveFixtureContent(value: unknown): void {
-  if (!value || typeof value !== 'object') return;
-  if ('reviewerStatus' in value) (value as { reviewerStatus: string }).reviewerStatus = 'approved';
-  Object.values(value).forEach(approveFixtureContent);
 }
 
 function downloader(downloaded: DownloadedContentPackage) {
@@ -74,6 +65,20 @@ test('installs curriculum parsed from verified bytes instead of the caller objec
   const installer = new ContentPackageInstaller(store, { download: async () => JSON.stringify(mismatched) }, { verify: async () => true });
 
   await expect(installer.stage(downloaded)).rejects.toThrow('Manifest and curriculum package identity do not match');
+});
+
+test('rejects bundled audio without exact redistribution and offline-package rights', async () => {
+  const store = new MemoryStore();
+  const downloaded = fixture();
+  downloaded.manifest.files.push({
+    path: 'audio/105-1.mp3',
+    kind: 'audio',
+    checksum: 'b'.repeat(64),
+    required: true,
+  });
+  const installer = new ContentPackageInstaller(store, downloader(downloaded), { verify: async () => true });
+
+  await expect(installer.stage(downloaded)).rejects.toThrow('lacks exact redistribution and offline-package rights');
 });
 
 test('keeps the previous registry pointer when activation commit fails', async () => {

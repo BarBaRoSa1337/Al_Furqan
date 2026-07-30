@@ -1,6 +1,7 @@
 import { validatePackage } from '../content/packageValidator';
 import { adaptLegacyPackage } from '../content/legacyPackageAdapter';
 import type { ContentRepository } from '../../types/content';
+import { grantCovers } from '../content/governance';
 import {
   ChecksumVerifier,
   ContentPackageManifest,
@@ -137,7 +138,32 @@ function validateStoredPackage(downloaded: DownloadedContentPackage, packageId: 
     throw new PackageInstallError(`Content package shape is invalid: ${errorMessage(error)}`);
   }
   if (!validation.valid) throw new PackageInstallError(`Content package is invalid: ${validation.errors.join('; ')}`);
+  validateBundledAudioRights(downloaded.manifest, content);
   return { ...downloaded, content };
+}
+
+function validateBundledAudioRights(manifest: ContentPackageManifest, content: DownloadedContentPackage['content']): void {
+  if (!manifest.files.some(file => file.kind === 'audio')) return;
+  const tracksBySource = new Map<string, typeof content.recitationTracks>();
+  content.recitationTracks.forEach(track => {
+    tracksBySource.set(track.sourceId, [...(tracksBySource.get(track.sourceId) ?? []), track]);
+  });
+  if (tracksBySource.size === 0) {
+    throw new PackageInstallError('Bundled audio files have no declared recitation tracks');
+  }
+  for (const [sourceId, tracks] of tracksBySource) {
+    const grant = content.governance?.licenseGrants.find(candidate => grantCovers(candidate, {
+      sourceId,
+      profile: 'public-free',
+      platforms: ['android', 'ios', 'web'],
+      rights: ['public_distribution', 'redistribution', 'download', 'offline_storage', 'segmentation'],
+      resourceIds: tracks.map(track => track.id),
+      contentHashes: tracks.map(track => track.checksum),
+    }));
+    if (!grant) {
+      throw new PackageInstallError(`Bundled audio from source "${sourceId}" lacks exact redistribution and offline-package rights`);
+    }
+  }
 }
 
 function isSafeIdentity(value: unknown): value is string {

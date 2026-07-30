@@ -99,7 +99,10 @@ function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: Content
     return <Card><Text style={styles.sourceValue}>{packageText(repo, 'content.audioUnavailable')}</Text></Card>;
   }
   const reciter = repo.getReciterById(tracks[0].reciterId);
-  return reciter ? <AyahAudioPlayer reciter={reciter} tracks={tracks} /> : null;
+  const contentPackage = repo.getPackageForBlock(block.id);
+  return reciter && contentPackage
+    ? <AyahAudioPlayer contentPackage={contentPackage} reciter={reciter} tracks={tracks} />
+    : null;
 }
 
 function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: ContentRepository }) {

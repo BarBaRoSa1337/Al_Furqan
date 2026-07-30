@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  DEFAULT_QF_CONTENT_API_BASE,
+  quranFoundationHeaders,
+} from './quran-foundation-client';
 
-const DEFAULT_API_BASE = 'https://api.quran.com/api/v4';
 const RECITER_RESOURCE_ID = 6;
 const RECITER_ID = 'mahmoud-khalil-al-husary';
 
@@ -19,7 +22,7 @@ interface ProviderAudio {
 }
 
 async function main() {
-  const apiBase = process.env.QURAN_API_BASE ?? DEFAULT_API_BASE;
+  const apiBase = process.env.QURAN_API_BASE ?? DEFAULT_QF_CONTENT_API_BASE;
   const chapter = Number(process.argv[2] ?? 105);
   if (!Number.isInteger(chapter) || chapter < 1 || chapter > 114) {
     throw new Error(`Invalid Surah number "${process.argv[2]}"`);
@@ -95,10 +98,7 @@ async function fetchWithRetry(url: string, headers: Record<string, string> = {})
 }
 
 function providerHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (process.env.QF_ACCESS_TOKEN) headers['x-auth-token'] = process.env.QF_ACCESS_TOKEN;
-  if (process.env.QF_CLIENT_ID) headers['x-client-id'] = process.env.QF_CLIENT_ID;
-  return headers;
+  return quranFoundationHeaders();
 }
 
 void main().catch(error => {

@@ -128,6 +128,13 @@ Owns:
 
 The complete Studio is a later application. The shared contract is part of the current foundation.
 
+### 7. Governance envelope
+
+Owns evidence references, exact hash-bound approval attestations, provider
+license grants, release usage profiles, and machine-readable validation
+diagnostics. This layer gates publishing and media policy without moving
+learner progress or religious content into executable code.
+
 ## Suggested folders
 
 Adapt to the existing repository rather than moving working files unnecessarily.

@@ -1,5 +1,16 @@
 # Offline Content Packages
 
+## Rights-aware package activation
+
+Production staging validates the package governance envelope before atomic
+activation. Audio or other media may be included only when the matching grant
+covers public distribution, redistribution, download/offline storage, target
+platforms, exact resource IDs, and exact content hashes.
+
+Runtime caches are not an alternative distribution channel. Their source-
+specific retention and integrity behavior is defined in
+`docs/CONTENT_RIGHTS_AND_AUDIO_CACHE.md`.
+
 ## Goal
 
 Allow learners to install complete, validated lesson packages for reliable offline learning.

@@ -1,30 +1,37 @@
 import { Ionicons } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
-import { resolveAndCacheRecitation } from '../../lib/audio/audioCache';
+import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { resolveAndCacheRecitation, type AudioCacheResult } from '../../lib/audio/audioCache';
+import { platformForAudio, resolveAudioAccessPolicy } from '../../lib/audio/audioPolicy';
 import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
+import type { ContentPackage } from '../../types/content';
 import type { RecitationTrack, Reciter } from '../../types/media';
 import Card from '../ui/Card';
 
 type RepeatCount = 1 | 3 | 5;
 
-export default function AyahAudioPlayer({ tracks, reciter }: { tracks: RecitationTrack[]; reciter: Reciter }) {
-  const [uris, setUris] = useState(() => tracks.map(track => track.asset.uri));
+export default function AyahAudioPlayer({
+  tracks,
+  reciter,
+  contentPackage,
+}: {
+  tracks: RecitationTrack[];
+  reciter: Reciter;
+  contentPackage: ContentPackage;
+}) {
   const [trackIndex, setTrackIndex] = useState(0);
   const [repeatCount, setRepeatCount] = useState<RepeatCount>(1);
   const [round, setRound] = useState(1);
-  const [cacheStatus, setCacheStatus] = useState<'caching' | 'cached' | 'streaming'>('caching');
+  const [resolution, setResolution] = useState<AudioCacheResult>();
+  const [cacheStatus, setCacheStatus] = useState<'checking' | 'verified' | 'streaming' | 'unavailable'>('checking');
   const [message, setMessage] = useState<string>();
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
-  const pendingPlay = useRef(true);
+  const pendingPlay = useRef(Platform.OS !== 'web');
   const handledFinish = useRef(false);
-  const playbackRef = useRef({ playing: false, trackIndex: 0 });
   const currentTrack = tracks[trackIndex];
-  const currentUri = uris[trackIndex];
-
-  playbackRef.current = { playing: status.playing, trackIndex };
+  const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
 
   useEffect(() => {
     void setAudioModeAsync({
@@ -38,23 +45,37 @@ export default function AyahAudioPlayer({ tracks, reciter }: { tracks: Recitatio
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all(tracks.map(resolveAndCacheRecitation)).then(results => {
-      if (cancelled) return;
-      setUris(current => results.map((result, index) => (
-        playbackRef.current.playing && playbackRef.current.trackIndex === index
-          ? current[index]
-          : result.status === 'unavailable' ? '' : result.uri
-      )));
-      setCacheStatus(results.every(result => result.status === 'cached') ? 'cached' : 'streaming');
-      const warning = results.find(result => result.status === 'remote' && result.reason);
-      if (warning?.status === 'remote') setMessage(warning.reason);
+    let release: (() => void) | undefined;
+    setResolution(undefined);
+    setCacheStatus('checking');
+    setMessage(Platform.OS === 'web' ? 'Tap Play to start recitation.' : undefined);
+    const policy = resolveAudioAccessPolicy(
+      contentPackage,
+      currentTrack,
+      platformForAudio(Platform.OS),
+      { development: __DEV__ },
+    );
+    void resolveAndCacheRecitation(currentTrack, policy).then(result => {
+      if (cancelled) {
+        result.status === 'verified_offline' && result.release?.();
+        return;
+      }
+      release = result.status === 'verified_offline' ? result.release : undefined;
+      setResolution(result);
+      setCacheStatus(result.status === 'verified_offline'
+        ? 'verified'
+        : result.status === 'streaming' ? 'streaming' : 'unavailable');
+      if ('reason' in result && result.reason) setMessage(result.reason);
     });
-    return () => { cancelled = true; };
-  }, [tracks]);
+    return () => {
+      cancelled = true;
+      release?.();
+    };
+  }, [contentPackage, currentTrack]);
 
   useEffect(() => {
-    player.replace(currentUri);
-    pendingPlay.current = true;
+    player.replace(currentUri || null);
+    pendingPlay.current = Platform.OS !== 'web';
     handledFinish.current = false;
   }, [currentUri, player]);
 
@@ -98,6 +119,10 @@ export default function AyahAudioPlayer({ tracks, reciter }: { tracks: Recitatio
   }, [player]);
 
   const togglePlayback = () => {
+    if (!currentUri) {
+      setMessage('Audio is not ready for playback.');
+      return;
+    }
     if (status.playing) {
       player.pause();
       return;
@@ -119,8 +144,14 @@ export default function AyahAudioPlayer({ tracks, reciter }: { tracks: Recitatio
           </Text>
         </View>
         <View style={styles.sourceBadge}>
-          <Ionicons name={cacheStatus === 'cached' ? 'download-outline' : 'cloud-outline'} size={14} color={colors.success} />
-          <Text style={styles.sourceBadgeText}>{cacheStatus === 'cached' ? 'Offline ready' : cacheStatus === 'caching' ? 'Caching' : 'Streaming'}</Text>
+          <Ionicons name={cacheStatus === 'verified' ? 'shield-checkmark-outline' : cacheStatus === 'unavailable' ? 'alert-circle-outline' : 'cloud-outline'} size={14} color={cacheStatus === 'unavailable' ? colors.warning : colors.success} />
+          <Text style={[styles.sourceBadgeText, cacheStatus === 'unavailable' && styles.sourceBadgeWarning]}>
+            {cacheStatus === 'verified'
+              ? resolution?.status === 'verified_offline' && resolution.expiresAt
+                ? `Offline until ${new Date(resolution.expiresAt).toLocaleDateString()}`
+                : 'Verified offline'
+              : cacheStatus === 'checking' ? 'Checking rights' : cacheStatus === 'unavailable' ? 'Unavailable' : 'Streaming only'}
+          </Text>
         </View>
       </View>
 
@@ -178,6 +209,7 @@ const styles = StyleSheet.create({
   ayah: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, marginTop: 1 },
   sourceBadge: { alignItems: 'center', backgroundColor: colors.successSoft, borderRadius: radii.pill, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 5 },
   sourceBadgeText: { color: colors.success, fontFamily: fonts.bold, fontSize: 9 },
+  sourceBadgeWarning: { color: colors.warning },
   controls: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
   secondaryControl: { alignItems: 'center', borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, height: touch.minimum, justifyContent: 'center', width: touch.minimum },
   playControl: { alignItems: 'center', backgroundColor: colors.success, borderRadius: radii.pill, height: 58, justifyContent: 'center', width: 58 },

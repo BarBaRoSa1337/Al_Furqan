@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
+    "content:audit": "node --import tsx scripts/audit-content.ts",
     "content:validate": "node --import tsx scripts/validate-content.ts",
     "structure:validate": "node --import tsx scripts/validate-quran-structure.ts",
     "structure:import": "node --import tsx scripts/import-quran-foundation-structure.ts",

@@ -1,5 +1,6 @@
 // Content Types for Quran Habit App
 import type { LearningActivity } from './activities';
+import type { ContentGovernance } from './governance';
 import type { Reciter, RecitationTrack } from './media';
 
 export const CORE_PACKAGE_TEXT_KEYS = [
@@ -160,6 +161,11 @@ export interface TafsirEntry {
   sourceId: string;
   reviewerStatus: ReviewerStatus;
   explanation?: string;
+  citation?: {
+    sourceId: string;
+    locator: string;
+    edition?: string;
+  };
 }
 
 export interface AyahRecord {
@@ -516,6 +522,8 @@ export interface ContentPackage {
   mediaAssets: MediaAsset[];
   learningPaths: LearningPath[];
   levels: Level[];
+  /** Optional for legacy/development packages; mandatory at the production boundary. */
+  governance?: ContentGovernance;
   metadata: {
     totalLevels: number;
     totalDuration?: number;
