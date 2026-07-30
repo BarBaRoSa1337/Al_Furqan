@@ -76,7 +76,10 @@ export function validatePackage(
   pkg.divisions.forEach(division => validateDivision(division, pkg, errors));
   pkg.structureIndex?.forEach(entry => {
     const label = `StructureIndex "${entry.editionId}:${refKey(entry.ayahRef)}"`;
-    if (!findAyah(pkg, entry.ayahRef)) errors.push(`${label} references unavailable ayah`);
+    const surah = pkg.surahs.find(candidate => candidate.surahNumber === entry.ayahRef.surahNumber);
+    if (!surah || entry.ayahRef.ayahNumber < 1 || entry.ayahRef.ayahNumber > surah.ayahCount) {
+      errors.push(`${label} references invalid Quran coordinates`);
+    }
     if (!pkg.editions.some(edition => edition.id === entry.editionId)) errors.push(`${label} references unknown edition "${entry.editionId}"`);
     validateBoundedNumber(`${label} juzNumber`, entry.juzNumber, 30, errors);
     validateBoundedNumber(`${label} hizbNumber`, entry.hizbNumber, 60, errors);
@@ -134,7 +137,13 @@ function validateSurah(
 ): void {
   const label = `Surah "${surah.id}"`;
   const actualAyahCount = pkg.ayat.filter(ayah => ayah.ref.surahNumber === surah.surahNumber).length;
-  if (actualAyahCount !== surah.ayahCount) errors.push(`${label} declares ${surah.ayahCount} ayat but package contains ${actualAyahCount}`);
+  const indexedAyahCount = (pkg.structureIndex ?? []).filter(entry => entry.ayahRef.surahNumber === surah.surahNumber).length;
+  if (surah.navigationOnly) {
+    if (actualAyahCount > 0) errors.push(`${label} is navigation-only but contains Quran text records`);
+    if (indexedAyahCount !== surah.ayahCount) errors.push(`${label} declares ${surah.ayahCount} ayat but structure index contains ${indexedAyahCount}`);
+  } else if (actualAyahCount !== surah.ayahCount) {
+    errors.push(`${label} declares ${surah.ayahCount} ayat but package contains ${actualAyahCount}`);
+  }
   validateSourceIds(label, [
     surah.sourceMetadata.quranTextSourceId,
     ...surah.sourceMetadata.translationSourceIds,
@@ -239,6 +248,8 @@ function validateRecitationTrack(track: RecitationTrack, pkg: ContentPackage, er
   if (!findAyah(pkg, track.ayahRef)) errors.push(`${label} references missing ayah ${refKey(track.ayahRef)}`);
   if (!track.license || !/^[a-f0-9]{64}$/i.test(track.checksum)) errors.push(`${label} missing license or has invalid checksum`);
   if (!track.asset.uri) errors.push(`${label} missing asset URI`);
+  if (track.durationMs !== undefined && (!Number.isFinite(track.durationMs) || track.durationMs <= 0)) errors.push(`${label} has invalid durationMs`);
+  if (track.byteSize !== undefined && (!Number.isInteger(track.byteSize) || track.byteSize <= 0)) errors.push(`${label} has invalid byteSize`);
   validateSourceIds(label, [track.sourceId], pkg, errors);
 }
 

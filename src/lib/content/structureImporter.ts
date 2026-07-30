@@ -21,6 +21,15 @@ export interface QuranStructureSnapshot {
     contentHash: string;
   };
   editionId: QuranEditionId;
+  surahs?: {
+    number: number;
+    arabicName: string;
+    transliteratedName: string;
+    englishName: string;
+    ayahCount: number;
+    revelationOrder?: number;
+    revelationPlace: 'makkah' | 'madinah';
+  }[];
   divisions: {
     kind: QuranDivisionKind;
     number: number;
@@ -41,11 +50,15 @@ export interface QuranStructureSnapshot {
 export interface ImportedQuranStructure {
   divisions: QuranDivision[];
   structureIndex: AyahStructureIndex[];
+  surahs: NonNullable<QuranStructureSnapshot['surahs']>;
 }
 
 export function importQuranStructureSnapshot(value: unknown, hasher?: StructureHasher): ImportedQuranStructure {
   if (!isSnapshot(value)) throw new Error('Quran structure snapshot is invalid');
-  if (hasher && hasher.hash(stableStringify({ divisions: value.divisions, verses: value.verses })) !== value.source.contentHash) {
+  const hashPayload = value.surahs
+    ? { divisions: value.divisions, surahs: value.surahs, verses: value.verses }
+    : { divisions: value.divisions, verses: value.verses };
+  if (hasher && hasher.hash(stableStringify(hashPayload)) !== value.source.contentHash) {
     throw new Error('Quran structure snapshot hash does not match');
   }
 
@@ -78,8 +91,9 @@ export function importQuranStructureSnapshot(value: unknown, hasher?: StructureH
     rukuNumber: verse.rukuNumber,
     manzilNumber: verse.manzilNumber,
   }));
+  validateCompleteSnapshot(value, structureIndex, divisions);
 
-  return { divisions, structureIndex };
+  return { divisions, structureIndex, surahs: value.surahs ?? [] };
 }
 
 export function stableStringify(value: unknown): string {
@@ -111,6 +125,14 @@ function isSnapshot(value: unknown): value is QuranStructureSnapshot {
     && candidate.divisions.every(division => HAFS_ENABLED_DIVISIONS.includes(division.kind as typeof HAFS_ENABLED_DIVISIONS[number])
       && validNumber(division.number, division.kind === 'juz' ? 30 : division.kind === 'hizb' ? 60 : 240)
       && typeof division.start === 'string' && typeof division.end === 'string')
+    && (candidate.surahs === undefined || (Array.isArray(candidate.surahs)
+      && candidate.surahs.every(surah => validNumber(surah.number, 114)
+        && typeof surah.arabicName === 'string'
+        && typeof surah.transliteratedName === 'string'
+        && typeof surah.englishName === 'string'
+        && Number.isInteger(surah.ayahCount)
+        && surah.ayahCount > 0
+        && (surah.revelationPlace === 'makkah' || surah.revelationPlace === 'madinah'))))
     && Array.isArray(candidate.verses)
     && candidate.verses.every(verse => typeof verse.verseKey === 'string'
       && validNumber(verse.juzNumber, 30) && validNumber(verse.hizbNumber, 60) && validNumber(verse.rubElHizbNumber, 240));
@@ -122,4 +144,47 @@ function validNumber(value: unknown, maximum: number): value is number {
 
 function compareRefs(a: AyahRef, b: AyahRef): number {
   return a.surahNumber - b.surahNumber || a.ayahNumber - b.ayahNumber;
+}
+
+function validateCompleteSnapshot(
+  snapshot: QuranStructureSnapshot,
+  structureIndex: AyahStructureIndex[],
+  divisions: QuranDivision[],
+): void {
+  const refKeys = new Set<string>();
+  structureIndex.forEach(entry => {
+    const key = `${entry.ayahRef.surahNumber}:${entry.ayahRef.ayahNumber}`;
+    if (refKeys.has(key)) throw new Error(`Duplicate Quran structure reference "${key}"`);
+    refKeys.add(key);
+  });
+  if (!snapshot.surahs) return;
+
+  const surahNumbers = new Set(snapshot.surahs.map(surah => surah.number));
+  if (snapshot.surahs.length !== 114 || surahNumbers.size !== 114) {
+    throw new Error('Complete Quran structure snapshot must contain 114 unique Surahs');
+  }
+  if (structureIndex.length !== 6236) {
+    throw new Error('Complete Quran structure snapshot must contain 6236 ayat');
+  }
+  snapshot.surahs.forEach(surah => {
+    const refs = structureIndex.filter(entry => entry.ayahRef.surahNumber === surah.number);
+    if (refs.length !== surah.ayahCount) {
+      throw new Error(`Surah ${surah.number} structure count does not match declared ayah count`);
+    }
+    refs.forEach((entry, index) => {
+      if (entry.ayahRef.ayahNumber !== index + 1) {
+        throw new Error(`Surah ${surah.number} structure references are not contiguous`);
+      }
+    });
+  });
+  const expectedCounts: Record<typeof HAFS_ENABLED_DIVISIONS[number], number> = {
+    juz: 30,
+    hizb: 60,
+    rub_el_hizb: 240,
+  };
+  HAFS_ENABLED_DIVISIONS.forEach(kind => {
+    if (divisions.filter(division => division.kind === kind).length !== expectedCounts[kind]) {
+      throw new Error(`Complete Quran structure snapshot has an invalid ${kind} count`);
+    }
+  });
 }

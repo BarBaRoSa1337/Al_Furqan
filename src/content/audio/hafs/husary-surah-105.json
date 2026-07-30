@@ -1,0 +1,56 @@
+{
+  "source": {
+    "id": "quran-foundation-husary-audio-v4",
+    "version": "content-api-v4-resource-6-2026-07-30",
+    "endpoint": "https://api.quran.com/api/v4",
+    "retrievedAt": "2026-07-30T00:00:00.000Z"
+  },
+  "editionId": "hafs-an-asim",
+  "reciter": {
+    "id": "mahmoud-khalil-al-husary",
+    "displayName": "Mahmoud Khalil Al-Husary",
+    "providerResourceId": "6"
+  },
+  "tracks": [
+    {
+      "verseKey": "105:1",
+      "providerResourceId": "6:105:1",
+      "uri": "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/105001.mp3",
+      "byteSize": 83381,
+      "checksum": "44a135cbf00403891871513135f2d2365ec0b721abd58470fcde1b472e77579d",
+      "format": "mp3"
+    },
+    {
+      "verseKey": "105:2",
+      "providerResourceId": "6:105:2",
+      "uri": "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/105002.mp3",
+      "byteSize": 68335,
+      "checksum": "3fbc56c18ba428ce1218e184c06b7db32434140c58dbdd466054609efe4c7872",
+      "format": "mp3"
+    },
+    {
+      "verseKey": "105:3",
+      "providerResourceId": "6:105:3",
+      "uri": "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/105003.mp3",
+      "byteSize": 75440,
+      "checksum": "4511477e340d82dbe284eb4914af0b8cdb409f309245c5bfbb07d14acea97de3",
+      "format": "mp3"
+    },
+    {
+      "verseKey": "105:4",
+      "providerResourceId": "6:105:4",
+      "uri": "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/105004.mp3",
+      "byteSize": 79411,
+      "checksum": "a5dd70f4187d78416dec917764e7b0d5e64794c7812e6cf026a998880c272083",
+      "format": "mp3"
+    },
+    {
+      "verseKey": "105:5",
+      "providerResourceId": "6:105:5",
+      "uri": "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/105005.mp3",
+      "byteSize": 68753,
+      "checksum": "32f11f68785d4382f0493e8ffed6ba940ec4d161654f425527eab473f0cc6d01",
+      "format": "mp3"
+    }
+  ]
+}

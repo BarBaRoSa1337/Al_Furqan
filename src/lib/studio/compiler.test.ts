@@ -7,7 +7,17 @@ function fixture(approved = false): { draft: PublishablePackageDraft; canonical:
   const canonical = structuredClone(sourcePackage) as ContentPackage;
   if (approved) approveFixtureContent(canonical);
   const { editions, surahs, ayat, wordTokens, divisions, ...curriculum } = canonical;
-  const draft: PublishablePackageDraft = { state: 'approved', canonical: { editionId: editions[0].id, surahIds: surahs.map(item => item.id), ayahRefs: ayat.map(item => item.ref), wordTokenIds: wordTokens.map(item => item.id), divisionIds: divisions.map(item => item.id) }, curriculum };
+  const draft: PublishablePackageDraft = {
+    state: 'approved',
+    canonical: {
+      editionId: editions[0].id,
+      surahIds: surahs.filter(item => !item.navigationOnly).map(item => item.id),
+      ayahRefs: ayat.map(item => item.ref),
+      wordTokenIds: wordTokens.map(item => item.id),
+      divisionIds: divisions.map(item => item.id),
+    },
+    curriculum,
+  };
   return { draft, canonical };
 }
 

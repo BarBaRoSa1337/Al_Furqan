@@ -14,13 +14,17 @@ import {
   Level,
   SurahRecord,
 } from '../../../types/content';
+import type { RecitationTrack, Reciter } from '../../../types/media';
 import { importQuranStructureSnapshot } from '../../../lib/content/structureImporter';
-import alFilStructureSnapshot from '../../structure/hafs/al-fil.json';
+import husaryAudioManifest from '../../audio/hafs/husary-surah-105.json';
+import fullStructureSnapshot from '../../structure/hafs/full.json';
 
 const QURAN_ARABIC_SOURCE_ID = 'quran-arabic-madani';
 const TRANSLATION_SOURCE_ID = 'quran-translation-sahih-international';
 const TAFSIR_SOURCE_ID = 'tafsir-ibn-kathir-summarised';
 const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
+const AUDIO_SOURCE_ID = 'quran-foundation-husary-audio-v4';
+const HUSARY_RECITER_ID = 'mahmoud-khalil-al-husary';
 export const HAFS_AN_ASIM_ID = 'hafs-an-asim' as const;
 
 export const hafsAnAsimEdition: QuranEdition = {
@@ -73,14 +77,25 @@ const structureSource: ContentSource = {
   id: STRUCTURE_SOURCE_ID,
   name: 'Quran Foundation Content API - Quran structure metadata',
   publisher: 'Quran Foundation',
-  version: 'content-api-v4-2026-07-29',
+  version: fullStructureSnapshot.source.version,
   language: 'en',
   reviewerStatus: 'draft',
-  notes: 'Deterministic Al-Fil structure snapshot pending metadata review.',
+  notes: 'Deterministic full Hafs structure snapshot pending metadata review.',
 };
 
-const sources = [quranArabicSource, quranTranslationSource, tafsirSource, structureSource];
-const alFilStructure = importQuranStructureSnapshot(alFilStructureSnapshot);
+const audioSource: ContentSource = {
+  id: AUDIO_SOURCE_ID,
+  name: 'Quran Foundation ayah recitation - Mahmoud Khalil Al-Husary',
+  publisher: 'Quran Foundation / QuranicAudio',
+  version: husaryAudioManifest.source.version,
+  language: 'ar',
+  reviewerStatus: 'draft',
+  notes: 'Ayah-level 64 kbps MP3 manifest and checksums imported from Quran Foundation. Distribution terms require final review.',
+  license: 'Pending provider license review',
+};
+
+const sources = [quranArabicSource, quranTranslationSource, tafsirSource, structureSource, audioSource];
+const fullStructure = importQuranStructureSnapshot(fullStructureSnapshot);
 
 const themes: Theme[] = [{
   id: 'theme-stories',
@@ -134,6 +149,25 @@ export const surahAlFilRecord: SurahRecord = {
   },
 };
 
+const structureSurahs: SurahRecord[] = fullStructure.surahs.map(surah => ({
+  id: `surah-${surah.number}`,
+  navigationOnly: true,
+  surahNumber: surah.number,
+  arabicName: surah.arabicName,
+  transliteratedName: surah.transliteratedName,
+  englishName: surah.englishName,
+  ayahCount: surah.ayahCount,
+  revelationOrder: surah.revelationOrder,
+  revelationPlace: surah.revelationPlace,
+  sourceMetadata: {
+    quranTextSourceId: STRUCTURE_SOURCE_ID,
+    translationSourceIds: [],
+    tafsirSourceIds: [],
+    reviewerStatus: 'draft',
+    notes: 'Canonical navigation metadata only; Arabic text is not included for this Surah.',
+  },
+}));
+
 const translation = (id: string, text: string) => ({
   id,
   locale: 'en',
@@ -174,6 +208,36 @@ export const surahAlFilWordTokens: WordToken[] = canonicalWords.flatMap(({ ayahN
 const wordTokenIds = (ayahNumber: number) => surahAlFilWordTokens
   .filter(token => token.ayahRef.ayahNumber === ayahNumber)
   .map(token => token.id);
+
+const husaryReciter: Reciter = {
+  id: HUSARY_RECITER_ID,
+  displayName: husaryAudioManifest.reciter.displayName,
+  providerResourceId: husaryAudioManifest.reciter.providerResourceId,
+  editionId: HAFS_AN_ASIM_ID,
+  sourceId: AUDIO_SOURCE_ID,
+  license: 'Pending provider license review',
+  reviewerStatus: 'draft',
+};
+
+const husaryTracks: RecitationTrack[] = husaryAudioManifest.tracks.map(track => {
+  const [surahNumber, ayahNumber] = track.verseKey.split(':').map(Number);
+  return {
+    id: `husary-${surahNumber}-${ayahNumber}`,
+    providerResourceId: track.providerResourceId,
+    reciterId: HUSARY_RECITER_ID,
+    editionId: HAFS_AN_ASIM_ID,
+    ayahRef: { surahNumber, ayahNumber },
+    sourceId: AUDIO_SOURCE_ID,
+    license: 'Pending provider license review',
+    checksum: track.checksum,
+    byteSize: track.byteSize,
+    format: 'mp3',
+    asset: {
+      kind: 'remote',
+      uri: track.uri,
+    },
+  };
+});
 
 const word = (wordTokenId: string, transliteration: string, meaning: string, root?: string) => ({
   id: `${wordTokenId}:meaning`,
@@ -399,7 +463,7 @@ export const surahAlFilLevels: Level[] = [
         title: 'Read / Listen',
         blocks: [
           { id: 'l1-ayah-1', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], showTransliteration: true },
-          { id: 'l1-audio-1', type: 'audio', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }] },
+          { id: 'l1-audio-1', type: 'audio', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], reciterId: HUSARY_RECITER_ID },
         ],
       },
       {
@@ -601,7 +665,10 @@ export const surahAlFilLevels: Level[] = [
         id: 'l2-read',
         kind: 'read',
         title: 'Read / Listen',
-        blocks: [{ id: 'l2-ayah-2', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], showTransliteration: true }],
+        blocks: [
+          { id: 'l2-ayah-2', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], showTransliteration: true },
+          { id: 'l2-audio-2', type: 'audio', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], reciterId: HUSARY_RECITER_ID },
+        ],
       },
       {
         id: 'l2-translation', kind: 'translation', title: 'Translation',
@@ -704,6 +771,7 @@ export const surahAlFilLevels: Level[] = [
         title: 'Read / Listen',
         blocks: [
           { id: 'l3-passage-3-4', type: 'quran_passage', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], showTransliteration: true },
+          { id: 'l3-audio-3-4', type: 'audio', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], reciterId: HUSARY_RECITER_ID },
         ],
       },
       {
@@ -804,7 +872,10 @@ export const surahAlFilLevels: Level[] = [
         id: 'l4-read',
         kind: 'read',
         title: 'Read / Listen',
-        blocks: [{ id: 'l4-ayah-5', type: 'quran_passage', ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })), showTransliteration: true }],
+        blocks: [
+          { id: 'l4-ayah-5', type: 'quran_passage', ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })), showTransliteration: true },
+          { id: 'l4-audio-review', type: 'audio', ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })), reciterId: HUSARY_RECITER_ID },
+        ],
       },
       {
         id: 'l4-translation', kind: 'translation', title: 'Translation',
@@ -895,21 +966,21 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '2.7',
+  version: '2.9',
   schemaVersion: 2,
-  revisionId: 'surah-al-fil-v1-r9',
+  revisionId: 'surah-al-fil-v1-r11',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
   editions: [hafsAnAsimEdition],
-  surahs: [surahAlFilRecord],
+  surahs: structureSurahs.map(surah => surah.surahNumber === 105 ? surahAlFilRecord : surah),
   ayat: surahAlFilAyat,
   wordTokens: surahAlFilWordTokens,
-  divisions: alFilStructure.divisions,
-  structureIndex: alFilStructure.structureIndex,
+  divisions: fullStructure.divisions,
+  structureIndex: fullStructure.structureIndex,
   themes,
-  reciters: [],
-  recitationTracks: [],
+  reciters: [husaryReciter],
+  recitationTracks: husaryTracks,
   localization,
   mediaAssets: [],
   learningPaths: [surahAlFilLearningPath],

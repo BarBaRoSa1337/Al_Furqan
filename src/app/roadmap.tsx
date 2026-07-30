@@ -32,8 +32,8 @@ export default function RoadmapScreen() {
     router.push(`/lesson/${levelId}`);
   };
 
-  const openLocation = (query: string) => {
-    router.push({ pathname: '/discover', params: { q: query } });
+  const openLocation = (mode: 'surah' | 'juz' | 'hizb', number: number) => {
+    router.push({ pathname: '/discover', params: { mode, number: String(number) } });
   };
 
   const activeOrPracticeLevel = dashboard.activeLevel ?? dashboard.latestCompletedLevel;

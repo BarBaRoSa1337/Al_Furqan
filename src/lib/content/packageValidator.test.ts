@@ -9,6 +9,26 @@ test('accepts draft package in development with warnings', () => {
   expect(result.warnings.length).toBeGreaterThan(0);
 });
 
+test('requires navigation-only Surahs to match the canonical structure without embedding Quran text', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const navigationSurah = pkg.surahs.find(surah => surah.navigationOnly);
+  if (!navigationSurah) throw new Error('Navigation Surah fixture unavailable');
+  pkg.structureIndex = pkg.structureIndex?.filter(entry => !(
+    entry.ayahRef.surahNumber === navigationSurah.surahNumber
+    && entry.ayahRef.ayahNumber === navigationSurah.ayahCount
+  ));
+
+  let result = validatePackage(pkg);
+  expect(result.errors.some(error => error.includes('structure index contains'))).toBe(true);
+
+  const canonicalAyah = structuredClone(pkg.ayat[0]);
+  canonicalAyah.id = `${navigationSurah.surahNumber}:1`;
+  canonicalAyah.ref = { surahNumber: navigationSurah.surahNumber, ayahNumber: 1 };
+  pkg.ayat.push(canonicalAyah);
+  result = validatePackage(pkg);
+  expect(result.errors.some(error => error.includes('navigation-only but contains Quran text'))).toBe(true);
+});
+
 test('blocks draft religious content in production', () => {
   const result = validatePackage(surahAlFilPackage, { mode: 'production' });
   expect(result.valid).toBe(false);
@@ -131,8 +151,8 @@ test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () 
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('2.7');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r9');
+  expect(surahAlFilPackage.version).toBe('2.9');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r11');
   expect(getCoreLevelSteps(surahAlFilPackage.levels[1]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',
@@ -165,19 +185,19 @@ test('rejects schema-v2 steps with multiple interactive exercises', () => {
 test('rejects invented Hafs Thumun metadata and inconsistent structure ranges', () => {
   const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
   pkg.structureIndex![0].thumunAlHizbNumber = 480;
-  pkg.divisions.find(division => division.kind === 'rub_el_hizb')!.range.start = { surahNumber: 106, ayahNumber: 1 };
+  pkg.divisions.find(division => division.kind === 'rub_el_hizb' && division.number === 1)!.range.start = { surahNumber: 2, ayahNumber: 1 };
 
   const result = validatePackage(pkg);
 
   expect(result.errors.some(error => error.includes('unsupported Hafs Thumun'))).toBe(true);
-  expect(result.errors.some(error => error.includes('outside Rub 240 range'))).toBe(true);
+  expect(result.errors.some(error => error.includes('outside Rub 1 range'))).toBe(true);
 });
 
 test('rejects discovery metadata outside the package canonical selection', () => {
   const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
   pkg.learningPaths[0].discovery = {
     ...pkg.learningPaths[0].discovery!,
-    alignment: { type: 'hizb', number: 59 },
+    alignment: { type: 'hizb', number: 61 },
   };
   pkg.levels[0].discovery = {
     ...pkg.levels[0].discovery!,
@@ -189,7 +209,7 @@ test('rejects discovery metadata outside the package canonical selection', () =>
 
   const result = validatePackage(pkg);
 
-  expect(result.errors.some(error => error.includes('unavailable Hizb 59'))).toBe(true);
+  expect(result.errors.some(error => error.includes('unavailable Hizb 61'))).toBe(true);
   expect(result.errors.some(error => error.includes('reversed range'))).toBe(true);
 });
 

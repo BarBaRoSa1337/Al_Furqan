@@ -162,3 +162,16 @@ Audio tracks must declare:
 - local or remote asset location.
 
 Do not mix audio from another edition with Hafs text.
+
+### Current implementation
+
+The current development package provides one Al-Husary Hafs manifest for
+Surah Al-Fil. `npm run audio:import -- 105` imports provider metadata, downloads
+each referenced MP3 during the CLI run, and writes byte-size/SHA-256-verified
+track records. The Expo client streams first and, on Android/iOS, caches only
+tracks that pass the declared size and checksum. Partial or mismatched files
+are deleted before they can be used.
+
+The web client streams remote audio and does not persist an unverified browser
+cache. The manifest and its source/license records are draft, so production
+package validation remains blocked pending approval.

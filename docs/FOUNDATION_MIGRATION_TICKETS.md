@@ -99,7 +99,7 @@ Compatibility:
 
 ## T20 — Audio resource foundation
 
-Status: implemented (contract only).
+Status: implemented (development playback and cache).
 
 Scope:
 
@@ -111,10 +111,10 @@ Scope:
 
 Compatibility:
 
-- no unapproved audio fetch;
-- lesson remains usable without optional audio unless explicitly marked required.
+- lesson remains usable without optional audio unless explicitly marked required;
+- production activation remains blocked while source/license/review records are draft.
 
-Delivered: reciter and ayah-track contracts, Hafs compatibility/source/license/checksum validation, repository lookups, and a resolver/player boundary. No audio fixture or playback is enabled because no approved Hafs audio source is configured.
+Delivered: reciter and ayah-track contracts, Hafs compatibility/source/license/checksum validation, repository lookups, an Al-Husary Al-Fil manifest, stream-then-cache playback, repeat controls, and native cache integrity verification. The development fixture is intentionally not production-publishable until the provider source/license and required reviews are approved.
 
 ## T21 — Offline package manifest and installer
 
@@ -211,7 +211,7 @@ Delivered: semantic step kinds; separate passage, translation, selected word-mea
 
 Migration: Al-Fil package `2.0`/revision `r2` separates mixed meaning/tafsir steps across all four levels. Level 1 includes the complete target sequence and two memory exercises. Existing level/path IDs and key legacy step IDs remain stable.
 
-Gate: new derived activities and summaries remain source-linked drafts. Production validation must continue to reject them until approval; approved Hafs audio is still unavailable.
+Gate: new derived activities and summaries remain source-linked drafts. Production validation must continue to reject them until approval; the development Hafs audio manifest also remains draft pending provider license and editorial approval.
 
 ## T27 — Memorization practice ladder
 

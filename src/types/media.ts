@@ -3,6 +3,7 @@ import type { AyahRef, QuranEditionId } from './content';
 export interface Reciter {
   id: string;
   displayName: string;
+  providerResourceId?: string;
   editionId: QuranEditionId;
   sourceId: string;
   license: string;
@@ -21,6 +22,10 @@ export interface RecitationTrack {
   sourceId: string;
   license: string;
   checksum: string;
+  providerResourceId?: string;
+  durationMs?: number;
+  byteSize?: number;
+  format?: string;
   asset: AudioAssetLocation;
 }
 

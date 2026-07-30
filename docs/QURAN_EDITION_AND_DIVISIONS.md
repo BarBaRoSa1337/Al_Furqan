@@ -132,12 +132,15 @@ Production validation must reject:
 
 ## Data population rule
 
-Do not invent full-Quran Juz/Hizb/Rub data.
+Do not invent or manually type full-Quran Juz/Hizb/Rub data. Full navigation
+metadata is imported through `npm run structure:import` from Quran Foundation
+Content API v4, normalized into `src/content/structure/hafs/full.json`, and
+validated with `npm run structure:validate`.
 
-For the current Al-Fil slice:
+The snapshot contains only navigation metadata: 114 Surah records, 6,236 Hafs
+ayah coordinates, and 30/60/240 Juz/Hizb/Rub memberships. It is not a full
+Quran-text import. `navigationOnly` Surah records must have no `AyahRecord`
+payload and must exactly match the imported structure index count.
 
-- use a verified source already present in the repository, or
-- add only source-backed records needed by the fixture, or
-- keep the model and tests ready while clearly marking unavailable production data.
-
-The implementation report must state which option was used.
+The snapshot source and its metadata remain draft until source review is
+complete; production validation must continue to enforce that gate.

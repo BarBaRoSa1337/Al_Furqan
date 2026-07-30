@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import BottomNavigation from '../components/furqan/BottomNavigation';
 import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
@@ -13,21 +13,40 @@ import { isLevelAccessible } from '../lib/progress/lessonAccess';
 import { colors, fonts, radii, shadows, spacing } from '../theme/tokens';
 import { AppProgress, DEFAULT_PROGRESS } from '../types/progress';
 
+type BrowseMode = 'search' | 'surah' | 'juz' | 'hizb';
+interface BrowseItem {
+  number: number;
+  title: string;
+  subtitle: string;
+  arabic?: string;
+}
+
 export default function DiscoverScreen() {
-  const params = useLocalSearchParams<{ q?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    q?: string | string[];
+    mode?: string | string[];
+    number?: string | string[];
+  }>();
   const initialQuery = Array.isArray(params.q) ? params.q[0] ?? '' : params.q ?? '';
+  const initialMode = normalizeBrowseMode(Array.isArray(params.mode) ? params.mode[0] : params.mode);
+  const initialNumber = parseBrowseNumber(Array.isArray(params.number) ? params.number[0] : params.number);
   const router = useRouter();
   const dashboard = useFurqanDashboard();
   const repo = getContentRepository();
   const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key);
   const [query, setQuery] = useState(initialQuery);
+  const [browseMode, setBrowseMode] = useState<BrowseMode>(initialMode);
+  const [browseNumber, setBrowseNumber] = useState<number | undefined>(initialNumber);
   const [downloadedOnly, setDownloadedOnly] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string>();
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
+  const browseListRef = useRef<FlatList<BrowseItem>>(null);
 
   useEffect(() => {
     setQuery(initialQuery);
-  }, [initialQuery]);
+    setBrowseMode(initialMode);
+    setBrowseNumber(initialNumber);
+  }, [initialMode, initialNumber, initialQuery]);
 
   useEffect(() => {
     void getAppProgress().then(setProgress).catch(() => undefined);
@@ -38,7 +57,12 @@ export default function DiscoverScreen() {
     editionId: 'hafs-an-asim' as const,
     studyLocale: 'en',
   };
-  const result = repo.searchDiscovery(query, {
+  const effectiveQuery = browseMode === 'search'
+    ? query
+    : browseNumber
+      ? `${browseMode === 'surah' ? 'Surah' : browseMode === 'juz' ? 'Juz' : 'Hizb'} ${browseNumber}`
+      : '';
+  const result = repo.searchDiscovery(effectiveQuery, {
     downloadedOnly,
     themeIds: selectedThemeId ? [selectedThemeId] : undefined,
     approvedOnly: !__DEV__,
@@ -48,6 +72,41 @@ export default function DiscoverScreen() {
     .filter((theme, index, all) => all.findIndex(candidate => candidate.id === theme.id) === index)
     .filter(theme => __DEV__ || theme.reviewerStatus === 'approved');
   const hasResults = result.quranReferences.length > 0 || result.learningPaths.length > 0;
+  const browseItems: BrowseItem[] = browseMode === 'surah'
+    ? repo.getSurahs('mushaf').map(surah => ({
+      number: surah.surahNumber,
+      title: surah.transliteratedName,
+      subtitle: `${surah.englishName} · ${surah.ayahCount} ayat`,
+      arabic: surah.arabicName,
+    }))
+    : browseMode === 'juz' || browseMode === 'hizb'
+      ? repo.listDivisions(browseMode, scope.editionId, scope).map(division => {
+        const refs = repo.listAyahRefsInDivision(browseMode, division.number, scope.editionId, scope);
+        const surahs = repo.listSurahsInDivision(browseMode, division.number, scope.editionId, scope);
+        return {
+          number: division.number,
+          title: `${browseMode === 'juz' ? 'Juz' : 'Hizb'} ${division.number}`,
+          subtitle: `${refs.length} ayat · ${surahs.length} Surah${surahs.length === 1 ? '' : 's'}`,
+        };
+      })
+      : [];
+
+  useEffect(() => {
+    if (!browseNumber) return;
+    browseListRef.current?.scrollToIndex({ animated: true, index: browseNumber - 1 });
+  }, [browseMode, browseNumber]);
+
+  const selectMode = (mode: BrowseMode) => {
+    setBrowseMode(mode);
+    setBrowseNumber(mode === 'surah'
+      ? dashboard.location?.surahNumber ?? 1
+      : mode === 'juz'
+        ? dashboard.location?.juzNumber ?? 1
+        : mode === 'hizb'
+          ? dashboard.location?.hizbNumber ?? 1
+          : undefined);
+    if (mode !== 'search') setQuery('');
+  };
 
   const openPath = (packageId: string, levelIds: string[]) => {
     const pkg = repo.getPackageById(packageId);
@@ -76,6 +135,7 @@ export default function DiscoverScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               onChangeText={setQuery}
+              onFocus={() => setBrowseMode('search')}
               placeholder={text('discovery.placeholder')}
               placeholderTextColor={colors.textMuted}
               returnKeyType="search"
@@ -83,6 +143,64 @@ export default function DiscoverScreen() {
               value={query}
             />
           </View>
+
+          <View accessibilityRole="tablist" style={styles.browseTabs}>
+            {(['search', 'surah', 'juz', 'hizb'] as BrowseMode[]).map(mode => {
+              const selected = browseMode === mode;
+              return (
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  key={mode}
+                  onPress={() => selectMode(mode)}
+                  style={({ pressed }) => [styles.browseTab, selected && styles.browseTabSelected, pressed && styles.pressed]}
+                >
+                  <Text style={[styles.browseTabText, selected && styles.browseTabTextSelected]}>
+                    {mode === 'search' ? 'Search' : mode[0].toUpperCase() + mode.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {browseMode !== 'search' ? (
+            <View style={styles.browseSection}>
+              <Text style={styles.filterLabel}>Browse by {browseMode}</Text>
+              <FlatList
+                contentContainerStyle={styles.browseList}
+                data={browseItems}
+                getItemLayout={(_data, index) => ({
+                  index,
+                  length: 190 + spacing.sm,
+                  offset: (190 + spacing.sm) * index,
+                })}
+                horizontal
+                initialScrollIndex={browseNumber ? browseNumber - 1 : 0}
+                keyExtractor={item => `${browseMode}:${item.number}`}
+                ref={browseListRef}
+                renderItem={({ item }) => {
+                  const selected = browseNumber === item.number;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      onPress={() => setBrowseNumber(item.number)}
+                      style={({ pressed }) => [styles.browseItem, selected && styles.browseItemSelected, pressed && styles.pressed]}
+                    >
+                      <View style={styles.browseNumber}><Text style={styles.browseNumberText}>{item.number}</Text></View>
+                      <View style={styles.browseCopy}>
+                        <Text style={styles.browseTitle}>{item.title}</Text>
+                        <Text style={styles.browseSubtitle}>{item.subtitle}</Text>
+                      </View>
+                      {item.arabic ? <Text style={styles.browseArabic}>{item.arabic}</Text> : null}
+                      <Ionicons name={selected ? 'checkmark-circle' : 'chevron-forward'} size={18} color={selected ? colors.success : colors.textMuted} />
+                    </Pressable>
+                  );
+                }}
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
+          ) : null}
 
           {themes.length > 0 ? (
             <View style={styles.filterGroup}>
@@ -121,12 +239,27 @@ export default function DiscoverScreen() {
               <Text style={styles.sectionTitle}>{text('discovery.quranReferences')}</Text>
               {result.quranReferences.map(reference => {
                 const ayat = repo.getAyatByRefs(reference.ayahRefs.slice(0, 3), scope.editionId, scope);
+                const firstRef = reference.ayahRefs[0];
+                const lastRef = reference.ayahRefs.at(-1);
+                const includedSurahs = reference.lookup.type === 'juz' || reference.lookup.type === 'hizb'
+                  ? repo.listSurahsInDivision(reference.lookup.type, reference.lookup.number, scope.editionId, scope)
+                  : [];
                 return (
                   <View key={`${reference.lookup.type}:${reference.label}`} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <Text style={styles.cardTitle}>{reference.label}</Text>
                       <Ionicons name="book-outline" size={18} color={colors.success} />
                     </View>
+                    {firstRef && lastRef ? (
+                      <Text style={styles.referenceMeta}>
+                        {firstRef.surahNumber}:{firstRef.ayahNumber}–{lastRef.surahNumber}:{lastRef.ayahNumber} · {reference.ayahRefs.length} ayat
+                      </Text>
+                    ) : null}
+                    {includedSurahs.length > 0 ? (
+                      <Text numberOfLines={3} style={styles.referenceSurahs}>
+                        {includedSurahs.map(surah => surah.transliteratedName).join(' · ')}
+                      </Text>
+                    ) : null}
                     {ayat.map(ayah => <Text key={ayah.id} style={styles.arabic}>{ayah.arabicText.text}</Text>)}
                     {reference.lessonAvailability === 'no_published_lesson' ? <Text style={styles.unavailable}>{text('discovery.noLesson')}</Text> : null}
                   </View>
@@ -168,6 +301,21 @@ const styles = StyleSheet.create({
   searchShell: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg, borderWidth: 1, boxShadow: shadows.card, flexDirection: 'row', paddingHorizontal: spacing.md },
   input: { color: colors.text, flex: 1, fontFamily: fonts.regular, fontSize: 16, minHeight: 50, paddingHorizontal: spacing.sm },
   filterGroup: { marginTop: spacing.lg },
+  browseTabs: { backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, flexDirection: 'row', marginTop: spacing.md, padding: 3 },
+  browseTab: { alignItems: 'center', borderRadius: radii.pill, flex: 1, justifyContent: 'center', minHeight: 40, paddingHorizontal: spacing.sm },
+  browseTabSelected: { backgroundColor: colors.primary },
+  browseTabText: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 12 },
+  browseTabTextSelected: { color: colors.surface },
+  browseSection: { marginTop: spacing.lg },
+  browseList: { gap: spacing.sm, paddingRight: spacing.lg },
+  browseItem: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.md, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, minHeight: 62, padding: spacing.md, width: 190 },
+  browseItemSelected: { backgroundColor: colors.successSoft, borderColor: colors.success },
+  browseNumber: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radii.pill, height: 34, justifyContent: 'center', width: 34 },
+  browseNumberText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 12 },
+  browseCopy: { flex: 1, minWidth: 0 },
+  browseTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 15 },
+  browseSubtitle: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
+  browseArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 20 },
   filterLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, marginBottom: spacing.sm, textTransform: 'uppercase' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
@@ -184,6 +332,8 @@ const styles = StyleSheet.create({
   cardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   cardTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 17 },
   arabic: { color: colors.text, fontFamily: fonts.arabic, fontSize: 27, lineHeight: 44, marginTop: spacing.sm, textAlign: 'right', writingDirection: 'rtl' },
+  referenceMeta: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, marginTop: spacing.sm },
+  referenceSurahs: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, marginTop: spacing.xs },
   unavailable: { color: colors.warning, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.sm },
   description: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, marginTop: spacing.sm },
   primaryButton: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: colors.success, borderRadius: radii.pill, flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md, minHeight: 44, paddingHorizontal: spacing.lg },
@@ -191,3 +341,13 @@ const styles = StyleSheet.create({
   empty: { color: colors.textMuted, fontFamily: fonts.regular, lineHeight: 22, paddingVertical: spacing.xl, textAlign: 'center' },
   pressed: { opacity: 0.72 },
 });
+
+function normalizeBrowseMode(value?: string): BrowseMode {
+  return value === 'surah' || value === 'juz' || value === 'hizb' ? value : 'search';
+}
+
+function parseBrowseNumber(value?: string): number | undefined {
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const number = Number(value);
+  return number > 0 ? number : undefined;
+}

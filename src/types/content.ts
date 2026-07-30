@@ -183,6 +183,8 @@ export interface AyahRecord {
 
 export interface SurahRecord {
   id: string;
+  /** True when the package supplies canonical navigation metadata without Quran text records. */
+  navigationOnly?: boolean;
   surahNumber: number;
   arabicName: string;
   transliteratedName: string;

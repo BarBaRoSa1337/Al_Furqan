@@ -1,4 +1,5 @@
 import snapshot from '../../content/structure/hafs/al-fil.json';
+import fullSnapshot from '../../content/structure/hafs/full.json';
 import { importQuranStructureSnapshot, stableStringify } from './structureImporter';
 
 test('imports the source-backed Al-Fil structure fixture deterministically', () => {
@@ -26,4 +27,17 @@ test('rejects a snapshot whose source hash does not match', () => {
 
 test('stableStringify sorts object keys recursively', () => {
   expect(stableStringify({ z: 1, a: { y: 2, b: 3 } })).toBe('{"a":{"b":3,"y":2},"z":1}');
+});
+
+test('imports the complete Hafs navigation index', () => {
+  const imported = importQuranStructureSnapshot(fullSnapshot, {
+    hash: () => fullSnapshot.source.contentHash,
+  });
+
+  expect(imported.surahs).toHaveLength(114);
+  expect(imported.structureIndex).toHaveLength(6236);
+  expect(imported.divisions.filter(division => division.kind === 'juz')).toHaveLength(30);
+  expect(imported.divisions.filter(division => division.kind === 'hizb')).toHaveLength(60);
+  expect(imported.divisions.filter(division => division.kind === 'rub_el_hizb')).toHaveLength(240);
+  expect(imported.structureIndex.some(entry => entry.thumunAlHizbNumber !== undefined)).toBe(false);
 });

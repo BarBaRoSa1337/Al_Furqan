@@ -40,6 +40,11 @@ Quran.com may supply candidate Uthmani text, word data, and edition-compatible r
 
 ## Media behavior
 
-`MediaBlock` selects package-declared image, SVG, or animation assets with alt text, source/license metadata, review state, and reduced-motion fallback. `AudioBlock` selects approved Hafs recitation tracks. The current fixture has no approved visual or audio assets, so it renders a safe fallback rather than downloading media at runtime.
+`MediaBlock` selects package-declared image, SVG, or animation assets with alt text, source/license metadata, review state, and reduced-motion fallback. `AudioBlock` selects Hafs-compatible recitation tracks declared by the package.
 
-Lottie playback and concrete recitation playback stay deferred until approved assets and an approved Hafs audio provider configuration exist.
+The current development package renders an Al-Husary ayah player for Al-Fil.
+It attempts playback on mount, exposes an accessible play/pause fallback for
+platform autoplay policies, provides repeat controls, and pauses on app
+background. Native tracks stream first, then enter the cache only after
+size/SHA-256 verification. The source/license records are draft, so this is
+not production-publishable until approval is complete.

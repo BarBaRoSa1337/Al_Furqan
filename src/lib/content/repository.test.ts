@@ -26,12 +26,26 @@ test('keeps canonical token IDs attached to their Hafs ayah', () => {
 
 test('resolves source-backed Al-Fil division memberships and the rub alias', () => {
   const repository = getContentRepository();
+  const rub240Refs = repository.listAyahRefsInDivision('rub', 240, HAFS_AN_ASIM_ID);
+  const rub240Surahs = repository.listSurahsInDivision('rub', 240, HAFS_AN_ASIM_ID);
 
   expect(repository.getDivision('juz', 30, HAFS_AN_ASIM_ID)?.range.start).toEqual({ surahNumber: 78, ayahNumber: 1 });
   expect(repository.getDivision('hizb', 60, HAFS_AN_ASIM_ID)?.range.start).toEqual({ surahNumber: 87, ayahNumber: 1 });
-  expect(repository.listAyahRefsInDivision('rub', 240, HAFS_AN_ASIM_ID)).toEqual(surahAlFilAyat.map(ayah => ayah.ref));
-  expect(repository.listSurahsInDivision('rub', 240, HAFS_AN_ASIM_ID).map(surah => surah.id)).toEqual(['surah-al-fil']);
+  expect(rub240Refs[0]).toEqual({ surahNumber: 100, ayahNumber: 9 });
+  expect(rub240Refs.at(-1)).toEqual({ surahNumber: 114, ayahNumber: 6 });
+  expect(rub240Refs).toEqual(expect.arrayContaining(surahAlFilAyat.map(ayah => ayah.ref)));
+  expect(rub240Surahs.map(surah => surah.id)).toContain('surah-al-fil');
   expect(repository.getDivisionsForAyah({ surahNumber: 105, ayahNumber: 1 }, HAFS_AN_ASIM_ID).map(division => division.number)).toEqual([30, 60, 240]);
+});
+
+test('exposes complete Hafs navigation indexes without inventing canonical ayah text', () => {
+  const repository = getContentRepository();
+
+  expect(repository.getSurahs()).toHaveLength(114);
+  expect(repository.listDivisions('juz', HAFS_AN_ASIM_ID)).toHaveLength(30);
+  expect(repository.listDivisions('hizb', HAFS_AN_ASIM_ID)).toHaveLength(60);
+  expect(repository.listDivisions('rub', HAFS_AN_ASIM_ID)).toHaveLength(240);
+  expect(repository.getAyahByRef({ surahNumber: 1, ayahNumber: 1 }, HAFS_AN_ASIM_ID)).toBeUndefined();
 });
 
 test('searches Quran references separately from matching learning paths', () => {
@@ -45,7 +59,9 @@ test('searches Quran references separately from matching learning paths', () => 
   expect(referenceSearch.learningPaths[0]?.packageId).toBe(surahAlFilPackage.id);
 
   const themeSearch = repository.searchDiscovery('stories');
-  expect(themeSearch.quranReferences).toEqual([]);
+  expect(themeSearch.quranReferences).toEqual(expect.arrayContaining([
+    expect.objectContaining({ lookup: { type: 'surah', surahNumber: 28 }, lessonAvailability: 'no_published_lesson' }),
+  ]));
   expect(themeSearch.learningPaths.map(result => result.path.id)).toContain('surah-al-fil-path-v1');
 });
 

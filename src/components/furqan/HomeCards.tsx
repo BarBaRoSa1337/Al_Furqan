@@ -45,12 +45,12 @@ export function LocationSelector({
   onSelect,
 }: {
   location?: QuranLocationSummary;
-  onSelect: (query: string) => void;
+  onSelect: (mode: 'surah' | 'juz' | 'hizb', number: number) => void;
 }) {
   const items = [
-    { label: 'Juz', value: location?.juzNumber, icon: 'book-outline' as const, query: location?.juzNumber ? `Juz ${location.juzNumber}` : undefined },
-    { label: 'Hizb', value: location?.hizbNumber, icon: 'options-outline' as const, query: location?.hizbNumber ? `Hizb ${location.hizbNumber}` : undefined },
-    { label: 'Surah', value: location?.surahNumber, icon: 'business-outline' as const, query: location?.surahName },
+    { label: 'Juz', mode: 'juz' as const, value: location?.juzNumber, icon: 'book-outline' as const },
+    { label: 'Hizb', mode: 'hizb' as const, value: location?.hizbNumber, icon: 'options-outline' as const },
+    { label: 'Surah', mode: 'surah' as const, value: location?.surahNumber, icon: 'business-outline' as const },
   ];
   return (
     <View style={styles.selectorShell}>
@@ -59,11 +59,11 @@ export function LocationSelector({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={item.value ? `${item.label} ${item.value}` : `${item.label} unavailable`}
-            accessibilityState={{ disabled: !item.query }}
-            disabled={!item.query}
+            accessibilityState={{ disabled: !item.value }}
+            disabled={!item.value}
             key={item.label}
-            onPress={() => item.query && onSelect(item.query)}
-            style={({ pressed }) => [styles.selectorItem, pressed && styles.pressed, !item.query && styles.disabled]}
+            onPress={() => item.value && onSelect(item.mode, item.value)}
+            style={({ pressed }) => [styles.selectorItem, pressed && styles.pressed, !item.value && styles.disabled]}
           >
             <Ionicons name={item.icon} size={17} color={colors.primary} />
             <Text style={styles.selectorLabel}>{item.label}</Text>

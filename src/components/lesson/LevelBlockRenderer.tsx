@@ -20,6 +20,7 @@ import LevelQuestionBlock from './LevelQuestionBlock';
 import PracticeActivityRenderer from './PracticeActivityRenderer';
 import { packageText } from '../../lib/content/text';
 import WisdomCard from './WisdomCard';
+import AyahAudioPlayer from './AyahAudioPlayer';
 import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
 
 interface LevelBlockRendererProps {
@@ -94,8 +95,11 @@ function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: Content
     const track = repo.getRecitationTrackByAyah(ref, block.reciterId);
     return track ? [track] : [];
   });
-  if (tracks.length !== block.ayahRefs.length) return null;
-  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.listen')}</Text>{tracks.map(track => <Text key={track.id} style={styles.sourceValue}>{repo.getReciterById(track.reciterId)?.displayName ?? packageText(repo, 'content.sourceUnavailable')}</Text>)}</Card>;
+  if (tracks.length !== block.ayahRefs.length) {
+    return <Card><Text style={styles.sourceValue}>{packageText(repo, 'content.audioUnavailable')}</Text></Card>;
+  }
+  const reciter = repo.getReciterById(tracks[0].reciterId);
+  return reciter ? <AyahAudioPlayer reciter={reciter} tracks={tracks} /> : null;
 }
 
 function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: ContentRepository }) {
