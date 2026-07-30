@@ -8,11 +8,13 @@ import {
   QuranDivision,
   ReviewerStatus,
   SurahRecord,
+  Theme,
   WordToken,
 } from '../../types/content';
 import { RecitationTrack, Reciter } from '../../types/media';
 import { validateActivity } from '../activities/activityEngine';
 import { getLevelStepKind } from './stepKind';
+import { resolveLegacyWordTokenId } from './legacyPackageAdapter';
 
 export type ValidationMode = 'development' | 'production';
 
@@ -53,6 +55,8 @@ export function validatePackage(
   validateUniqueIds('ayah ref', pkg.ayat.map(ayah => `${ayah.editionId}:${refKey(ayah.ref)}`), errors);
   validateUniqueIds('word token', pkg.wordTokens.map(token => token.id), errors);
   validateUniqueIds('division', pkg.divisions.map(division => division.id), errors);
+  validateUniqueIds('structure index', (pkg.structureIndex ?? []).map(entry => `${entry.editionId}:${refKey(entry.ayahRef)}`), errors);
+  validateUniqueIds('theme', (pkg.themes ?? []).map(theme => theme.id), errors);
   validateUniqueIds('reciter', pkg.reciters.map(reciter => reciter.id), errors);
   validateUniqueIds('recitation track', pkg.recitationTracks.map(track => track.id), errors);
   validateUniqueIds('media asset', pkg.mediaAssets.map(asset => asset.id), errors);
@@ -70,6 +74,19 @@ export function validatePackage(
   pkg.ayat.forEach(ayah => validateAyah(ayah, pkg, mode, errors, warnings));
   pkg.wordTokens.forEach(token => validateWordToken(token, pkg, errors));
   pkg.divisions.forEach(division => validateDivision(division, pkg, errors));
+  pkg.structureIndex?.forEach(entry => {
+    const label = `StructureIndex "${entry.editionId}:${refKey(entry.ayahRef)}"`;
+    if (!findAyah(pkg, entry.ayahRef)) errors.push(`${label} references unavailable ayah`);
+    if (!pkg.editions.some(edition => edition.id === entry.editionId)) errors.push(`${label} references unknown edition "${entry.editionId}"`);
+    validateBoundedNumber(`${label} juzNumber`, entry.juzNumber, 30, errors);
+    validateBoundedNumber(`${label} hizbNumber`, entry.hizbNumber, 60, errors);
+    validateBoundedNumber(`${label} rubElHizbNumber`, entry.rubElHizbNumber, 240, errors);
+    if (entry.editionId === 'hafs-an-asim' && entry.thumunAlHizbNumber !== undefined) errors.push(`${label} invents unsupported Hafs Thumun metadata`);
+    validateStructureDivision(label, entry.ayahRef, 'juz', entry.juzNumber, pkg, errors);
+    validateStructureDivision(label, entry.ayahRef, 'hizb', entry.hizbNumber, pkg, errors);
+    validateStructureDivision(label, entry.ayahRef, 'rub_el_hizb', entry.rubElHizbNumber, pkg, errors);
+  });
+  pkg.themes?.forEach(theme => validateTheme(theme, pkg, mode, errors, warnings));
   pkg.reciters.forEach(reciter => validateReciter(reciter, pkg, mode, errors, warnings));
   pkg.recitationTracks.forEach(track => validateRecitationTrack(track, pkg, errors));
   pkg.mediaAssets.forEach(asset => validateMediaAsset(asset, pkg, mode, errors, warnings));
@@ -86,6 +103,7 @@ export function validatePackage(
     });
     validateSourceIds(`LearningPath "${path.id}"`, path.sourceMetadata.sourceIds, pkg, errors);
     validateReviewStatus(`LearningPath "${path.id}"`, path.sourceMetadata.reviewerStatus, mode, errors, warnings);
+    validateDiscoveryMetadata(`LearningPath "${path.id}"`, path.discovery, pkg, errors, warnings);
   });
   if (pkg.metadata.defaultLearningPathId && !pkg.learningPaths.some(path => path.id === pkg.metadata.defaultLearningPathId)) {
     errors.push(`metadata.defaultLearningPathId references missing path "${pkg.metadata.defaultLearningPathId}"`);
@@ -153,9 +171,17 @@ function validateAyah(
   });
   ayah.wordMeanings?.forEach((entry, index) => {
     const wordLabel = `${label} wordMeaning[${index}]`;
+    const hasLegacyArabic = 'arabic' in entry && typeof entry.arabic === 'string' && entry.arabic.trim().length > 0;
     validateSourceIds(wordLabel, [entry.sourceId], pkg, errors);
     validateReviewStatus(wordLabel, entry.reviewerStatus, mode, errors, warnings);
-    if (!entry.wordTokenId) errors.push(`${wordLabel} missing canonical token reference`);
+    if (pkg.schemaVersion >= 2 && !entry.wordTokenId) errors.push(`${wordLabel} missing canonical token reference`);
+    if (pkg.schemaVersion === 1 && !entry.wordTokenId) {
+      if (!hasLegacyArabic) {
+        errors.push(`${wordLabel} missing Arabic text or canonical token reference`);
+      } else if (!resolveLegacyWordTokenId(pkg, ayah, entry.arabic)) {
+        errors.push(`${wordLabel} legacy Arabic does not match exactly one canonical token in ${label}`);
+      }
+    }
     if (entry.wordTokenId && !ayah.wordTokenIds.includes(entry.wordTokenId)) {
       errors.push(`${wordLabel} token is absent from ${label}`);
     }
@@ -187,7 +213,11 @@ function validateDivision(division: QuranDivision, pkg: ContentPackage, errors: 
   const label = `Division "${division.id}"`;
   if (!pkg.editions.some(edition => edition.id === division.editionId)) errors.push(`${label} references unknown edition "${division.editionId}"`);
   if (!Number.isInteger(division.number) || division.number < 1) errors.push(`${label} has invalid number`);
+  const maximum = division.kind === 'juz' ? 30 : division.kind === 'hizb' ? 60 : division.kind === 'rub_el_hizb' ? 240 : 480;
+  if (division.number > maximum) errors.push(`${label} number exceeds ${maximum}`);
+  if (division.editionId === 'hafs-an-asim' && division.kind === 'thumun_al_hizb') errors.push(`${label} uses unsupported Hafs Thumun division`);
   if (!division.sourceVersion) errors.push(`${label} missing sourceVersion`);
+  if (division.contentHash && !/^[a-f0-9]{64}$/i.test(division.contentHash)) errors.push(`${label} has invalid contentHash`);
   validateSourceIds(label, [division.sourceId], pkg, errors);
   if (comparePositions(division.range.start, division.range.end) > 0) errors.push(`${label} starts after its end`);
 }
@@ -250,6 +280,15 @@ function validateLevel(
   validateUniqueIds(`block in ${label}`, level.steps.flatMap(step => step.blocks.map(block => block.id)), errors);
   validateUniqueIds(`ayah ref in ${label}`, level.ayahRefs.map(refKey), errors);
   level.ayahRefs.forEach(ref => validateAyahRef(label, ref, pkg, errors));
+  validateDiscoveryMetadata(label, level.discovery, pkg, errors, warnings);
+  const structure = level.ayahRefs
+    .map(ref => pkg.structureIndex?.find(entry => sameRef(entry.ayahRef, ref)))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  if (structure.length > 1) {
+    const hizbs = new Set(structure.map(entry => entry.hizbNumber));
+    const rubs = new Set(structure.map(entry => entry.rubElHizbNumber));
+    if (hizbs.size > 1 || rubs.size > 1) warnings.push(`${label} unexpectedly crosses a Hizb or Rub boundary`);
+  }
 
   level.unlockRules?.requiresLevelIds?.forEach(requiredId => {
     if (!path?.levelIds.includes(requiredId)) errors.push(`${label} unlock rule references level outside its path: "${requiredId}"`);
@@ -260,6 +299,8 @@ function validateLevel(
     if (pkg.schemaVersion >= 2 && !step.kind) errors.push(`${label} step "${step.id}" missing kind`);
     const stepKind = getLevelStepKind(step);
     if (step.blocks.length === 0) errors.push(`${label} step "${step.id}" has no blocks`);
+    const interactiveBlocks = step.blocks.filter(block => block.type === 'activity' || block.type === 'question');
+    if (pkg.schemaVersion >= 2 && interactiveBlocks.length > 1) errors.push(`${label} step "${step.id}" has more than one interactive exercise`);
     step.blocks.forEach(block => {
       const blockLabel = `${label} block "${block.id}"`;
       if (pkg.schemaVersion >= 2 && !isBlockAllowedInStep(stepKind, block.type)) errors.push(`${blockLabel} is incompatible with step kind "${stepKind}"`);
@@ -328,6 +369,96 @@ function validateLevel(
     .flatMap(step => step.blocks.filter(block => block.type === 'activity' || block.type === 'question'));
   if (level.completionRules?.requireMemoryActivity && memoryActivities.length === 0) errors.push(`${label} requires at least one memory activity`);
   if (level.completionRules?.requireUnderstandingActivity && understandingActivities.length === 0) errors.push(`${label} requires at least one understanding activity`);
+}
+
+function validateTheme(
+  theme: Theme,
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[]
+): void {
+  const label = `Theme "${theme.id}"`;
+  if (!theme.title[pkg.localization.defaultLocale]) errors.push(`${label} missing default-locale title`);
+  validateSourceIds(label, theme.sourceIds, pkg, errors);
+  validateReviewStatus(label, theme.reviewerStatus, mode, errors, warnings);
+  if (theme.parentId && !pkg.themes?.some(candidate => candidate.id === theme.parentId)) errors.push(`${label} references missing parent "${theme.parentId}"`);
+}
+
+function validateDiscoveryMetadata(
+  label: string,
+  discovery: Level['discovery'],
+  pkg: ContentPackage,
+  errors: string[],
+  warnings: string[]
+): void {
+  if (!discovery) {
+    warnings.push(`${label} has no discovery metadata`);
+    return;
+  }
+  discovery.themeIds.forEach(themeId => {
+    if (!pkg.themes?.some(theme => theme.id === themeId)) errors.push(`${label} references missing theme "${themeId}"`);
+  });
+  if (discovery.contentTypes.length === 0) errors.push(`${label} has no discovery content type`);
+  if (discovery.studyLocales.length === 0) errors.push(`${label} has no discovery locale`);
+  if (discovery.audiences.length === 0) errors.push(`${label} has no discovery audience`);
+  const alignment = discovery.alignment;
+  if (alignment.type === 'surah') {
+    if (!pkg.surahs.some(surah => surah.surahNumber === alignment.surahNumber)) {
+      errors.push(`${label} discovery alignment references unavailable Surah`);
+    }
+    return;
+  }
+  if (alignment.type === 'ayah_range') {
+    validateDiscoveryRange(label, alignment.range, pkg, errors);
+    return;
+  }
+  if (alignment.type === 'custom_ranges') {
+    if (alignment.ranges.length === 0) errors.push(`${label} discovery alignment has no custom ranges`);
+    alignment.ranges.forEach(range => validateDiscoveryRange(label, range, pkg, errors));
+    return;
+  }
+  if (!pkg.divisions.some(division => division.kind === alignment.type && division.number === alignment.number)) {
+    errors.push(`${label} discovery alignment references unavailable ${divisionLabel(alignment.type)} ${alignment.number}`);
+  }
+}
+
+function validateDiscoveryRange(label: string, range: { start: AyahRef; end: AyahRef }, pkg: ContentPackage, errors: string[]): void {
+  if (comparePositions(range.start, range.end) > 0) {
+    errors.push(`${label} discovery alignment has a reversed range`);
+    return;
+  }
+  validateAyahRef(`${label} discovery range start`, range.start, pkg, errors);
+  validateAyahRef(`${label} discovery range end`, range.end, pkg, errors);
+}
+
+function validateStructureDivision(
+  label: string,
+  ayahRef: AyahRef,
+  kind: QuranDivision['kind'],
+  number: number,
+  pkg: ContentPackage,
+  errors: string[]
+): void {
+  const division = pkg.divisions.find(candidate => candidate.kind === kind && candidate.number === number);
+  if (!division) {
+    errors.push(`${label} references missing ${divisionLabel(kind)} ${number}`);
+    return;
+  }
+  if (comparePositions(ayahRef, division.range.start) < 0 || comparePositions(ayahRef, division.range.end) > 0) {
+    errors.push(`${label} falls outside ${divisionLabel(kind)} ${number} range`);
+  }
+}
+
+function divisionLabel(kind: QuranDivision['kind']): string {
+  if (kind === 'juz') return 'Juz';
+  if (kind === 'hizb') return 'Hizb';
+  if (kind === 'rub_el_hizb') return 'Rub';
+  return 'Thumun';
+}
+
+function validateBoundedNumber(label: string, value: number, maximum: number, errors: string[]): void {
+  if (!Number.isInteger(value) || value < 1 || value > maximum) errors.push(`${label} must be between 1 and ${maximum}`);
 }
 
 function isBlockAllowedInStep(kind: ReturnType<typeof getLevelStepKind>, blockType: Level['steps'][number]['blocks'][number]['type']): boolean {

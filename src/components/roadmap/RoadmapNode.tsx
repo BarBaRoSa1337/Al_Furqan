@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, fonts, radii, shadows, spacing } from '../../theme/tokens';
+import { ZelligeSeal } from '../furqan/FurqanArtwork';
 
 export type NodeStatus = 'completed' | 'active' | 'locked';
 
@@ -9,126 +12,105 @@ interface RoadmapNodeProps {
   description?: string;
   status: NodeStatus;
   index: number;
+  durationMinutes: number;
+  ayahLabel: string;
   onPress: (id: string) => void;
   isLast?: boolean;
+  completedActionLabel?: string;
 }
 
-const STATUS_COLORS: Record<NodeStatus, { bg: string; border: string; icon: string; text: string }> = {
-  completed: { bg: '#1E8449', border: '#1E8449', icon: '✓', text: '#FFFFFF' },
-  active: { bg: '#1B4F72', border: '#1B4F72', icon: '▶', text: '#FFFFFF' },
-  locked: { bg: '#E8E8E8', border: '#CCC', icon: '🔒', text: '#AAA' },
-};
-
-const RoadmapNode: React.FC<RoadmapNodeProps> = ({
+export default function RoadmapNode({
   id,
   title,
   description,
   status,
   index,
+  durationMinutes,
+  ayahLabel,
   onPress,
   isLast = false,
-}) => {
-  const colors = STATUS_COLORS[status];
-  const isLocked = status === 'locked';
+  completedActionLabel = 'Practice',
+}: RoadmapNodeProps) {
+  const locked = status === 'locked';
+  const completed = status === 'completed';
+  const active = status === 'active';
+  const icon = completed ? 'checkmark' : locked ? 'lock-closed' : 'play';
 
   return (
-    <View style={styles.wrapper}>
-      {/* Connector line */}
-      {!isLast && <View style={[styles.connector, isLocked && styles.connectorLocked]} />}
-
-      <TouchableOpacity
+    <View style={[styles.wrapper, active && styles.activeWrapper]}>
+      {!isLast ? <View style={[styles.connector, locked && styles.connectorLocked]} /> : null}
+      <View style={styles.markerColumn}>
+        <ZelligeSeal size={active ? 78 : 54} tone={completed ? 'completed' : locked ? 'locked' : 'active'}>
+          <Ionicons name={icon} size={active ? 29 : 19} color={colors.surface} />
+        </ZelligeSeal>
+      </View>
+      <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${title}, ${status}`}
-        accessibilityState={{ disabled: isLocked, selected: status === 'active' }}
-        style={styles.row}
-        onPress={() => !isLocked && onPress(id)}
-        activeOpacity={isLocked ? 1 : 0.8}
-        disabled={isLocked}
+        accessibilityLabel={`${title}, ${status}, ${durationMinutes} minutes`}
+        accessibilityState={{ disabled: locked, selected: active }}
+        disabled={locked}
+        onPress={() => onPress(id)}
+        style={({ pressed }) => [
+          styles.card,
+          active && styles.activeCard,
+          completed && styles.completedCard,
+          locked && styles.lockedCard,
+          pressed && !locked && styles.pressed,
+        ]}
       >
-        {/* Circle indicator */}
-        <View
-          style={[
-            styles.circle,
-            { backgroundColor: colors.bg, borderColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.icon, { color: colors.text }]}>{colors.icon}</Text>
-        </View>
-
-        {/* Text content */}
-        <View style={styles.content}>
-          <Text style={[styles.title, isLocked && styles.lockedText]}>{title}</Text>
-          {description ? (
-            <Text style={[styles.desc, isLocked && styles.lockedText]} numberOfLines={2}>
-              {description}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* Status chip */}
-        {status === 'completed' && (
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>Done</Text>
+        <View style={styles.cardCopy}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.circleLabel, locked && styles.lockedText]}>Circle {index + 1}</Text>
+            <View style={[styles.statusPill, completed && styles.completedPill, active && styles.activePill, locked && styles.lockedPill]}>
+              <Text style={[styles.statusText, completed && styles.completedStatus, active && styles.activeStatus]}>
+                {completed ? 'Completed' : active ? 'Current' : 'Locked'}
+              </Text>
+            </View>
           </View>
-        )}
-        {status === 'active' && (
-          <View style={[styles.chip, styles.chipActive]}>
-            <Text style={[styles.chipText, styles.chipTextActive]}>Start</Text>
+          <Text style={[styles.title, active && styles.activeTitle, locked && styles.lockedText]}>{title}</Text>
+          {description && active ? <Text style={styles.description} numberOfLines={2}>{description}</Text> : null}
+          <View style={styles.metaRow}>
+            <Ionicons name="book-outline" size={12} color={locked ? colors.locked : colors.textMuted} />
+            <Text style={[styles.meta, locked && styles.lockedText]}>{ayahLabel}</Text>
+            <View style={styles.metaDot} />
+            <Ionicons name="time-outline" size={12} color={locked ? colors.locked : colors.textMuted} />
+            <Text style={[styles.meta, locked && styles.lockedText]}>{durationMinutes} min</Text>
           </View>
-        )}
-      </TouchableOpacity>
+          {completed ? <Text style={styles.practiceLabel}>{completedActionLabel}</Text> : null}
+        </View>
+        {!locked ? <Ionicons name="chevron-forward" size={18} color={active ? colors.success : colors.textMuted} /> : null}
+      </Pressable>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  wrapper: { position: 'relative', marginBottom: 4 },
-  connector: {
-    position: 'absolute',
-    left: 21,
-    top: 44,
-    width: 2,
-    height: 36,
-    backgroundColor: '#1B4F72',
-    zIndex: 0,
-  },
-  connectorLocked: { backgroundColor: '#DDD' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  circle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  icon: { fontSize: 16, fontWeight: '700' },
-  content: { flex: 1 },
-  title: { fontSize: 16, fontWeight: '700', color: '#1A1A1A', marginBottom: 2 },
-  desc: { fontSize: 13, color: '#666', lineHeight: 18 },
-  lockedText: { color: '#AAA' },
-  chip: {
-    backgroundColor: '#D5F5E3',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 99,
-  },
-  chipText: { fontSize: 12, color: '#1E8449', fontWeight: '700' },
-  chipActive: { backgroundColor: '#D6EAF8' },
-  chipTextActive: { color: '#1B4F72' },
+  wrapper: { alignItems: 'center', flexDirection: 'row', minHeight: 88, position: 'relative' },
+  activeWrapper: { minHeight: 122 },
+  connector: { borderColor: colors.gold, borderLeftWidth: 2, borderStyle: 'dashed', bottom: -8, left: 37, position: 'absolute', top: 54, width: 1, zIndex: 0 },
+  connectorLocked: { borderColor: colors.borderStrong },
+  markerColumn: { alignItems: 'center', justifyContent: 'center', width: 76, zIndex: 2 },
+  card: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.md, borderWidth: 1, boxShadow: shadows.card, flex: 1, flexDirection: 'row', marginVertical: spacing.xs, minHeight: 72, padding: spacing.md },
+  activeCard: { borderColor: colors.gold, borderWidth: 1.5, boxShadow: shadows.raised, minHeight: 104 },
+  completedCard: { backgroundColor: '#FCFAF4' },
+  lockedCard: { backgroundColor: colors.surfaceWarm, boxShadow: 'none' },
+  pressed: { opacity: 0.74, transform: [{ scale: 0.992 }] },
+  cardCopy: { flex: 1, minWidth: 0 },
+  titleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  circleLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
+  statusPill: { backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+  completedPill: { backgroundColor: colors.successSoft },
+  activePill: { backgroundColor: colors.success },
+  lockedPill: { backgroundColor: colors.surfaceMuted },
+  statusText: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 8, textTransform: 'uppercase' },
+  completedStatus: { color: colors.success },
+  activeStatus: { color: colors.surface },
+  title: { color: colors.text, fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, marginTop: 1 },
+  activeTitle: { color: colors.primary, fontSize: 17, lineHeight: 22 },
+  description: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, marginTop: 2 },
+  metaRow: { alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: spacing.xs },
+  meta: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 10 },
+  metaDot: { backgroundColor: colors.borderStrong, borderRadius: 2, height: 3, marginHorizontal: 2, width: 3 },
+  lockedText: { color: colors.locked },
+  practiceLabel: { color: colors.success, fontFamily: fonts.bold, fontSize: 9, marginTop: 3, textTransform: 'uppercase' },
 });
-
-export default RoadmapNode;

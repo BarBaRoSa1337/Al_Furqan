@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { colors, fonts, radii } from '../../theme/tokens';
 
 interface ProgressBarProps {
   current: number;
@@ -8,20 +9,27 @@ interface ProgressBarProps {
   color?: string;
   height?: number;
   showLabel?: boolean;
+  accessibilityLabel?: string;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
   current,
   total,
   label,
-  color = '#1B4F72',
+  color = colors.primary,
   height = 8,
   showLabel = true,
+  accessibilityLabel,
 }) => {
   const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
 
   return (
-    <View style={styles.wrapper}>
+    <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 0, max: 100, now: pct }}
+      style={styles.wrapper}
+    >
       {showLabel && (
         <View style={styles.labelRow}>
           <Text style={styles.label}>{label ?? `${current} / ${total}`}</Text>
@@ -47,11 +55,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  label: { fontSize: 13, color: '#555', fontWeight: '500' },
-  pct: { fontSize: 13, fontWeight: '700' },
+  label: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 13, fontWeight: '500' },
+  pct: { fontFamily: fonts.bold, fontSize: 13, fontWeight: '700' },
   track: {
-    backgroundColor: '#E8E8E8',
-    borderRadius: 99,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.pill,
     overflow: 'hidden',
   },
   fill: {

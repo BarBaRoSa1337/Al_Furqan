@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Alert, BackHandler, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import StepRenderer from '../../components/lesson/StepRenderer';
+import DailyLearningLoop from '../../components/lesson/DailyLearningLoop';
 import Button from '../../components/ui/Button';
-import ProgressBar from '../../components/ui/ProgressBar';
 import { useLevelSession } from '../../hooks/useLevelSession';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
+import { colors } from '../../theme/tokens';
 
 export default function LessonPlayerScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -15,7 +15,7 @@ export default function LessonPlayerScreen() {
   const router = useRouter();
   const session = useLevelSession(levelId);
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key);
+  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values);
 
   const confirmExit = () => {
     Alert.alert(text('lesson.leaveLevel'), text('lesson.leaveMessage'), [
@@ -71,38 +71,30 @@ export default function LessonPlayerScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={text('lesson.leave')}
-          onPress={confirmExit}
-          style={styles.closeButton}
-        >
-          <Text style={styles.closeIcon}>×</Text>
-        </TouchableOpacity>
-        <View style={styles.progressWrap}>
-          <ProgressBar current={session.currentStepIndex + 1} total={activeLevel.steps.length} showLabel={false} height={6} />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {session.warning ? <Text style={styles.warning}>{session.warning.message}</Text> : null}
-        {session.error ? <Text style={styles.errorBanner}>{session.error}</Text> : null}
-        <StepRenderer step={session.step} onQuestionAnswer={session.answerQuestion} onActivityAnswer={session.answerActivity} />
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <Button
-          title={session.isLastStep ? text('lesson.completeLevel') : text('lesson.continue')}
-          onPress={() => { void handleAdvance(); }}
-          disabled={!session.canProceed || session.busy}
-          loading={session.busy}
-          size="lg"
-          style={styles.continueButton}
-        />
-      </View>
-    </SafeAreaView>
+    <DailyLearningLoop
+      level={activeLevel}
+      step={session.step}
+      currentStepIndex={session.currentStepIndex}
+      totalSteps={session.totalCoreSteps}
+      canProceed={session.canProceed}
+      needsCheck={session.needsCheck}
+      feedback={session.feedback}
+      reviewRoundLabel={session.retryCount > 0 ? text('lesson.reviewRound', { count: session.retryCount }) : undefined}
+      isLastStep={session.isLastStep}
+      busy={session.busy}
+      continueLabel={text('lesson.continue')}
+      checkLabel={text('question.checkAnswer')}
+      completeLabel={text('lesson.completeLevel')}
+      correctFeedbackLabel={text('lesson.correctFeedback')}
+      retryFeedbackLabel={text('lesson.retryFeedback')}
+      exitLabel={text('lesson.leave')}
+      warning={session.warning?.message}
+      error={session.error ?? undefined}
+      onExit={confirmExit}
+      onAdvance={handleAdvance}
+      onQuestionAnswer={session.answerQuestion}
+      onActivityAnswer={session.answerActivity}
+    />
   );
 }
 
@@ -110,7 +102,7 @@ function LoadingState({ label }: { label: string }) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.center}>
-        <ActivityIndicator color="#1B4F72" />
+        <ActivityIndicator color={colors.primary} />
         <Text style={styles.loadingText}>{label}</Text>
       </View>
     </SafeAreaView>
@@ -118,19 +110,10 @@ function LoadingState({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F0E8' },
+  safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, color: '#566573', fontSize: 14 },
-  errorTitle: { color: '#7B241C', fontSize: 20, fontWeight: '800', textAlign: 'center' },
-  errorText: { color: '#5D6D7E', fontSize: 14, lineHeight: 21, marginTop: 8, textAlign: 'center' },
+  loadingText: { marginTop: 12, color: colors.textMuted, fontSize: 14 },
+  errorTitle: { color: colors.danger, fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  errorText: { color: colors.textMuted, fontSize: 14, lineHeight: 21, marginTop: 8, textAlign: 'center' },
   stateButton: { marginTop: 20 },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
-  closeButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E8E8E8', justifyContent: 'center', alignItems: 'center' },
-  closeIcon: { fontSize: 24, color: '#566573', fontWeight: '700', lineHeight: 28 },
-  progressWrap: { flex: 1, marginLeft: 20 },
-  scroll: { padding: 20, paddingBottom: 40 },
-  warning: { backgroundColor: '#FCF3CF', color: '#7D6608', borderRadius: 10, padding: 12, marginBottom: 16, lineHeight: 20 },
-  errorBanner: { backgroundColor: '#FDEDEC', color: '#922B21', borderRadius: 10, padding: 12, marginBottom: 16, lineHeight: 20 },
-  footer: { padding: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E8E8E8' },
-  continueButton: { width: '100%' },
 });

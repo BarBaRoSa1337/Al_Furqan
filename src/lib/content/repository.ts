@@ -3,13 +3,22 @@
 import {
   AyahRecord,
   AyahRef,
+  AyahStructureIndex,
+  ContentScope,
   ContentRepository,
   ContentPackage,
   ContentSource,
+  DiscoveryFilters,
+  DiscoveryQueryResult,
+  DiscoverySearchResult,
+  LearningPathDiscoveryResult,
   QuranEdition,
   QuranEditionId,
   QuranDivision,
-  QuranDivisionKind,
+  QuranDivisionQueryKind,
+  QuranLookup,
+  QuranRange,
+  QuranReferenceResult,
   LearningPath,
   Level,
   PackageTextKey,
@@ -20,6 +29,8 @@ import {
 import { Reciter, RecitationTrack } from '../../types/media';
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { validatePackage } from './packageValidator';
+import { adaptLegacyPackage } from './legacyPackageAdapter';
+import { normalizeSearchText, parseDiscoveryQueryValue, refKey } from './discovery';
 
 class ContentRepositoryImpl implements ContentRepository {
   private _packages: ContentPackage[] = [];
@@ -34,6 +45,7 @@ class ContentRepositoryImpl implements ContentRepository {
   private _learningPaths: LearningPath[] = [];
   private _levels: Level[] = [];
   private _activePackageId: string | undefined;
+  private _packageOrigins = new Map<string, 'built_in' | 'downloaded'>();
   private _initialized = false;
 
   constructor() {
@@ -42,53 +54,64 @@ class ContentRepositoryImpl implements ContentRepository {
 
   private _init(): void {
     // Register all content packages here
-    this._registerPackage(surahAlFilPackage);
+    this._registerPackage(surahAlFilPackage, 'built_in');
     this._initialized = true;
   }
 
-  private _registerPackage(pkg: ContentPackage): void {
-    const validation = validatePackage(pkg, { mode: __DEV__ ? 'development' : 'production' });
+  private _registerPackage(pkg: ContentPackage, origin: 'built_in' | 'downloaded'): void {
+    const adaptedPackage = adaptLegacyPackage(pkg);
+    const validation = validatePackage(adaptedPackage, { mode: __DEV__ ? 'development' : 'production' });
     if (!validation.valid) {
-      throw new Error(`Invalid content package "${pkg.id}": ${validation.errors.join('; ')}`);
+      throw new Error(`Invalid content package "${adaptedPackage.id}": ${validation.errors.join('; ')}`);
     }
     validation.warnings.forEach((warning) => {
-      console.warn(`[content:${pkg.id}] ${warning}`);
+      console.warn(`[content:${adaptedPackage.id}] ${warning}`);
     });
 
-    if (this._packages.some(p => p.id === pkg.id)) return;
-    this._packages.push(pkg);
-    if (!this._activePackageId) this._activePackageId = pkg.id;
-    this._appendPackageIndexes(pkg);
+    if (this._packages.some(p => p.id === adaptedPackage.id)) return;
+    this._packages.push(adaptedPackage);
+    this._packageOrigins.set(adaptedPackage.id, origin);
+    if (!this._activePackageId) this._activePackageId = adaptedPackage.id;
+    this._appendPackageIndexes(adaptedPackage);
   }
 
-  registerPackage(pkg: ContentPackage, activate = true): void {
-    const validation = validatePackage(pkg, { mode: __DEV__ ? 'development' : 'production' });
-    if (!validation.valid) throw new Error(`Invalid content package "${pkg.id}": ${validation.errors.join('; ')}`);
-    this._assertNoIdentityConflicts(pkg);
-    const existingIndex = this._packages.findIndex(candidate => candidate.id === pkg.id);
-    if (existingIndex >= 0) this._packages.splice(existingIndex, 1, pkg);
-    else this._packages.push(pkg);
-    if (activate || !this._activePackageId) this._activePackageId = pkg.id;
+  registerPackage(pkg: ContentPackage, activate = true, origin: 'built_in' | 'downloaded' = 'downloaded'): void {
+    const adaptedPackage = adaptLegacyPackage(pkg);
+    const validation = validatePackage(adaptedPackage, { mode: __DEV__ ? 'development' : 'production' });
+    if (!validation.valid) throw new Error(`Invalid content package "${adaptedPackage.id}": ${validation.errors.join('; ')}`);
+    this._assertNoIdentityConflicts(adaptedPackage);
+    const existingIndex = this._packages.findIndex(candidate => candidate.id === adaptedPackage.id);
+    if (existingIndex >= 0) this._packages.splice(existingIndex, 1, adaptedPackage);
+    else this._packages.push(adaptedPackage);
+    this._packageOrigins.set(adaptedPackage.id, origin);
+    if (activate || !this._activePackageId) this._activePackageId = adaptedPackage.id;
     this._rebuildIndexes();
   }
 
   private _assertNoIdentityConflicts(pkg: ContentPackage): void {
     const otherPackages = this._packages.filter(candidate => candidate.id !== pkg.id);
     const levelIds = new Set(otherPackages.flatMap(candidate => candidate.levels.map(level => level.id)));
+    const blockIds = new Set(otherPackages.flatMap(candidate => candidate.levels.flatMap(level => level.steps.flatMap(step => step.blocks.map(block => block.id)))));
     const activityIds = new Set(otherPackages.flatMap(candidate => candidate.levels.flatMap(level => level.steps.flatMap(step => step.blocks
       .filter(block => block.type === 'activity')
       .map(block => block.activity.id)))));
     const conflictingLevel = pkg.levels.find(level => levelIds.has(level.id));
     if (conflictingLevel) throw new Error(`Level ID "${conflictingLevel.id}" is already owned by another package`);
+    const conflictingBlock = pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).find(block => blockIds.has(block.id));
+    if (conflictingBlock) throw new Error(`Block ID "${conflictingBlock.id}" is already owned by another package`);
     const conflictingActivity = pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks
       .filter(block => block.type === 'activity')
       .map(block => block.activity.id)))
       .find(id => activityIds.has(id));
     if (conflictingActivity) throw new Error(`Activity ID "${conflictingActivity}" is already owned by another package`);
+    assertSharedRecordsMatch('Ayah', pkg.ayat, otherPackages.flatMap(candidate => candidate.ayat));
+    assertSharedRecordsMatch('Word token', pkg.wordTokens, otherPackages.flatMap(candidate => candidate.wordTokens));
+    assertSharedRecordsMatch('Division', pkg.divisions, otherPackages.flatMap(candidate => candidate.divisions));
   }
 
   removePackage(id: string): void {
     this._packages = this._packages.filter(pkg => pkg.id !== id);
+    this._packageOrigins.delete(id);
     if (this._activePackageId === id) this._activePackageId = this._packages[0]?.id;
     this._rebuildIndexes();
   }
@@ -184,8 +207,14 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._packages.find(pkg => pkg.levels.some(level => level.id === levelId));
   }
 
-  getSourceById(id: string): ContentSource | undefined {
-    return this._sources.find(source => source.id === id);
+  getPackageForBlock(blockId: string): ContentPackage | undefined {
+    return this._packages.find(pkg => pkg.levels.some(level => level.steps.some(step => step.blocks.some(block => block.id === blockId))));
+  }
+
+  getSourceById(id: string, scope?: ContentScope): ContentSource | undefined {
+    return scope
+      ? this._packagesForScope(scope).flatMap(pkg => pkg.sources).find(source => source.id === id)
+      : this._sources.find(source => source.id === id);
   }
 
   getEdition(id: QuranEditionId): QuranEdition | undefined {
@@ -196,8 +225,8 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._surahs.find(surah => surah.id === id);
   }
 
-  getSurahByNumber(number: number): SurahRecord | undefined {
-    return this._surahs.find(surah => surah.surahNumber === number);
+  getSurahByNumber(number: number, scope?: ContentScope): SurahRecord | undefined {
+    return this._surahsForScope(scope).find(surah => surah.surahNumber === number);
   }
 
   getLevelById(id: string): Level | undefined {
@@ -225,20 +254,22 @@ class ContentRepositoryImpl implements ContentRepository {
     return this._learningPaths.find(path => path.id === id);
   }
 
-  getAyahByRef(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim'): AyahRecord | undefined {
-    return this._ayat.find(
+  getAyahByRef(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): AyahRecord | undefined {
+    return this._ayatForScope(scope).find(
       ayah => ayah.editionId === editionId && ayah.ref.surahNumber === ref.surahNumber && ayah.ref.ayahNumber === ref.ayahNumber
     );
   }
 
-  getAyatByRefs(refs: AyahRef[], editionId: QuranEditionId = 'hafs-an-asim'): AyahRecord[] {
+  getAyatByRefs(refs: AyahRef[], editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): AyahRecord[] {
     return refs
-      .map(ref => this.getAyahByRef(ref, editionId))
+      .map(ref => this.getAyahByRef(ref, editionId, scope))
       .filter((ayah): ayah is AyahRecord => Boolean(ayah));
   }
 
-  getWordToken(id: string): WordToken | undefined {
-    return this._wordTokens.find(token => token.id === id);
+  getWordToken(id: string, scope?: ContentScope): WordToken | undefined {
+    return scope
+      ? this._packagesForScope(scope).flatMap(pkg => pkg.wordTokens).find(token => token.id === id)
+      : this._wordTokens.find(token => token.id === id);
   }
 
   getReciterById(id: string): Reciter | undefined {
@@ -252,29 +283,98 @@ class ContentRepositoryImpl implements ContentRepository {
       && track.ayahRef.ayahNumber === ref.ayahNumber);
   }
 
-  listDivisions(kind: QuranDivisionKind, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision[] {
-    return this._divisions.filter(division => division.kind === kind && division.editionId === editionId)
+  listDivisions(kind: QuranDivisionQueryKind, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): QuranDivision[] {
+    const canonicalKind = normalizeDivisionKind(kind);
+    return this._divisionsForScope(scope).filter(division => division.kind === canonicalKind && division.editionId === editionId)
       .sort((a, b) => a.number - b.number);
   }
 
-  getDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision | undefined {
-    return this.listDivisions(kind, editionId).find(division => division.number === number);
+  getDivision(kind: QuranDivisionQueryKind, number: number, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): QuranDivision | undefined {
+    return this.listDivisions(kind, editionId, scope).find(division => division.number === number);
   }
 
-  listAyahRefsInDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): AyahRef[] {
-    const division = this.getDivision(kind, number, editionId);
-    if (!division) return [];
-    return this._ayat.filter(ayah => ayah.editionId === editionId && isRefInRange(ayah.ref, division.range))
-      .map(ayah => ayah.ref);
+  listAyahRefsInDivision(kind: QuranDivisionQueryKind, number: number, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): AyahRef[] {
+    const canonicalKind = normalizeDivisionKind(kind);
+    return this._structureForScope(scope)
+      .filter(entry => entry.editionId === editionId && structureNumber(entry, canonicalKind) === number)
+      .map(entry => entry.ayahRef)
+      .sort(compareRefs);
   }
 
-  listSurahsInDivision(kind: QuranDivisionKind, number: number, editionId: QuranEditionId = 'hafs-an-asim'): SurahRecord[] {
-    const numbers = new Set(this.listAyahRefsInDivision(kind, number, editionId).map(ref => ref.surahNumber));
-    return this._surahs.filter(surah => numbers.has(surah.surahNumber));
+  listSurahsInDivision(kind: QuranDivisionQueryKind, number: number, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): SurahRecord[] {
+    const numbers = new Set(this.listAyahRefsInDivision(kind, number, editionId, scope).map(ref => ref.surahNumber));
+    return this._surahsForScope(scope).filter(surah => numbers.has(surah.surahNumber));
   }
 
-  getDivisionsForAyah(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim'): QuranDivision[] {
-    return this._divisions.filter(division => division.editionId === editionId && isRefInRange(ref, division.range));
+  getDivisionsForAyah(ref: AyahRef, editionId: QuranEditionId = 'hafs-an-asim', scope?: ContentScope): QuranDivision[] {
+    const structure = this.getAyahStructure(ref, scope);
+    if (!structure || structure.editionId !== editionId) return [];
+    return this._divisionsForScope(scope).filter(division => division.editionId === editionId
+      && structureNumber(structure, division.kind) === division.number);
+  }
+
+  getAyahsInRange(range: QuranRange, scope?: ContentScope): AyahRecord[] {
+    return this._ayatForScope(scope)
+      .filter(ayah => ayah.editionId === (scope?.editionId ?? 'hafs-an-asim') && isRefInRange(ayah.ref, range))
+      .sort((a, b) => compareRefs(a.ref, b.ref));
+  }
+
+  getAyahStructure(ref: AyahRef, scope?: ContentScope): AyahStructureIndex | undefined {
+    const editionId = scope?.editionId ?? 'hafs-an-asim';
+    return this._structureForScope(scope).find(entry => entry.editionId === editionId && sameRef(entry.ayahRef, ref));
+  }
+
+  parseDiscoveryQuery(query: string, scope?: ContentScope): DiscoveryQueryResult {
+    return parseDiscoveryQueryValue(query, this._surahsForScope(scope));
+  }
+
+  searchQuranMetadata(query: string, scope?: ContentScope): QuranReferenceResult[] {
+    const parsed = this.parseDiscoveryQuery(query, scope);
+    if (parsed.query.kind === 'empty') return [];
+    if (parsed.query.kind === 'text') {
+      const text = parsed.query.normalizedText;
+      const matched = this._surahsForScope(scope).filter(surah => [
+        surah.transliteratedName,
+        surah.englishName,
+        surah.arabicName,
+      ].some(name => normalizeSearchText(name).includes(text)));
+      return matched.map(surah => this.referenceResult({ type: 'surah', surahNumber: surah.surahNumber }, scope));
+    }
+    return this.lookupAvailable(parsed.query.lookup, scope) ? [this.referenceResult(parsed.query.lookup, scope)] : [];
+  }
+
+  listLearningPaths(filters: DiscoveryFilters = {}, scope?: ContentScope): LearningPathDiscoveryResult[] {
+    return this._packagesForScope(scope)
+      .filter(pkg => !filters.downloadedOnly || this._packageOrigins.get(pkg.id) === 'downloaded')
+      .flatMap(pkg => pkg.learningPaths.map(path => ({ packageId: pkg.id, path, levels: path.levelIds
+        .map(id => pkg.levels.find(level => level.id === id))
+        .filter((level): level is Level => Boolean(level)) })))
+      .filter(result => matchesPathFilters(result, filters, this))
+      .sort((a, b) => a.path.title.localeCompare(b.path.title) || a.packageId.localeCompare(b.packageId));
+  }
+
+  listLevels(filters: DiscoveryFilters = {}, scope?: ContentScope): Level[] {
+    return this.listLearningPaths(filters, scope).flatMap(result => result.levels)
+      .filter(level => (!filters.maximumMinutesPerLevel || level.durationMinutes <= filters.maximumMinutesPerLevel)
+        && (!filters.learningGoals || filters.learningGoals.every(goal => level.goals.includes(goal))))
+      .filter((level, index, levels) => levels.findIndex(candidate => candidate.id === level.id) === index);
+  }
+
+  findLearningContentForQuranLookup(lookup: QuranLookup, scope?: ContentScope): LearningPathDiscoveryResult[] {
+    return this.listLearningPaths({ quranLookup: lookup }, scope);
+  }
+
+  searchDiscovery(query: string, filters: DiscoveryFilters = {}, scope?: ContentScope): DiscoverySearchResult {
+    const parsed = this.parseDiscoveryQuery(query, scope);
+    const quranReferences = this.searchQuranMetadata(query, scope);
+    let learningPaths = parsed.query.kind === 'quran_lookup'
+      ? this.listLearningPaths({ ...filters, quranLookup: parsed.query.lookup }, scope)
+      : this.listLearningPaths(filters, scope);
+    if (parsed.query.kind === 'text') {
+      const text = parsed.query.normalizedText;
+      learningPaths = learningPaths.filter(result => pathMatchesText(result, text, this.getPackageById(result.packageId), scope?.studyLocale ?? 'en'));
+    }
+    return { quranReferences, learningPaths, diagnostics: parsed.diagnostics };
   }
 
   getNextLevel(levelId: string): Level | undefined {
@@ -340,6 +440,58 @@ class ContentRepositoryImpl implements ContentRepository {
   }
 
   getAllPackages(): ContentPackage[] { return [...this._packages]; }
+
+  private _packagesForScope(scope?: ContentScope): ContentPackage[] {
+    if (!scope) return this._packages;
+    const ids = new Set(scope.activePackageIds);
+    return this._packages.filter(pkg => ids.has(pkg.id) && pkg.editions.some(edition => edition.id === scope.editionId));
+  }
+
+  private _ayatForScope(scope?: ContentScope): AyahRecord[] {
+    return scope ? uniqueById(this._packagesForScope(scope).flatMap(pkg => pkg.ayat)) : this._ayat;
+  }
+
+  private _surahsForScope(scope?: ContentScope): SurahRecord[] {
+    return scope ? uniqueById(this._packagesForScope(scope).flatMap(pkg => pkg.surahs)) : this._surahs;
+  }
+
+  private _divisionsForScope(scope?: ContentScope): QuranDivision[] {
+    return scope ? uniqueById(this._packagesForScope(scope).flatMap(pkg => pkg.divisions)) : this._divisions;
+  }
+
+  private _structureForScope(scope?: ContentScope): AyahStructureIndex[] {
+    const packages = this._packagesForScope(scope);
+    const records = packages.flatMap(pkg => pkg.structureIndex ?? []);
+    return records.filter((entry, index) => records.findIndex(candidate => candidate.editionId === entry.editionId
+      && sameRef(candidate.ayahRef, entry.ayahRef)) === index);
+  }
+
+  private lookupAvailable(lookup: QuranLookup, scope?: ContentScope): boolean {
+    switch (lookup.type) {
+      case 'surah':
+        return Boolean(this.getSurahByNumber(lookup.surahNumber, scope));
+      case 'ayah':
+        return Boolean(this.getAyahByRef(lookup.ayahRef, scope?.editionId, scope));
+      case 'ayah_range':
+        return this.getAyahsInRange(lookup.range, scope).length > 0;
+      case 'juz':
+      case 'hizb':
+      case 'rub_el_hizb':
+        return this.listAyahRefsInDivision(lookup.type, lookup.number, scope?.editionId, scope).length > 0;
+    }
+  }
+
+  private referenceResult(lookup: QuranLookup, scope?: ContentScope): QuranReferenceResult {
+    const ayahRefs = lookupRefs(lookup, this, scope);
+    return {
+      lookup,
+      label: lookupLabel(lookup, this, scope),
+      ayahRefs,
+      lessonAvailability: this.findLearningContentForQuranLookup(lookup, scope).length > 0
+        ? 'published'
+        : 'no_published_lesson',
+    };
+  }
 }
 
 // Singleton
@@ -360,4 +512,104 @@ function isRefInRange(ref: AyahRef, range: { start: AyahRef; end: AyahRef }): bo
 
 function compareRefs(a: AyahRef, b: AyahRef): number {
   return a.surahNumber - b.surahNumber || a.ayahNumber - b.ayahNumber;
+}
+
+function sameRef(a: AyahRef, b: AyahRef): boolean {
+  return a.surahNumber === b.surahNumber && a.ayahNumber === b.ayahNumber;
+}
+
+function normalizeDivisionKind(kind: QuranDivisionQueryKind): Exclude<QuranDivisionQueryKind, 'rub'> {
+  return kind === 'rub' ? 'rub_el_hizb' : kind;
+}
+
+function structureNumber(entry: AyahStructureIndex, kind: Exclude<QuranDivisionQueryKind, 'rub'>): number | undefined {
+  if (kind === 'juz') return entry.juzNumber;
+  if (kind === 'hizb') return entry.hizbNumber;
+  if (kind === 'rub_el_hizb') return entry.rubElHizbNumber;
+  return entry.thumunAlHizbNumber;
+}
+
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  return items.filter((item, index) => items.findIndex(candidate => candidate.id === item.id) === index);
+}
+
+function lookupRefs(lookup: QuranLookup, repo: ContentRepositoryImpl, scope?: ContentScope): AyahRef[] {
+  switch (lookup.type) {
+    case 'surah':
+      return repo.getAyahsInRange({
+        start: { surahNumber: lookup.surahNumber, ayahNumber: 1 },
+        end: { surahNumber: lookup.surahNumber, ayahNumber: Number.MAX_SAFE_INTEGER },
+      }, scope).map(ayah => ayah.ref);
+    case 'ayah':
+      return repo.getAyahByRef(lookup.ayahRef, scope?.editionId, scope) ? [lookup.ayahRef] : [];
+    case 'ayah_range':
+      return repo.getAyahsInRange(lookup.range, scope).map(ayah => ayah.ref);
+    case 'juz':
+    case 'hizb':
+    case 'rub_el_hizb':
+      return repo.listAyahRefsInDivision(lookup.type, lookup.number, scope?.editionId, scope);
+  }
+}
+
+function lookupLabel(lookup: QuranLookup, repo: ContentRepositoryImpl, scope?: ContentScope): string {
+  switch (lookup.type) {
+    case 'surah':
+      return repo.getSurahByNumber(lookup.surahNumber, scope)?.transliteratedName ?? `Surah ${lookup.surahNumber}`;
+    case 'ayah':
+      return refKey(lookup.ayahRef);
+    case 'ayah_range':
+      return `${refKey(lookup.range.start)}-${lookup.range.end.ayahNumber}`;
+    case 'juz':
+      return `Juz ${lookup.number}`;
+    case 'hizb':
+      return `Hizb ${lookup.number}`;
+    case 'rub_el_hizb':
+      return `Rub ${lookup.number}`;
+  }
+}
+
+function matchesPathFilters(result: LearningPathDiscoveryResult, filters: DiscoveryFilters, repo: ContentRepositoryImpl): boolean {
+  const metadata = result.path.discovery;
+  if (filters.approvedOnly && result.path.sourceMetadata.reviewerStatus !== 'approved') return false;
+  if (filters.themeIds && (!metadata || !filters.themeIds.every(id => metadata.themeIds.includes(id)))) return false;
+  if (filters.contentTypes && (!metadata || !filters.contentTypes.some(type => metadata.contentTypes.includes(type)))) return false;
+  if (filters.studyLocale && (!metadata || !metadata.studyLocales.includes(filters.studyLocale))) return false;
+  if (filters.audience && (!metadata || !metadata.audiences.includes(filters.audience))) return false;
+  const maximumMinutes = filters.maximumMinutesPerLevel;
+  if (maximumMinutes && !result.levels.some(level => level.durationMinutes <= maximumMinutes)) return false;
+  if (filters.learningGoals && !result.levels.some(level => filters.learningGoals!.every(goal => level.goals.includes(goal)))) return false;
+  if (filters.quranLookup && !pathMatchesLookup(result, filters.quranLookup, repo)) return false;
+  return true;
+}
+
+function pathMatchesLookup(result: LearningPathDiscoveryResult, lookup: QuranLookup, repo: ContentRepositoryImpl): boolean {
+  const pkg = repo.getPackageById(result.packageId);
+  if (!pkg) return false;
+  if (lookup.type === 'surah') return result.path.surahIds.some(id => pkg.surahs.find(surah => surah.id === id)?.surahNumber === lookup.surahNumber);
+  const scope: ContentScope = {
+    activePackageIds: [result.packageId],
+    editionId: 'hafs-an-asim',
+    studyLocale: result.path.discovery?.studyLocales[0] ?? pkg.localization.defaultLocale,
+  };
+  const refs = lookupRefs(lookup, repo, scope);
+  const keys = new Set(refs.map(refKey));
+  return result.levels.some(level => level.ayahRefs.some(ref => keys.has(refKey(ref))));
+}
+
+function pathMatchesText(result: LearningPathDiscoveryResult, text: string, pkg: ContentPackage | undefined, locale: string): boolean {
+  if (normalizeSearchText(`${result.path.title} ${result.path.description}`).includes(text)) return true;
+  const themeIds = new Set(result.path.discovery?.themeIds ?? []);
+  return (pkg?.themes ?? []).some(theme => themeIds.has(theme.id) && [
+    theme.title[locale],
+    ...(theme.aliases?.[locale] ?? []),
+  ].some(value => value && normalizeSearchText(value).includes(text)));
+}
+
+function assertSharedRecordsMatch<T extends { id: string }>(label: string, incoming: T[], installed: T[]): void {
+  incoming.forEach(record => {
+    const existing = installed.find(candidate => candidate.id === record.id);
+    if (existing && JSON.stringify(existing) !== JSON.stringify(record)) {
+      throw new Error(`${label} ID "${record.id}" conflicts with canonical data in another package`);
+    }
+  });
 }

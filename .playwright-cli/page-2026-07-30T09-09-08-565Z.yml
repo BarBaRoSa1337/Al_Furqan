@@ -1,0 +1,44 @@
+- generic [ref=f4e211]:
+  - generic [ref=f4e213]:
+    - generic [ref=f4e214]:
+      - generic [ref=f4e215]: 
+      - generic [ref=f4e219]:
+        - heading "Your progress" [level=1] [ref=f4e220]
+        - generic [ref=f4e221]: A quiet record of your Quran habit.
+    - generic [ref=f4e222]:
+      - generic [ref=f4e223]: Current path
+      - generic [ref=f4e224]: Surah Al-Fil
+      - generic [ref=f4e225]: Context + Ayah 1
+    - generic [ref=f4e227]:
+      - generic [ref=f4e228]:
+        - generic [ref=f4e229]: "0"
+        - generic [ref=f4e230]: Day streak
+      - generic [ref=f4e231]:
+        - generic [ref=f4e232]: "0"
+        - generic [ref=f4e233]: Points
+      - generic [ref=f4e234]:
+        - generic [ref=f4e235]: "0"
+        - generic [ref=f4e236]: Circles completed
+      - generic [ref=f4e237]:
+        - generic [ref=f4e238]: "0"
+        - generic [ref=f4e239]: Review items
+    - generic [ref=f4e240]:
+      - generic [ref=f4e241]: Habit summary
+      - generic [ref=f4e242]:
+        - generic [ref=f4e243]: Longest streak
+        - generic [ref=f4e244]: 0 days
+      - generic [ref=f4e245]:
+        - generic [ref=f4e246]: Ready to review
+        - generic [ref=f4e247]: "0"
+      - generic [ref=f4e248]:
+        - generic [ref=f4e249]: Daily goal
+        - generic [ref=f4e250]: Not yet complete
+  - tablist [ref=f4e251]:
+    - tab "Home" [ref=f4e252] [cursor=pointer]:
+      - generic [ref=f4e253]: 
+    - tab "Explore" [ref=f4e256] [cursor=pointer]:
+      - generic [ref=f4e257]: 
+    - tab "Reviews" [ref=f4e260] [cursor=pointer]:
+      - generic [ref=f4e261]: 
+    - tab "Profile" [ref=f4e264] [cursor=pointer]:
+      - generic [ref=f4e265]: 

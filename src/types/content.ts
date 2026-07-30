@@ -7,7 +7,7 @@ export const CORE_PACKAGE_TEXT_KEYS = [
   'lesson.loadingLevel', 'lesson.levelNotFound', 'lesson.backToRoadmap', 'lesson.leaveLevel', 'lesson.leaveMessage', 'lesson.keepLearning', 'lesson.leave', 'lesson.progressUnavailable', 'lesson.continue', 'lesson.completeLevel',
   'completion.loading', 'completion.levelNotFound', 'completion.progressUnavailable', 'completion.alhamdulillah', 'completion.completed', 'completion.rewardsEarned', 'completion.alreadyCounted', 'completion.levelCompleted', 'completion.pathXp', 'completion.saved', 'completion.startNextLevel', 'completion.backToRoadmap',
   'activity.recall', 'activity.reveal', 'activity.revealAndRate', 'activity.compareAndRate', 'activity.again', 'activity.hard', 'activity.remembered', 'activity.selectedAnswer', 'activity.buildAnswer', 'activity.matchTranslationHint',
-  'activity.typeFromMemory', 'activity.typedAnswerLabel',
+  'activity.typeFromMemory', 'activity.typedAnswerLabel', 'activity.showArabicKeyboard', 'activity.hideArabicKeyboard', 'activity.arabicKeyboard', 'activity.keyboardSpace', 'activity.keyboardBackspace',
   'review.title', 'review.due', 'review.start', 'review.noneDue', 'review.complete', 'review.next', 'review.backToRoadmap',
   'question.quiz', 'question.checkAnswer', 'question.checking', 'question.tryAgain', 'question.correct', 'question.answerIs', 'question.fillAnswer', 'question.typeAnswer', 'question.checkMatches', 'question.matchHint', 'question.true', 'question.false',
   'content.translationUnavailable', 'content.arabicSource', 'content.translationSource', 'content.source', 'content.sourceUnavailable', 'content.unsupported', 'content.tafsir', 'content.explanation', 'content.draftPendingReview', 'content.toggleDetails', 'content.wordByWord', 'content.translation', 'content.listen', 'content.audioUnavailable', 'content.context.historical_context', 'content.context.occasion_of_revelation', 'content.context.tafsir_summary',
@@ -72,17 +72,28 @@ export interface QuranEdition {
   checksum?: string;
 }
 
-export interface WordMeaning {
+interface WordMeaningBase {
   /** Stable resource ID used by activities and Studio selections. */
   id: string;
-  /** Stable canonical token reference. Arabic is resolved from WordToken. */
-  wordTokenId: string;
   transliteration: string;
   meaning: string;
   root?: string;
   sourceId: string;
   reviewerStatus: ReviewerStatus;
 }
+
+export type WordMeaning = WordMeaningBase & (
+  | {
+      /** Schema v2 resolves Arabic exclusively from the canonical token. */
+      wordTokenId: string;
+      arabic?: never;
+    }
+  | {
+      /** Schema v1 compatibility shape; canonical text wins when both exist. */
+      wordTokenId?: string;
+      arabic: string;
+    }
+);
 
 export interface AyahRef {
   surahNumber: number;
@@ -98,7 +109,8 @@ export interface QuranRange {
   end: QuranPosition;
 }
 
-export type QuranDivisionKind = 'juz' | 'hizb' | 'rub';
+export type QuranDivisionKind = 'juz' | 'hizb' | 'rub_el_hizb' | 'thumun_al_hizb';
+export type QuranDivisionQueryKind = QuranDivisionKind | 'rub';
 
 export interface QuranDivision {
   id: string;
@@ -108,6 +120,19 @@ export interface QuranDivision {
   range: QuranRange;
   sourceId: string;
   sourceVersion: string;
+  contentHash?: string;
+}
+
+export interface AyahStructureIndex {
+  editionId: QuranEditionId;
+  ayahRef: AyahRef;
+  juzNumber: number;
+  hizbNumber: number;
+  rubElHizbNumber: number;
+  thumunAlHizbNumber?: number;
+  pageNumber?: number;
+  rukuNumber?: number;
+  manzilNumber?: number;
 }
 
 export interface WordToken {
@@ -176,6 +201,94 @@ export interface SurahRecord {
 }
 
 export type LearningGoal = 'memorize' | 'understand' | 'reflect' | 'quiz';
+export type CourseContentType = 'surah_course' | 'thematic_course' | 'review_course';
+export type DiscoveryAudience = 'teen' | 'adult' | 'family';
+export type CurriculumAlignment =
+  | { type: 'surah'; surahNumber: number }
+  | { type: 'ayah_range'; range: QuranRange }
+  | { type: 'juz'; number: number }
+  | { type: 'hizb'; number: number }
+  | { type: 'rub_el_hizb'; number: number }
+  | { type: 'custom_ranges'; ranges: QuranRange[] };
+
+export interface Theme {
+  id: string;
+  parentId?: string;
+  title: Record<string, string>;
+  aliases?: Record<string, string[]>;
+  description?: Record<string, string>;
+  sourceIds: string[];
+  reviewerStatus: ReviewerStatus;
+}
+
+export interface DiscoveryMetadata {
+  alignment: CurriculumAlignment;
+  themeIds: string[];
+  contentTypes: CourseContentType[];
+  studyLocales: string[];
+  audiences: DiscoveryAudience[];
+}
+
+export interface ContentScope {
+  activePackageIds: string[];
+  editionId: QuranEditionId;
+  studyLocale: string;
+}
+
+export type QuranLookup =
+  | { type: 'surah'; surahNumber: number }
+  | { type: 'ayah'; ayahRef: AyahRef }
+  | { type: 'ayah_range'; range: QuranRange }
+  | { type: 'juz'; number: number }
+  | { type: 'hizb'; number: number }
+  | { type: 'rub_el_hizb'; number: number };
+
+export interface DiscoveryFilters {
+  quranLookup?: QuranLookup;
+  themeIds?: string[];
+  contentTypes?: CourseContentType[];
+  learningGoals?: LearningGoal[];
+  studyLocale?: string;
+  maximumMinutesPerLevel?: number;
+  audience?: DiscoveryAudience;
+  downloadedOnly?: boolean;
+  approvedOnly?: boolean;
+}
+
+export type ParsedDiscoveryQuery =
+  | { kind: 'quran_lookup'; lookup: QuranLookup }
+  | { kind: 'text'; normalizedText: string }
+  | { kind: 'empty' };
+
+export interface DiscoveryDiagnostic {
+  code: string;
+  message: string;
+}
+
+export interface DiscoveryQueryResult {
+  query: ParsedDiscoveryQuery;
+  diagnostics: DiscoveryDiagnostic[];
+}
+
+export interface QuranReferenceResult {
+  lookup: QuranLookup;
+  label: string;
+  ayahRefs: AyahRef[];
+  lessonAvailability: 'published' | 'no_published_lesson';
+}
+
+export interface LearningPathDiscoveryResult {
+  packageId: string;
+  path: LearningPath;
+  levels: Level[];
+}
+
+export interface DiscoverySearchResult {
+  quranReferences: QuranReferenceResult[];
+  learningPaths: LearningPathDiscoveryResult[];
+  diagnostics: DiscoveryDiagnostic[];
+}
+
 export type ContextKind = 'historical_context' | 'occasion_of_revelation' | 'tafsir_summary';
 export type LevelStepKind =
   | 'context'
@@ -197,6 +310,7 @@ export interface LearningPath {
   description: string;
   surahIds: string[];
   levelIds: string[];
+  discovery?: DiscoveryMetadata;
   sourceMetadata: {
     reviewerStatus: ReviewerStatus;
     sourceIds: string[];
@@ -214,6 +328,7 @@ export interface Level {
   ayahRefs: AyahRef[];
   difficulty: LevelDifficulty;
   goals: LearningGoal[];
+  discovery?: DiscoveryMetadata;
   steps: LevelStep[];
   completionRules?: {
     requireMemoryActivity: boolean;
@@ -391,6 +506,8 @@ export interface ContentPackage {
   ayat: AyahRecord[];
   wordTokens: WordToken[];
   divisions: QuranDivision[];
+  structureIndex?: AyahStructureIndex[];
+  themes?: Theme[];
   reciters: Reciter[];
   recitationTracks: RecitationTrack[];
   localization: PackageLocalization;
@@ -422,28 +539,37 @@ export interface ContentRepository {
   levels: Level[];
   getPackageById(id: string): ContentPackage | undefined;
   getPackageForLevel(levelId: string): ContentPackage | undefined;
+  getPackageForBlock(blockId: string): ContentPackage | undefined;
   getActivePackage(): ContentPackage | undefined;
   getText(key: PackageTextKey, locale?: string): string;
-  registerPackage(pkg: ContentPackage, activate?: boolean): void;
+  registerPackage(pkg: ContentPackage, activate?: boolean, origin?: 'built_in' | 'downloaded'): void;
   removePackage(id: string): void;
-  getSourceById(id: string): ContentSource | undefined;
+  getSourceById(id: string, scope?: ContentScope): ContentSource | undefined;
   getEdition(id: QuranEditionId): QuranEdition | undefined;
   getSurahById(id: string): SurahRecord | undefined;
-  getSurahByNumber(number: number): SurahRecord | undefined;
+  getSurahByNumber(number: number, scope?: ContentScope): SurahRecord | undefined;
   getLevelById(id: string): Level | undefined;
   getActivityById(id: string): LearningActivity | undefined;
   getActivityForLevel(levelId: string, activityId: string): LearningActivity | undefined;
   getLevelForActivity(id: string): Level | undefined;
-  getAyahByRef(ref: AyahRef, editionId?: QuranEditionId): AyahRecord | undefined;
-  getAyatByRefs(refs: AyahRef[], editionId?: QuranEditionId): AyahRecord[];
-  getWordToken(id: string): WordToken | undefined;
+  getAyahByRef(ref: AyahRef, editionId?: QuranEditionId, scope?: ContentScope): AyahRecord | undefined;
+  getAyatByRefs(refs: AyahRef[], editionId?: QuranEditionId, scope?: ContentScope): AyahRecord[];
+  getWordToken(id: string, scope?: ContentScope): WordToken | undefined;
   getReciterById(id: string): Reciter | undefined;
   getRecitationTrackByAyah(ref: AyahRef, reciterId?: string, editionId?: QuranEditionId): RecitationTrack | undefined;
-  listDivisions(kind: QuranDivisionKind, editionId?: QuranEditionId): QuranDivision[];
-  getDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): QuranDivision | undefined;
-  listAyahRefsInDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): AyahRef[];
-  listSurahsInDivision(kind: QuranDivisionKind, number: number, editionId?: QuranEditionId): SurahRecord[];
-  getDivisionsForAyah(ref: AyahRef, editionId?: QuranEditionId): QuranDivision[];
+  listDivisions(kind: QuranDivisionQueryKind, editionId?: QuranEditionId, scope?: ContentScope): QuranDivision[];
+  getDivision(kind: QuranDivisionQueryKind, number: number, editionId?: QuranEditionId, scope?: ContentScope): QuranDivision | undefined;
+  listAyahRefsInDivision(kind: QuranDivisionQueryKind, number: number, editionId?: QuranEditionId, scope?: ContentScope): AyahRef[];
+  listSurahsInDivision(kind: QuranDivisionQueryKind, number: number, editionId?: QuranEditionId, scope?: ContentScope): SurahRecord[];
+  getDivisionsForAyah(ref: AyahRef, editionId?: QuranEditionId, scope?: ContentScope): QuranDivision[];
+  getAyahsInRange(range: QuranRange, scope?: ContentScope): AyahRecord[];
+  getAyahStructure(ref: AyahRef, scope?: ContentScope): AyahStructureIndex | undefined;
+  parseDiscoveryQuery(query: string, scope?: ContentScope): DiscoveryQueryResult;
+  searchQuranMetadata(query: string, scope?: ContentScope): QuranReferenceResult[];
+  listLearningPaths(filters?: DiscoveryFilters, scope?: ContentScope): LearningPathDiscoveryResult[];
+  listLevels(filters?: DiscoveryFilters, scope?: ContentScope): Level[];
+  findLearningContentForQuranLookup(lookup: QuranLookup, scope?: ContentScope): LearningPathDiscoveryResult[];
+  searchDiscovery(query: string, filters?: DiscoveryFilters, scope?: ContentScope): DiscoverySearchResult;
   getNextLevel(levelId: string): Level | undefined;
   getLearningPathById(id: string): LearningPath | undefined;
   getCurrentLearningPath(): LearningPath | undefined;

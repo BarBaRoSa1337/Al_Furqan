@@ -1,6 +1,7 @@
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { ContentPackage } from '../../types/content';
 import { validatePackage } from './packageValidator';
+import { getCoreLevelSteps, getPracticeLevelSteps } from './lessonSteps';
 
 test('accepts draft package in development with warnings', () => {
   const result = validatePackage(surahAlFilPackage, { mode: 'development' });
@@ -81,36 +82,115 @@ test('keeps schema-v1 packages readable through inferred step kinds', () => {
   expect(validatePackage(pkg).valid).toBe(true);
 });
 
-test('authors Al-Fil Level 1 in the memorization-first sequence', () => {
-  expect(surahAlFilPackage.levels[0].steps.map(step => step.kind)).toEqual([
+test('keeps schema-v1 word meanings readable without canonical token references', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const meaning = pkg.ayat[0].wordMeanings?.[0];
+  if (!meaning) throw new Error('Word meaning fixture unavailable');
+  const arabic = pkg.wordTokens.find(token => token.id === meaning.wordTokenId)?.arabicText;
+  if (!arabic) throw new Error('Canonical token fixture unavailable');
+  pkg.schemaVersion = 1;
+  pkg.ayat[0].wordMeanings![0] = { ...meaning, wordTokenId: undefined, arabic } as unknown as typeof meaning;
+
+  expect(validatePackage(pkg).valid).toBe(true);
+});
+
+test('rejects schema-v1 word meanings whose Arabic is not canonical', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const meaning = pkg.ayat[0].wordMeanings?.[0];
+  if (!meaning) throw new Error('Word meaning fixture unavailable');
+  pkg.schemaVersion = 1;
+  pkg.ayat[0].wordMeanings![0] = { ...meaning, wordTokenId: undefined, arabic: 'غير مطابق' } as unknown as typeof meaning;
+
+  const result = validatePackage(pkg);
+
+  expect(result.valid).toBe(false);
+  expect(result.errors.some(error => error.includes('does not match exactly one canonical token'))).toBe(true);
+});
+
+test('requires canonical word references and rejects embedded Arabic in schema v2', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const meaning = pkg.ayat[0].wordMeanings?.[0];
+  if (!meaning) throw new Error('Word meaning fixture unavailable');
+  pkg.ayat[0].wordMeanings![0] = { ...meaning, wordTokenId: undefined, arabic: 'legacy' } as unknown as typeof meaning;
+
+  const result = validatePackage(pkg);
+
+  expect(result.errors.some(error => error.includes('missing canonical token reference'))).toBe(true);
+  expect(result.errors.some(error => error.includes('duplicates canonical Arabic text'))).toBe(true);
+});
+
+test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () => {
+  expect(getCoreLevelSteps(surahAlFilPackage.levels[0]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'word_meaning', 'tafsir',
-    'memorize', 'memory_practice', 'memory_practice', 'memory_practice',
+    'memorize',
     'understanding_practice', 'summary',
   ]);
+  expect(getPracticeLevelSteps(surahAlFilPackage.levels[0]).map(step => step.id)).toEqual(expect.arrayContaining([
+    'l1-memory-practice', 'l1-order-words', 'l1-type-recall', 'l1-match-translation-practice', 'l1-quiz-practice',
+  ]));
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('2.3');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r5');
-  expect(surahAlFilPackage.levels[1].steps.map(step => step.kind)).toEqual([
+  expect(surahAlFilPackage.version).toBe('2.7');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r9');
+  expect(getCoreLevelSteps(surahAlFilPackage.levels[1]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',
   ]);
-  expect(surahAlFilPackage.levels[2].steps.map(step => step.kind)).toEqual([
+  expect(getCoreLevelSteps(surahAlFilPackage.levels[2]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',
   ]);
-  expect(surahAlFilPackage.levels[3].steps.map(step => step.kind)).toEqual([
-    'context', 'read', 'translation', 'memory_practice', 'word_meaning',
-    'understanding_practice', 'tafsir', 'understanding_practice',
+  expect(getCoreLevelSteps(surahAlFilPackage.levels[3]).map(step => step.kind)).toEqual([
+    'context', 'read', 'translation', 'word_meaning', 'understanding_practice', 'tafsir',
     'memory_practice', 'memory_practice', 'summary',
   ]);
   expect(surahAlFilPackage.levels.slice(1).flatMap(level => level.steps)
     .flatMap(step => step.blocks)
     .filter(block => block.type === 'activity')
     .map(block => block.activity.kind)).toEqual(expect.arrayContaining([
-      'choose_continuation', 'order_ayat', 'match_word_meaning', 'recall_then_reveal',
+      'choose_continuation', 'order_ayat', 'match_word_meaning', 'order_tokens',
     ]));
+});
+
+test('rejects schema-v2 steps with multiple interactive exercises', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  const practice = pkg.levels[0].steps.find(step => step.id === 'l1-match-translation-practice');
+  if (!practice) throw new Error('Practice fixture unavailable');
+  practice.blocks.push(structuredClone(pkg.levels[0].steps.find(step => step.id === 'l1-quiz-practice')!.blocks[0]));
+
+  expect(validatePackage(pkg).errors.some(error => error.includes('more than one interactive exercise'))).toBe(true);
+});
+
+test('rejects invented Hafs Thumun metadata and inconsistent structure ranges', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  pkg.structureIndex![0].thumunAlHizbNumber = 480;
+  pkg.divisions.find(division => division.kind === 'rub_el_hizb')!.range.start = { surahNumber: 106, ayahNumber: 1 };
+
+  const result = validatePackage(pkg);
+
+  expect(result.errors.some(error => error.includes('unsupported Hafs Thumun'))).toBe(true);
+  expect(result.errors.some(error => error.includes('outside Rub 240 range'))).toBe(true);
+});
+
+test('rejects discovery metadata outside the package canonical selection', () => {
+  const pkg = structuredClone(surahAlFilPackage) as ContentPackage;
+  pkg.learningPaths[0].discovery = {
+    ...pkg.learningPaths[0].discovery!,
+    alignment: { type: 'hizb', number: 59 },
+  };
+  pkg.levels[0].discovery = {
+    ...pkg.levels[0].discovery!,
+    alignment: {
+      type: 'ayah_range',
+      range: { start: { surahNumber: 105, ayahNumber: 5 }, end: { surahNumber: 105, ayahNumber: 1 } },
+    },
+  };
+
+  const result = validatePackage(pkg);
+
+  expect(result.errors.some(error => error.includes('unavailable Hizb 59'))).toBe(true);
+  expect(result.errors.some(error => error.includes('reversed range'))).toBe(true);
 });
 
 test('rejects malformed continuation content through package validation', () => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, StatusBar, StatusBarStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors } from '../../theme/tokens';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ interface ScreenProps {
 const Screen: React.FC<ScreenProps> = ({
   children,
   style,
-  backgroundColor = '#F5F0E8',
+  backgroundColor = colors.background,
   edges = ['top', 'left', 'right'],
   statusBarStyle = 'dark-content',
 }) => {

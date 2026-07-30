@@ -1,4 +1,5 @@
 import { validatePackage } from '../content/packageValidator';
+import { adaptLegacyPackage } from '../content/legacyPackageAdapter';
 import type { ContentRepository } from '../../types/content';
 import {
   ChecksumVerifier,
@@ -85,8 +86,12 @@ export async function hydrateInstalledPackages(store: PackageStore, repository: 
   const registry = await store.read<InstalledPackageRegistry>(REGISTRY_KEY);
   if (!registry) return;
   for (const record of Object.values(registry.packages)) {
-    const active = await store.read<DownloadedContentPackage>(activeKey(record.packageId, record.activeVersion));
-    if (active) repository.registerPackage(validateStoredPackage(active, record.packageId, record.activeVersion).content, true);
+    try {
+      const active = await store.read<DownloadedContentPackage>(activeKey(record.packageId, record.activeVersion));
+      if (active) repository.registerPackage(validateStoredPackage(active, record.packageId, record.activeVersion).content, true);
+    } catch (error) {
+      console.warn(`[content:${record.packageId}@${record.activeVersion}] Installed package hydration skipped: ${errorMessage(error)}`);
+    }
   }
 }
 
@@ -124,6 +129,7 @@ function validateStoredPackage(downloaded: DownloadedContentPackage, packageId: 
   if (!content || typeof content !== 'object' || content.id !== packageId || content.version !== version) {
     throw new PackageInstallError('Manifest and curriculum package identity do not match');
   }
+  content = adaptLegacyPackage(content);
   let validation;
   try {
     validation = validatePackage(content, { mode: 'production' });

@@ -6,6 +6,7 @@ import FillBlankQuestion from '../quiz/FillBlankQuestion';
 import MatchQuestion from '../quiz/MatchQuestion';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
+import { colors, fonts, radii, spacing } from '../../theme/tokens';
 
 interface LevelQuestionBlockProps {
   block: QuestionBlock;
@@ -78,20 +79,22 @@ export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlo
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
     borderLeftWidth: 4,
-    borderLeftColor: '#6C3483',
+    borderLeftColor: colors.gold,
   },
   badge: {
+    color: colors.primary,
+    fontFamily: fonts.bold,
     fontSize: 11,
-    fontWeight: '700',
-    color: '#6C3483',
-    textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 10,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
   },
-  unsupported: { fontSize: 14, color: '#7F8C8D', lineHeight: 22 },
+  unsupported: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 22 },
 });

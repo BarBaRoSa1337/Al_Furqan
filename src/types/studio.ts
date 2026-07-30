@@ -14,7 +14,7 @@ export interface CanonicalSelection {
 export interface PublishablePackageDraft {
   state: PublicationState;
   canonical: CanonicalSelection;
-  curriculum: Omit<ContentPackage, 'editions' | 'surahs' | 'ayat' | 'wordTokens' | 'divisions'>;
+  curriculum: Omit<ContentPackage, 'editions' | 'surahs' | 'ayat' | 'wordTokens' | 'divisions' | 'structureIndex'>;
 }
 
 export interface CompileDiagnostic {

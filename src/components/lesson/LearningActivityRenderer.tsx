@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { LearningActivity } from '../../types/activities';
-import { evaluateActivity } from '../../lib/activities/activityEngine';
-import { createActivityEvaluationContext } from '../../lib/activities/activityContext';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import Card from '../ui/Card';
+import { colors, fonts, radii, spacing } from '../../theme/tokens';
 
 interface Props {
   activity: LearningActivity;
@@ -29,135 +28,151 @@ function SequenceActivity({ activity, ids, answerLength, onAnswer }: Props & { i
   const repo = getContentRepository();
   const [choices] = useState(() => shuffle(ids));
   const [answer, setAnswer] = useState<string[]>([]);
-  const submission = useSubmission(activity, onAnswer);
   const labels = useMemo(() => new Map(ids.map(id => [id, resolveItemLabel(activity, id)])), [activity, ids]);
+  const isAyahOrder = activity.kind === 'order_ayat';
 
   const choose = (id: string) => {
-    if (submission.result === true || answer.length >= answerLength) return;
-    setAnswer(current => [...current, id]);
-    submission.reset();
+    if (answer.length >= answerLength) return;
+    const nextAnswer = [...answer, id];
+    setAnswer(nextAnswer);
+    if (nextAnswer.length === answerLength) void onAnswer?.(nextAnswer, false);
   };
   const remove = (index: number) => {
     setAnswer(current => current.filter((_, itemIndex) => itemIndex !== index));
-    submission.reset();
+    void onAnswer?.(answer.filter((_, itemIndex) => itemIndex !== index), false);
   };
 
   return <ActivityCard instruction={activity.instruction}>
     <Text style={styles.hint}>{packageText(repo, 'activity.buildAnswer')}</Text>
-    <View accessibilityLabel={packageText(repo, 'activity.selectedAnswer')} style={styles.answerTray}>
-      {answer.map((id, index) => <Option key={`${id}:${index}`} label={labels.get(id) ?? id} selected onPress={() => remove(index)} />)}
+    <View accessibilityLabel={packageText(repo, 'activity.selectedAnswer')} style={[styles.answerTray, isAyahOrder ? styles.ayahStack : styles.answerSequence]}>
+      {answer.map((id, index) => <Option key={`${id}:${index}`} label={labels.get(id) ?? id} selected fullWidth={isAyahOrder} marker={String(index + 1)} onPress={() => remove(index)} />)}
     </View>
-    <View style={styles.options}>{choices.map(id => <Option key={id} label={labels.get(id) ?? id} disabled={answer.includes(id)} onPress={() => choose(id)} />)}</View>
-    <SubmitControl disabled={answer.length !== answerLength} {...submission} onPress={() => submission.submit(answer)} />
+    <View style={[styles.options, isAyahOrder ? styles.ayahStack : styles.rtlSequence]}>
+      {choices.map(id => <Option key={id} label={labels.get(id) ?? id} disabled={answer.includes(id)} fullWidth={isAyahOrder} onPress={() => choose(id)} />)}
+    </View>
   </ActivityCard>;
 }
 
 function WordMeaningMatch({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'match_word_meaning' }>; onAnswer?: Props['onAnswer'] }) {
   const repo = getContentRepository();
   const meanings = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []);
-  const [layout] = useState(() => createMatchLayout(activity.config.pairs.map(pair => pair.promptTokenId), activity.config.pairs.map(pair => pair.meaningId)));
-  const { prompts, choices } = layout;
-  return <MatchActivity activity={activity} prompts={prompts.map(id => ({ id, label: repo.getWordToken(id)?.arabicText ?? id }))} choices={choices.map(id => ({ id, label: meanings.find(meaning => meaning.id === id)?.meaning ?? id }))} hint={packageText(repo, 'question.matchHint')} onAnswer={onAnswer} />;
+  const promptIds = activity.config.pairs.map(pair => pair.promptTokenId);
+  const [meaningIds] = useState(() => shuffle(activity.config.pairs.map(pair => pair.meaningId)));
+  return <MatchActivity activity={activity} prompts={promptIds.map(id => ({ id, label: repo.getWordToken(id)?.arabicText ?? id }))} choices={meaningIds.map(id => ({ id, label: meanings.find(meaning => meaning.id === id)?.meaning ?? id }))} hint={packageText(repo, 'activity.matchWordPrompt')} onAnswer={onAnswer} />;
 }
 
 function AyahTranslationMatch({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'match_ayah_translation' }>; onAnswer?: Props['onAnswer'] }) {
   const repo = getContentRepository();
   const [layout] = useState(() => createMatchLayout(activity.config.ayahSegments, activity.config.translationSegments));
-  const { prompts, choices } = layout;
-  return <MatchActivity activity={activity} prompts={prompts.map(segment => ({ id: segment.id, label: segment.tokenIds.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ') }))} choices={choices.map(segment => ({ id: segment.id, label: segment.text }))} hint={packageText(repo, 'activity.matchTranslationHint')} onAnswer={onAnswer} />;
+  return <MatchActivity activity={activity} prompts={layout.prompts.map(segment => ({ id: segment.id, label: segment.tokenIds.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ') }))} choices={layout.choices.map(segment => ({ id: segment.id, label: segment.text }))} hint={packageText(repo, 'activity.matchTranslationHint')} onAnswer={onAnswer} />;
 }
 
 function ContinuationActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'choose_continuation' }>; onAnswer?: Props['onAnswer'] }) {
   const repo = getContentRepository();
   const [options] = useState(() => shuffle(activity.config.optionIds));
   const [answer, setAnswer] = useState<string>();
-  const submission = useSubmission(activity, onAnswer);
   const prompt = activity.config.promptTokenIds?.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ');
   return <ActivityCard instruction={activity.instruction}>
     {prompt ? <Text accessibilityLabel={prompt} style={styles.quranPrompt}>{prompt}</Text> : null}
-    <View style={styles.choiceList}>{options.map(id => <Option key={id} label={resolveItemLabel(activity, id)} selected={answer === id} onPress={() => { setAnswer(id); submission.reset(); }} />)}</View>
-    <SubmitControl disabled={!answer} {...submission} onPress={() => submission.submit(answer)} />
+    <View style={styles.choiceList}>{options.map(id => <Option key={id} label={resolveItemLabel(activity, id)} fullWidth selected={answer === id} onPress={() => { setAnswer(id); void onAnswer?.(id, false); }} />)}</View>
   </ActivityCard>;
 }
 
 function MatchActivity({ activity, prompts, choices, hint, onAnswer }: Props & { prompts: { id: string; label: string }[]; choices: { id: string; label: string }[]; hint: string }) {
-  const [activePrompt, setActivePrompt] = useState(prompts[0]?.id);
-  const [answer, setAnswer] = useState<Record<string, string>>({});
-  const submission = useSubmission(activity, onAnswer);
+  const repo = getContentRepository();
+  const [activePrompt, setActivePrompt] = useState<string>();
+  const [matchedPairs, setMatchedPairs] = useState<Record<string, string>>({});
+  const [incorrectPair, setIncorrectPair] = useState<{ promptId: string; choiceId: string }>();
+  const matchedCount = Object.keys(matchedPairs).length;
+
+  const choose = (choiceId: string) => {
+    if (!activePrompt) return;
+    if (isCorrectMatch(activity, activePrompt, choiceId)) {
+      const nextPairs = { ...matchedPairs, [activePrompt]: choiceId };
+      setMatchedPairs(nextPairs);
+      setIncorrectPair(undefined);
+      setActivePrompt(undefined);
+      if (Object.keys(nextPairs).length === prompts.length) void onAnswer?.(nextPairs, false);
+    } else {
+      setIncorrectPair({ promptId: activePrompt, choiceId });
+    }
+  };
+
   return <ActivityCard instruction={activity.instruction}>
     <Text style={styles.hint}>{hint}</Text>
-    <View style={styles.options}>{prompts.map(prompt => <Option key={prompt.id} label={prompt.label} selected={activePrompt === prompt.id} onPress={() => setActivePrompt(prompt.id)} />)}</View>
-    <View style={styles.options}>{choices.map(choice => {
-      const usedByAnotherPrompt = Boolean(activePrompt && Object.entries(answer).some(([promptId, choiceId]) => promptId !== activePrompt && choiceId === choice.id));
-      return <Option key={choice.id} label={choice.label} disabled={usedByAnotherPrompt} selected={Boolean(activePrompt && answer[activePrompt] === choice.id)} onPress={() => {
-      if (!activePrompt || submission.result === true) return;
-      setAnswer(current => ({ ...current, [activePrompt]: choice.id }));
-      const next = prompts.find(prompt => !answer[prompt.id] && prompt.id !== activePrompt);
-      setActivePrompt(next?.id ?? activePrompt);
-      submission.reset();
-    }} />; })}</View>
-    <SubmitControl disabled={Object.keys(answer).length !== prompts.length} {...submission} onPress={() => submission.submit(answer)} />
+    <Text accessibilityLiveRegion="polite" style={styles.matchProgress}>{packageText(repo, 'activity.matchProgress', { current: matchedCount, total: prompts.length })}</Text>
+    <View style={styles.matchColumns}>
+      <View style={styles.matchColumn}>
+        <Text style={styles.columnLabel}>{packageText(repo, 'content.wordByWord')}</Text>
+        {prompts.filter(prompt => !matchedPairs[prompt.id]).map(prompt => <Option key={prompt.id} label={prompt.label} selected={activePrompt === prompt.id} incorrect={incorrectPair?.promptId === prompt.id} onPress={() => { setActivePrompt(prompt.id); setIncorrectPair(undefined); }} />)}
+      </View>
+      <View style={styles.matchColumn}>
+        <Text style={styles.columnLabel}>{packageText(repo, 'content.translation')}</Text>
+        {choices.map(choice => {
+          const used = Object.values(matchedPairs).includes(choice.id);
+          if (used) return null;
+          return <Option key={choice.id} label={choice.label} selected={incorrectPair?.choiceId === choice.id} incorrect={incorrectPair?.choiceId === choice.id} onPress={() => choose(choice.id)} />;
+        })}
+      </View>
+    </View>
   </ActivityCard>;
 }
 
 function ChoiceActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'multiple_choice' }>; onAnswer?: Props['onAnswer'] }) {
   const [options] = useState(() => shuffle(activity.config.options));
   const [answer, setAnswer] = useState<string>();
-  const submission = useSubmission(activity, onAnswer);
-  return <ActivityCard instruction={activity.instruction}><View style={styles.choiceList}>{options.map(option => <Option key={option.id} label={option.text} selected={answer === option.id} onPress={() => { setAnswer(option.id); submission.reset(); }} />)}</View><SubmitControl disabled={!answer} {...submission} onPress={() => submission.submit(answer)} /></ActivityCard>;
+  return <ActivityCard instruction={activity.instruction}><View style={styles.choiceList}>{options.map(option => <Option key={option.id} label={option.text} fullWidth selected={answer === option.id} onPress={() => { setAnswer(option.id); void onAnswer?.(option.id, false); }} />)}</View></ActivityCard>;
 }
 
 function TypedActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'type_missing_text' }>; onAnswer?: Props['onAnswer'] }) {
   const repo = getContentRepository();
   const [answer, setAnswer] = useState('');
-  const submission = useSubmission(activity, onAnswer);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const updateAnswer = (value: string) => { setAnswer(value); void onAnswer?.(value, false); };
   return <ActivityCard instruction={activity.instruction}>
     <Text style={styles.hint}>{packageText(repo, 'activity.typeFromMemory')}</Text>
-    <TextInput
-      accessibilityLabel={packageText(repo, 'activity.typedAnswerLabel')}
-      autoCapitalize="none"
-      autoCorrect={false}
-      multiline
-      onChangeText={value => { setAnswer(value); submission.reset(); }}
-      placeholder={packageText(repo, 'question.typeAnswer')}
-      style={styles.typedInput}
-      textAlign="right"
-      value={answer}
-    />
-    <SubmitControl disabled={!answer.trim()} {...submission} onPress={() => submission.submit(answer)} />
+    <TextInput accessibilityLabel={packageText(repo, 'activity.typedAnswerLabel')} autoCapitalize="none" autoCorrect={false} multiline onChangeText={updateAnswer} placeholder={packageText(repo, 'question.typeAnswer')} style={styles.typedInput} textAlign="right" value={answer} />
+    <Pressable accessibilityRole="button" accessibilityState={{ expanded: keyboardVisible }} accessibilityLabel={packageText(repo, keyboardVisible ? 'activity.hideArabicKeyboard' : 'activity.showArabicKeyboard')} style={styles.keyboardToggle} onPress={() => setKeyboardVisible(visible => !visible)}>
+      <Text style={styles.keyboardToggleText}>{packageText(repo, keyboardVisible ? 'activity.hideArabicKeyboard' : 'activity.showArabicKeyboard')}</Text>
+    </Pressable>
+    {keyboardVisible ? <ArabicKeyboard repo={repo} onInput={value => updateAnswer(`${answer}${value}`)} onBackspace={() => updateAnswer(answer.slice(0, -1))} /> : null}
   </ActivityCard>;
 }
 
-function useSubmission(activity: LearningActivity, onAnswer?: Props['onAnswer']) {
-  const [result, setResult] = useState<boolean>();
-  const [submitting, setSubmitting] = useState(false);
-  return {
-    result,
-    submitting,
-    reset: () => setResult(undefined),
-    submit: async (answer: unknown) => {
-      if (result === false) { setResult(undefined); return; }
-      const evaluation = evaluateActivity(activity, answer, createActivityEvaluationContext(getContentRepository()));
-      setSubmitting(true);
-      try { await onAnswer?.(answer, evaluation.correct); setResult(evaluation.correct); }
-      finally { setSubmitting(false); }
-    },
-  };
+const ARABIC_KEY_ROWS = [
+  ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع'],
+  ['ه', 'خ', 'ح', 'ج', 'د', 'ش', 'س'],
+  ['ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك'],
+  ['ظ', 'ط', 'ذ', 'د', 'ز', 'ر', 'و'],
+  ['ء', 'أ', 'إ', 'آ', 'ى', 'ة'],
+] as const;
+
+function ArabicKeyboard({ repo, onInput, onBackspace }: { repo: ReturnType<typeof getContentRepository>; onInput: (value: string) => void; onBackspace: () => void }) {
+  return <View accessibilityLabel={packageText(repo, 'activity.arabicKeyboard')} style={styles.keyboard}>
+    {ARABIC_KEY_ROWS.map((row, rowIndex) => <View key={rowIndex} style={styles.keyboardRow}>{row.map(key => <Pressable key={key} accessibilityRole="button" accessibilityLabel={key} style={styles.keyboardKey} onPress={() => onInput(key)}><Text style={styles.keyboardKeyText}>{key}</Text></Pressable>)}</View>)}
+    <View style={styles.keyboardRow}>
+      <Pressable accessibilityRole="button" accessibilityLabel={packageText(repo, 'activity.keyboardBackspace')} style={[styles.keyboardKey, styles.keyboardAction]} onPress={onBackspace}><Text style={styles.keyboardActionText}>⌫</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={packageText(repo, 'activity.keyboardSpace')} style={[styles.keyboardKey, styles.keyboardSpace]} onPress={() => onInput(' ')}><Text style={styles.keyboardActionText}>{packageText(repo, 'activity.keyboardSpace')}</Text></Pressable>
+    </View>
+  </View>;
 }
 
 function ActivityCard({ instruction, children }: { instruction: string; children: React.ReactNode }) {
-  return <Card><Text style={styles.instruction}>{instruction}</Text>{children}</Card>;
+  return <Card style={styles.card}><Text style={styles.instruction}>{instruction}</Text>{children}</Card>;
 }
 
-function Option({ label, selected = false, disabled = false, onPress }: { label: string; selected?: boolean; disabled?: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={label} disabled={disabled} style={[styles.option, selected && styles.selected, disabled && styles.used]} onPress={onPress}><Text style={[styles.optionText, containsArabic(label) && styles.rtlText]}>{label}</Text></Pressable>;
+function Option({ label, selected = false, disabled = false, fullWidth = false, incorrect = false, marker, onPress }: { label: string; selected?: boolean; disabled?: boolean; fullWidth?: boolean; incorrect?: boolean; marker?: string; onPress: () => void }) {
+  const arabic = containsArabic(label);
+  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={marker ? `${label}, ${marker}` : label} disabled={disabled} style={[styles.option, fullWidth && styles.optionFullWidth, selected && !incorrect && styles.selected, incorrect && styles.incorrect, disabled && styles.used]} onPress={onPress}>
+    <Text style={[styles.optionText, arabic && styles.rtlText]}>{label}</Text>
+    {marker ? <Text style={styles.optionMarker}>{marker}</Text> : null}
+  </Pressable>;
 }
 
-function SubmitControl({ disabled, submitting, result, onPress }: { disabled: boolean; submitting: boolean; result?: boolean; onPress: () => Promise<void> }) {
-  const repo = getContentRepository();
-  const locked = disabled || submitting || result === true;
-  const label = submitting ? packageText(repo, 'question.checking') : result === true ? packageText(repo, 'question.correct') : result === false ? packageText(repo, 'question.tryAgain') : packageText(repo, 'question.checkAnswer');
-  return <Pressable accessibilityRole="button" disabled={locked} style={[styles.submit, locked && styles.disabled]} onPress={() => { void onPress(); }}><Text style={styles.submitText}>{label}</Text></Pressable>;
+function isCorrectMatch(activity: LearningActivity, promptId: string, choiceId: string): boolean {
+  if (activity.kind === 'match_word_meaning') return activity.config.pairs.some(pair => pair.promptTokenId === promptId && pair.meaningId === choiceId);
+  if (activity.kind === 'match_ayah_translation') return activity.config.pairs.some(pair => pair.ayahSegmentId === promptId && pair.translationSegmentId === choiceId);
+  return false;
 }
 
 function resolveItemLabel(activity: LearningActivity, id: string): string {
@@ -188,20 +203,37 @@ export function createMatchLayout<P, C>(prompts: readonly P[], choices: readonly
 }
 
 const styles = StyleSheet.create({
-  unsupported: { color: '#7F8C8D', fontSize: 14, lineHeight: 21 },
-  instruction: { fontSize: 17, color: '#2C3E50', lineHeight: 25, marginBottom: 14, fontWeight: '600' },
-  hint: { color: '#7F8C8D', marginBottom: 10 },
-  quranPrompt: { color: '#1B4F72', fontFamily: 'serif', fontSize: 27, lineHeight: 42, marginBottom: 16, textAlign: 'right', writingDirection: 'rtl' },
-  answerTray: { minHeight: 52, flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderColor: '#D5DBDB', borderRadius: 12, padding: 8, marginBottom: 12 },
-  options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  choiceList: { gap: 8 },
-  option: { backgroundColor: '#F5F0E8', borderWidth: 1, borderColor: '#E5DED2', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11 },
-  selected: { backgroundColor: '#D4EFDF', borderColor: '#27AE60' },
-  optionText: { fontSize: 16, color: '#1B4F72', textAlign: 'center' },
-  rtlText: { writingDirection: 'rtl' },
-  used: { opacity: 0.3 },
-  typedInput: { minHeight: 96, borderWidth: 2, borderColor: '#D5DBDB', borderRadius: 12, padding: 14, color: '#1A1A1A', backgroundColor: '#FFF', fontFamily: 'serif', fontSize: 24, lineHeight: 38, writingDirection: 'rtl' },
-  submit: { backgroundColor: '#1B4F72', borderRadius: 10, padding: 13, marginTop: 8, alignItems: 'center' },
-  disabled: { opacity: 0.5 },
-  submitText: { color: '#FFF', fontWeight: '700' },
+  card: { borderWidth: 1, borderColor: colors.border },
+  unsupported: { color: colors.textMuted, fontSize: 14, lineHeight: 21 },
+  instruction: { color: colors.text, fontSize: 18, fontWeight: '800', lineHeight: 26, marginBottom: spacing.md },
+  hint: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginBottom: spacing.sm },
+  quranPrompt: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 29, lineHeight: 46, marginBottom: spacing.md, textAlign: 'right', writingDirection: 'rtl' },
+  answerTray: { backgroundColor: colors.primarySoft, borderWidth: 2, borderColor: colors.primary, borderRadius: radii.lg, minHeight: 66, padding: spacing.sm, marginBottom: spacing.md },
+  answerSequence: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm },
+  rtlSequence: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm },
+  ayahStack: { gap: spacing.sm },
+  options: { marginBottom: spacing.md },
+  choiceList: { gap: spacing.sm },
+  option: { alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, flexDirection: 'row', gap: spacing.xs, justifyContent: 'center', minHeight: 46, paddingHorizontal: spacing.md, paddingVertical: 10 },
+  optionFullWidth: { width: '100%' },
+  selected: { backgroundColor: colors.successSoft, borderColor: colors.success },
+  incorrect: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
+  used: { opacity: 0.42 },
+  optionText: { color: colors.text, flexShrink: 1, fontSize: 16, textAlign: 'center' },
+  rtlText: { fontFamily: fonts.arabic, fontSize: 22, lineHeight: 32, textAlign: 'right', writingDirection: 'rtl' },
+  optionMarker: { color: colors.success, fontSize: 11, fontWeight: '800' },
+  matchProgress: { color: colors.primary, fontSize: 13, fontWeight: '800', marginBottom: spacing.md },
+  matchColumns: { flexDirection: 'row-reverse', gap: spacing.sm, marginBottom: spacing.md },
+  matchColumn: { flex: 1, gap: spacing.sm },
+  columnLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+  typedInput: { minHeight: 96, borderWidth: 2, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, color: colors.text, backgroundColor: colors.surface, fontFamily: fonts.arabic, fontSize: 26, lineHeight: 40, writingDirection: 'rtl' },
+  keyboardToggle: { alignItems: 'center', marginTop: spacing.sm, paddingVertical: spacing.sm },
+  keyboardToggleText: { color: colors.primary, fontSize: 14, fontWeight: '800' },
+  keyboard: { backgroundColor: colors.background, borderColor: colors.border, borderRadius: radii.md, borderWidth: 1, gap: spacing.xs, marginTop: spacing.xs, padding: spacing.sm },
+  keyboardRow: { flexDirection: 'row-reverse', gap: spacing.xs, justifyContent: 'center' },
+  keyboardKey: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.sm, borderWidth: 1, justifyContent: 'center', minHeight: 40, minWidth: 34, paddingHorizontal: spacing.xs },
+  keyboardKeyText: { color: colors.text, fontFamily: fonts.arabic, fontSize: 21 },
+  keyboardAction: { minWidth: 48 },
+  keyboardSpace: { flex: 1, maxWidth: 180 },
+  keyboardActionText: { color: colors.primary, fontSize: 13, fontWeight: '800' },
 });

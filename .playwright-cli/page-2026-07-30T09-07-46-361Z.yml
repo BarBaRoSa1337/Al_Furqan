@@ -1,0 +1,18 @@
+- generic [ref=f2e210]:
+  - generic [ref=f2e211]:
+    - button "Leave" [ref=f2e212] [cursor=pointer]:
+      - generic [ref=f2e213]: 
+    - generic [ref=f2e214]:
+      - generic [ref=f2e215]:
+        - generic [ref=f2e216]: Context + Ayah 1
+        - generic [ref=f2e217]: 1 / 8
+      - 'progressbar "Context + Ayah 1: 1 / 8" [ref=f2e218]'
+  - generic [ref=f2e223]:
+    - generic [ref=f2e224]: Context
+    - generic [ref=f2e225]:
+      - generic [ref=f2e226]: Historical context
+      - generic [ref=f2e227]: Draft religious explanation pending review
+      - generic [ref=f2e229]: The Year of the Elephant
+      - generic [ref=f2e230]: In the year Prophet Muhammad ﷺ was born, Abraha marched from Yemen toward Makkah with a great army intending to destroy the Kaaba.
+      - generic [ref=f2e231]: "Source: Tafsir Ibn Kathir (Summarised) (draft)"
+  - button "Continue" [ref=f2e233] [cursor=pointer]

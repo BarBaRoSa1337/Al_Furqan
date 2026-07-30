@@ -1,0 +1,15 @@
+- generic [ref=f2e210]:
+  - generic [ref=f2e211]:
+    - button "Leave" [ref=f2e212] [cursor=pointer]:
+      - generic [ref=f2e213]: 
+    - generic [ref=f2e214]:
+      - generic [ref=f2e215]:
+        - generic [ref=f2e216]: Context + Ayah 1
+        - generic [ref=f2e217]: 2 / 8
+      - 'progressbar "Context + Ayah 1: 2 / 8" [ref=f2e235]'
+  - generic [ref=f2e223]:
+    - generic [ref=f2e224]: Read / Listen
+    - generic [ref=f2e237]:
+      - generic [ref=f2e238]: أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ ٱلْفِيلِ
+      - generic [ref=f2e239]: Alam tara kayfa fa'ala rabbuka bi-as'habi l-feel
+  - button "Continue" [ref=f2e233] [cursor=pointer]

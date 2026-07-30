@@ -64,16 +64,16 @@ test('serializes concurrent question attempts without data loss', async () => {
   expect((await getLevelProgress(level.id))?.questionAttempts).toHaveLength(2);
 });
 
-test('persists recall attempts and requires a passing rating for completion', async () => {
+test('requires a correct word-bank answer for memorization completion', async () => {
   const level = surahAlFilLevels[0];
   const seeded = readyProgress(level);
   seeded.activityAttempts = seeded.activityAttempts.filter(attempt => attempt.activityId !== 'l1-recall-ayah-1');
   await seedSnapshot({ [level.id]: seeded });
 
   expect(isLevelReadyForCompletion(level, await getLevelProgress(level.id))).toBe(false);
-  await recordActivityAttempt({ levelId: level.id, pathId: level.pathId, activityId: 'l1-recall-ayah-1', answer: 'again', correct: false, evaluationVersion: '1' });
+  await recordActivityAttempt({ levelId: level.id, pathId: level.pathId, activityId: 'l1-recall-ayah-1', answer: ['105:1:word:2'], correct: false, evaluationVersion: '1' });
   expect(isLevelReadyForCompletion(level, await getLevelProgress(level.id))).toBe(false);
-  await recordActivityAttempt({ levelId: level.id, pathId: level.pathId, activityId: 'l1-recall-ayah-1', answer: 'remembered', correct: true, evaluationVersion: '1' });
+  await recordActivityAttempt({ levelId: level.id, pathId: level.pathId, activityId: 'l1-recall-ayah-1', answer: ['105:1:word:1', '105:1:word:2', '105:1:word:3', '105:1:word:4', '105:1:word:5', '105:1:word:6', '105:1:word:7'], correct: true, evaluationVersion: '1' });
 
   const progress = await getLevelProgress(level.id);
   expect(progress?.activityAttempts.filter(attempt => attempt.activityId === 'l1-recall-ayah-1')).toHaveLength(2);

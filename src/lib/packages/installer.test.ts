@@ -14,9 +14,10 @@ class MemoryStore implements PackageStore {
   async remove(key: string): Promise<void> { this.values.delete(key); }
 }
 
-function fixture(version = '1.0.0'): DownloadedContentPackage {
+function fixture(version = '1.0.0', packageId = surahAlFilPackage.id): DownloadedContentPackage {
   const content = structuredClone(surahAlFilPackage) as ContentPackage;
   approveFixtureContent(content);
+  content.id = packageId;
   content.version = version;
   return { manifest: { packageId: content.id, version, files: [{ path: 'package.json', kind: 'curriculum', checksum: 'a'.repeat(64), required: true }] }, content };
 }
@@ -91,7 +92,7 @@ test('keeps the previous registry pointer when activation commit fails', async (
   expect((await firstInstaller.getActive(first.manifest.packageId))?.content.version).toBe('1.0.0');
 });
 
-test('rejects corrupted active content during hydration', async () => {
+test('skips corrupted active content during hydration', async () => {
   const store = new MemoryStore();
   const downloaded = fixture();
   const installer = new ContentPackageInstaller(store, downloader(downloaded), { verify: async () => true });
@@ -100,6 +101,35 @@ test('rejects corrupted active content during hydration', async () => {
   const activeKey = `content-package-active:${downloaded.manifest.packageId}:${downloaded.manifest.version}`;
   const active = store.values.get(activeKey) as DownloadedContentPackage;
   active.files = { 'package.json': '{bad json' };
+  const registerPackage = jest.fn();
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-  await expect(hydrateInstalledPackages(store, { registerPackage: jest.fn() })).rejects.toBeInstanceOf(PackageInstallError);
+  await expect(hydrateInstalledPackages(store, { registerPackage })).resolves.toBeUndefined();
+  expect(registerPackage).not.toHaveBeenCalled();
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining(`[content:${downloaded.manifest.packageId}@${downloaded.manifest.version}]`));
+  warn.mockRestore();
+});
+
+test('continues hydrating valid packages after a corrupted package', async () => {
+  const store = new MemoryStore();
+  const corrupted = fixture('1.0.0', 'corrupted-package');
+  const valid = fixture('1.0.0', 'valid-package');
+  const corruptedInstaller = new ContentPackageInstaller(store, downloader(corrupted), { verify: async () => true });
+  const validInstaller = new ContentPackageInstaller(store, downloader(valid), { verify: async () => true });
+  await corruptedInstaller.stage(corrupted);
+  await corruptedInstaller.activate(corrupted.manifest.packageId, corrupted.manifest.version);
+  await validInstaller.stage(valid);
+  await validInstaller.activate(valid.manifest.packageId, valid.manifest.version);
+  const corruptedKey = `content-package-active:${corrupted.manifest.packageId}:${corrupted.manifest.version}`;
+  const corruptedActive = store.values.get(corruptedKey) as DownloadedContentPackage;
+  corruptedActive.files = { 'package.json': '{bad json' };
+  const registerPackage = jest.fn();
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+  await hydrateInstalledPackages(store, { registerPackage });
+
+  expect(registerPackage).toHaveBeenCalledTimes(1);
+  expect(registerPackage).toHaveBeenCalledWith(expect.objectContaining({ id: valid.manifest.packageId }), true);
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining(`[content:${corrupted.manifest.packageId}@${corrupted.manifest.version}]`));
+  warn.mockRestore();
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LevelStep } from '../../types/content';
+import { colors, fonts } from '../../theme/tokens';
 import LevelBlockRenderer from './LevelBlockRenderer';
 
 interface StepRendererProps {
@@ -28,8 +29,9 @@ export default function StepRenderer({ step, onQuestionAnswer, onActivityAnswer 
 const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '800',
-    color: '#1B4F72',
+    color: colors.primary,
     marginBottom: 16,
   },
 });

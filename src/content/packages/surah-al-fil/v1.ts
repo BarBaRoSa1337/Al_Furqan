@@ -6,16 +6,21 @@ import {
   AyahRecord,
   ContentPackage,
   ContentSource,
+  DiscoveryMetadata,
   QuranEdition,
+  Theme,
   WordToken,
   LearningPath,
   Level,
   SurahRecord,
 } from '../../../types/content';
+import { importQuranStructureSnapshot } from '../../../lib/content/structureImporter';
+import alFilStructureSnapshot from '../../structure/hafs/al-fil.json';
 
 const QURAN_ARABIC_SOURCE_ID = 'quran-arabic-madani';
 const TRANSLATION_SOURCE_ID = 'quran-translation-sahih-international';
 const TAFSIR_SOURCE_ID = 'tafsir-ibn-kathir-summarised';
+const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
 export const HAFS_AN_ASIM_ID = 'hafs-an-asim' as const;
 
 export const hafsAnAsimEdition: QuranEdition = {
@@ -64,21 +69,49 @@ const tafsirSource: ContentSource = {
   license: 'Educational use',
 };
 
-const sources = [quranArabicSource, quranTranslationSource, tafsirSource];
+const structureSource: ContentSource = {
+  id: STRUCTURE_SOURCE_ID,
+  name: 'Quran Foundation Content API - Quran structure metadata',
+  publisher: 'Quran Foundation',
+  version: 'content-api-v4-2026-07-29',
+  language: 'en',
+  reviewerStatus: 'draft',
+  notes: 'Deterministic Al-Fil structure snapshot pending metadata review.',
+};
+
+const sources = [quranArabicSource, quranTranslationSource, tafsirSource, structureSource];
+const alFilStructure = importQuranStructureSnapshot(alFilStructureSnapshot);
+
+const themes: Theme[] = [{
+  id: 'theme-stories',
+  title: { en: 'Quran stories' },
+  aliases: { en: ['stories', 'history'] },
+  description: { en: 'Source-backed lessons centered on events narrated or referenced in the Quran.' },
+  sourceIds: [TAFSIR_SOURCE_ID],
+  reviewerStatus: 'draft',
+}];
+
+const alFilDiscovery: DiscoveryMetadata = {
+  alignment: { type: 'surah', surahNumber: 105 },
+  themeIds: ['theme-stories'],
+  contentTypes: ['surah_course'],
+  studyLocales: ['en'],
+  audiences: ['teen', 'adult', 'family'],
+};
 
 const localization = {
   defaultLocale: 'en',
   catalogs: [{
     locale: 'en',
     entries: {
-      'app.title': 'Quran Do', 'app.loading': 'Loading...', 'app.errorLearningPathNotFound': 'Learning path not found',
+      'app.title': 'Furqan', 'app.loading': 'Loading...', 'app.errorLearningPathNotFound': 'Learning path not found',
       'roadmap.levels': '{count} Levels', 'roadmap.pathProgress': 'Path progress', 'roadmap.loadingProgress': 'Loading progress...', 'roadmap.progressUnavailable': 'Progress could not be loaded.',
-      'lesson.loadingLevel': 'Loading level...', 'lesson.levelNotFound': 'Level not found.', 'lesson.backToRoadmap': 'Back to Roadmap', 'lesson.leaveLevel': 'Leave level?', 'lesson.leaveMessage': 'Completed steps are saved. You can continue later.', 'lesson.keepLearning': 'Keep Learning', 'lesson.leave': 'Leave', 'lesson.progressUnavailable': 'Progress unavailable', 'lesson.continue': 'Continue', 'lesson.completeLevel': 'Complete Level',
+      'lesson.loadingLevel': 'Loading level...', 'lesson.levelNotFound': 'Level not found.', 'lesson.backToRoadmap': 'Back to Roadmap', 'lesson.leaveLevel': 'Leave level?', 'lesson.leaveMessage': 'Completed steps are saved. You can continue later.', 'lesson.keepLearning': 'Keep Learning', 'lesson.leave': 'Leave', 'lesson.progressUnavailable': 'Progress unavailable', 'lesson.continue': 'Continue', 'lesson.completeLevel': 'Complete Level', 'lesson.correctFeedback': 'Correct. Keep this in mind.', 'lesson.retryFeedback': 'We will revisit this shortly.', 'lesson.reviewRound': 'Review round: {count} remaining',
       'completion.loading': 'Loading completion...', 'completion.levelNotFound': 'Level not found.', 'completion.progressUnavailable': 'Progress unavailable', 'completion.alhamdulillah': 'Alhamdulillah!', 'completion.completed': 'You completed {title}', 'completion.rewardsEarned': 'Rewards Earned', 'completion.alreadyCounted': 'Already counted earlier', 'completion.levelCompleted': 'Level completed', 'completion.pathXp': '  •  +{xp} path XP', 'completion.saved': 'Completion already saved.', 'completion.startNextLevel': 'Start Next Level', 'completion.backToRoadmap': 'Back to Roadmap',
-      'activity.recall': 'Recall', 'activity.reveal': 'Reveal', 'activity.revealAndRate': 'Reveal and rate', 'activity.compareAndRate': 'Compare your recall with the Quran passage, then rate it.', 'activity.again': 'Again', 'activity.hard': 'Hard', 'activity.remembered': 'Remembered', 'activity.selectedAnswer': 'Your answer', 'activity.buildAnswer': 'Tap choices to build your answer', 'activity.matchTranslationHint': 'Tap an ayah segment, then tap its translation', 'activity.typeFromMemory': 'Write from memory. Harakat are optional for this exercise.', 'activity.typedAnswerLabel': 'Arabic answer from memory',
+      'activity.recall': 'Recall', 'activity.reveal': 'Reveal', 'activity.revealAndRate': 'Reveal and rate', 'activity.compareAndRate': 'Compare your recall with the Quran passage, then rate it.', 'activity.again': 'Again', 'activity.hard': 'Hard', 'activity.remembered': 'Remembered', 'activity.selectedAnswer': 'Your answer', 'activity.buildAnswer': 'Tap choices to build your answer', 'activity.matchTranslationHint': 'Tap an ayah segment, then tap its translation', 'activity.typeFromMemory': 'Write from memory. Harakat are optional for this exercise.', 'activity.typedAnswerLabel': 'Arabic answer from memory', 'activity.showArabicKeyboard': 'Show Arabic keyboard', 'activity.hideArabicKeyboard': 'Hide Arabic keyboard', 'activity.arabicKeyboard': 'Arabic keyboard', 'activity.keyboardSpace': 'Space', 'activity.keyboardBackspace': 'Backspace',
       'review.title': 'Spaced Review', 'review.due': '{count} review activities due', 'review.start': 'Start Review', 'review.noneDue': 'No reviews are due right now.', 'review.complete': 'Review complete', 'review.next': 'Next Review', 'review.backToRoadmap': 'Back to Roadmap',
       'question.quiz': 'Quiz', 'question.checkAnswer': 'Check Answer', 'question.checking': 'Saving...', 'question.tryAgain': 'Try Again', 'question.correct': 'Correct!', 'question.answerIs': 'The answer is: {answer}', 'question.fillAnswer': 'Fill in the blank answer', 'question.typeAnswer': 'Type your answer...', 'question.checkMatches': 'Check Matches', 'question.matchHint': 'Tap an Arabic word, then tap its meaning', 'question.true': 'True', 'question.false': 'False',
-      'content.translationUnavailable': 'Translation unavailable.', 'content.arabicSource': 'Arabic source', 'content.translationSource': 'Translation source', 'content.source': 'Source', 'content.sourceUnavailable': 'Source unavailable', 'content.unsupported': 'This content is unavailable in this app version.', 'content.tafsir': 'Tafsir', 'content.explanation': 'Explanation', 'content.draftPendingReview': 'Draft religious explanation pending review', 'content.toggleDetails': 'Toggle details', 'content.wordByWord': 'Word Meaning', 'content.translation': 'Translation', 'content.listen': 'Listen', 'content.audioUnavailable': 'Recitation audio is not included in this package.', 'content.context.historical_context': 'Historical context', 'content.context.occasion_of_revelation': 'Occasion of revelation', 'content.context.tafsir_summary': 'Tafsir summary',
+      'content.translationUnavailable': 'Translation unavailable.', 'content.arabicSource': 'Arabic source', 'content.translationSource': 'Translation source', 'content.source': 'Source', 'content.sourceUnavailable': 'Source unavailable', 'content.unsupported': 'This content is unavailable in this app version.', 'content.tafsir': 'Tafsir', 'content.explanation': 'Explanation', 'content.draftPendingReview': 'Draft religious explanation pending review', 'content.toggleDetails': 'Toggle details', 'content.shareWisdom': 'Share {title}', 'content.wordByWord': 'Word Meaning', 'content.translation': 'Translation', 'content.listen': 'Listen', 'content.audioUnavailable': 'Recitation audio is not included in this package.', 'content.context.historical_context': 'Historical context', 'content.context.occasion_of_revelation': 'Occasion of revelation', 'content.context.tafsir_summary': 'Tafsir summary',
     },
   }],
 };
@@ -320,6 +353,7 @@ export const surahAlFilLearningPath: LearningPath = {
     'al-fil-level-3-ayat-3-4',
     'al-fil-level-4-ayah-5-review',
   ],
+  discovery: alFilDiscovery,
   sourceMetadata: {
     reviewerStatus: 'draft',
     sourceIds: [QURAN_ARABIC_SOURCE_ID, TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID],
@@ -338,6 +372,7 @@ export const surahAlFilLevels: Level[] = [
     ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
     difficulty: 'easy',
     goals: ['memorize', 'understand', 'reflect', 'quiz'],
+    discovery: alFilDiscovery,
     completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     steps: [
       {
@@ -390,23 +425,26 @@ export const surahAlFilLevels: Level[] = [
       {
         id: 'l1-recall',
         kind: 'memorize',
-        title: 'Memorization Exercise 1',
+        title: 'Build the Ayah',
         blocks: [
           {
             id: 'l1-recall-ayah-1',
             type: 'activity',
             activity: {
               id: 'l1-recall-ayah-1',
-              kind: 'recall_then_reveal',
+              kind: 'order_tokens',
               ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
-              instruction: 'Recall Ayah 1, then reveal it and rate your recall.',
+              instruction: 'Build Ayah 1 from the word bank, in Quran order.',
               required: true,
               difficulty: 1,
               knowledgeRefs: ['l1-ayah-1'],
               sourceIds: [QURAN_ARABIC_SOURCE_ID],
               reviewerStatus: 'approved',
               reviewSchedule: { intervalDays: [1, 3, 7] },
-              config: {},
+              config: {
+                itemIds: ['105:1:word:4', '105:1:word:1', '105:1:word:7', '105:1:word:3', '105:1:word:6', '105:1:word:2', '105:1:word:5'],
+                correctOrderIds: ['105:1:word:1', '105:1:word:2', '105:1:word:3', '105:1:word:4', '105:1:word:5', '105:1:word:6', '105:1:word:7'],
+              },
             },
           },
         ],
@@ -414,7 +452,8 @@ export const surahAlFilLevels: Level[] = [
       {
         id: 'l1-memory-practice',
         kind: 'memory_practice',
-        title: 'Memorization Exercise 2',
+        title: 'Extra: Fill the Gap',
+        required: false,
         blocks: [
           {
             id: 'l1-fill-gap-1',
@@ -432,7 +471,8 @@ export const surahAlFilLevels: Level[] = [
       {
         id: 'l1-order-words',
         kind: 'memory_practice',
-        title: 'Rebuild the Ayah',
+        title: 'Extra: Rebuild the Ayah',
+        required: false,
         blocks: [{
           id: 'l1-order-ayah-1', type: 'activity', activity: {
             id: 'l1-order-ayah-1', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
@@ -478,6 +518,14 @@ export const surahAlFilLevels: Level[] = [
               ] },
             },
           },
+        ],
+      },
+      {
+        id: 'l1-match-translation-practice',
+        kind: 'understanding_practice',
+        title: 'Extra: Match the Translation',
+        required: false,
+        blocks: [
           {
             id: 'l1-match-translation', type: 'activity', activity: {
               id: 'l1-match-translation', kind: 'match_ayah_translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
@@ -499,6 +547,14 @@ export const surahAlFilLevels: Level[] = [
               },
             },
           },
+        ],
+      },
+      {
+        id: 'l1-quiz-practice',
+        kind: 'understanding_practice',
+        title: 'Extra: Understanding Check',
+        required: false,
+        blocks: [
           {
             id: 'l1-quiz-1', type: 'activity', activity: {
               id: 'l1-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
@@ -533,6 +589,7 @@ export const surahAlFilLevels: Level[] = [
     ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
     difficulty: 'easy',
     goals: ['memorize', 'understand', 'quiz'],
+    discovery: alFilDiscovery,
     completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-1-context-ayah-1'] },
     steps: [
@@ -586,7 +643,11 @@ export const surahAlFilLevels: Level[] = [
               { promptTokenId: '105:2:word:5', meaningId: '105:2:word:5:meaning' },
             ] },
           } },
-          { id: 'l2-quiz-1', type: 'activity', activity: {
+        ],
+      },
+      {
+        id: 'l2-quiz-practice', kind: 'understanding_practice', title: 'Extra: Understanding Check', required: false,
+        blocks: [{ id: 'l2-quiz-1', type: 'activity', activity: {
             id: 'l2-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
             instruction: 'What does the key word translated around ruin or misguidance mean in this ayah?', required: false, difficulty: 1,
             knowledgeRefs: ['l2-words-2'], sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
@@ -594,20 +655,20 @@ export const surahAlFilLevels: Level[] = [
               { id: 'success', text: 'Success and victory' }, { id: 'ruin', text: 'Misguidance, ruin, and failure' },
               { id: 'journey', text: 'A long journey' }, { id: 'battle', text: 'A battle in the desert' },
             ], correctOptionId: 'ruin' },
-          } },
-        ],
+        } }],
       },
       {
         id: 'l2-tafsir', kind: 'tafsir', title: 'Tafsir',
         blocks: [{ id: 'l2-tafsir-2', type: 'tafsir_ref', ayahRef: { surahNumber: 105, ayahNumber: 2 }, tafsirEntryId: '105-2-ibn-kathir-summary' }],
       },
       {
-        id: 'l2-recall', kind: 'memory_practice', title: 'Memorization Practice',
+        id: 'l2-recall', kind: 'memory_practice', title: 'Build the Ayah',
         blocks: [{ id: 'l2-recall-2', type: 'activity', activity: {
-          id: 'l2-recall-2', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
-          instruction: 'Recall Ayah 2, then reveal it and rate your recall.', required: true, difficulty: 1,
+          id: 'l2-recall-2', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }],
+          instruction: 'Build Ayah 2 from the word bank, in Quran order.', required: true, difficulty: 1,
           knowledgeRefs: ['l2-ayah-2'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
-          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { itemIds: ['105:2:word:3', '105:2:word:1', '105:2:word:5', '105:2:word:2', '105:2:word:4'], correctOrderIds: ['105:2:word:1', '105:2:word:2', '105:2:word:3', '105:2:word:4', '105:2:word:5'] },
         } }],
       },
       {
@@ -629,6 +690,7 @@ export const surahAlFilLevels: Level[] = [
     ],
     difficulty: 'medium',
     goals: ['memorize', 'understand', 'quiz'],
+    discovery: alFilDiscovery,
     completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-2-ayah-2'] },
     steps: [
@@ -675,7 +737,11 @@ export const surahAlFilLevels: Level[] = [
               { promptTokenId: '105:4:word:2', meaningId: '105:4:word:2:meaning' },
             ] },
           } },
-          { id: 'l3-quiz-1', type: 'activity', activity: {
+        ],
+      },
+      {
+        id: 'l3-quiz-practice', kind: 'understanding_practice', title: 'Extra: Understanding Check', required: false,
+        blocks: [{ id: 'l3-quiz-1', type: 'activity', activity: {
             id: 'l3-quiz-1', kind: 'multiple_choice', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }],
             instruction: 'What does the key word about the birds describe?', required: false, difficulty: 2,
             knowledgeRefs: ['l3-words-3-4'], sourceIds: [TRANSLATION_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
@@ -683,8 +749,7 @@ export const surahAlFilLevels: Level[] = [
               { id: 'large', text: 'They were very large birds' }, { id: 'flocks', text: 'They came in flocks, group after group' },
               { id: 'white', text: 'They were white birds only' }, { id: 'prey', text: 'They were birds of prey like eagles' },
             ], correctOptionId: 'flocks' },
-          } },
-        ],
+        } }],
       },
       {
         id: 'l3-tafsir', kind: 'tafsir', title: 'Tafsir',
@@ -694,12 +759,13 @@ export const surahAlFilLevels: Level[] = [
         ],
       },
       {
-        id: 'l3-recall', kind: 'memory_practice', title: 'Memorization Practice',
+        id: 'l3-recall', kind: 'memory_practice', title: 'Build the Ayat',
         blocks: [{ id: 'l3-recall-3-4', type: 'activity', activity: {
-          id: 'l3-recall-3-4', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }],
-          instruction: 'Recall Ayat 3 and 4 in order, then reveal them.', required: true, difficulty: 2,
+          id: 'l3-recall-3-4', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }],
+          instruction: 'Build Ayat 3 and 4 from the word bank, in Quran order.', required: true, difficulty: 2,
           knowledgeRefs: ['l3-passage-3-4'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
-          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { itemIds: ['105:3:word:3', '105:4:word:2', '105:3:word:1', '105:4:word:4', '105:3:word:4', '105:4:word:1', '105:3:word:2', '105:4:word:3'], correctOrderIds: ['105:3:word:1', '105:3:word:2', '105:3:word:3', '105:3:word:4', '105:4:word:1', '105:4:word:2', '105:4:word:3', '105:4:word:4'] },
         } }],
       },
       {
@@ -718,6 +784,7 @@ export const surahAlFilLevels: Level[] = [
     ayahRefs: [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber })),
     difficulty: 'medium',
     goals: ['memorize', 'understand', 'reflect', 'quiz'],
+    discovery: alFilDiscovery,
     completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
     unlockRules: { requiresLevelIds: ['al-fil-level-3-ayat-3-4'] },
     metadata: { isFinalReview: true },
@@ -744,7 +811,7 @@ export const surahAlFilLevels: Level[] = [
         blocks: [{ id: 'l4-translation-5', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }], locale: 'en', translationEntryIds: ['105-5-sahih-en'] }],
       },
       {
-        id: 'l4-retrieval', kind: 'memory_practice', title: 'Continue the Ayah',
+        id: 'l4-retrieval', kind: 'memory_practice', title: 'Extra: Continue the Ayah', required: false,
         blocks: [{ id: 'l4-continuation-5', type: 'activity', activity: {
           id: 'l4-continuation-5', kind: 'choose_continuation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
           instruction: 'Choose the words that correctly complete Ayah 5.', required: true, difficulty: 2,
@@ -795,12 +862,13 @@ export const surahAlFilLevels: Level[] = [
         } }],
       },
       {
-        id: 'l4-memory', kind: 'memory_practice', title: 'Memorization Practice',
+        id: 'l4-memory', kind: 'memory_practice', title: 'Build the Ayah',
         blocks: [{ id: 'l4-recall-5', type: 'activity', activity: {
-          id: 'l4-recall-5', kind: 'recall_then_reveal', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
-          instruction: 'Recall Ayah 5, then reveal it and rate your recall.', required: true, difficulty: 2,
+          id: 'l4-recall-5', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }],
+          instruction: 'Build Ayah 5 from the word bank, in Quran order.', required: true, difficulty: 2,
           knowledgeRefs: ['l4-ayah-5'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
-          reviewSchedule: { intervalDays: [1, 3, 7] }, config: {},
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: { itemIds: ['105:5:word:2', '105:5:word:3', '105:5:word:1'], correctOrderIds: ['105:5:word:1', '105:5:word:2', '105:5:word:3'] },
         } }],
       },
       {
@@ -827,9 +895,9 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '2.3',
+  version: '2.7',
   schemaVersion: 2,
-  revisionId: 'surah-al-fil-v1-r5',
+  revisionId: 'surah-al-fil-v1-r9',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
@@ -837,8 +905,9 @@ const surahAlFilPackage: ContentPackage = {
   surahs: [surahAlFilRecord],
   ayat: surahAlFilAyat,
   wordTokens: surahAlFilWordTokens,
-  // Division records require a verified external boundary source; none is bundled yet.
-  divisions: [],
+  divisions: alFilStructure.divisions,
+  structureIndex: alFilStructure.structureIndex,
+  themes,
   reciters: [],
   recitationTracks: [],
   localization,

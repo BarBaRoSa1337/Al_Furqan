@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import {
   AyahRecord,
@@ -9,7 +9,6 @@ import {
   LevelBlock,
   MediaBlock,
   QuranPassageBlock,
-  SummaryLevelBlock,
   TafsirEntry,
   TranslationBlock,
   WordMeaning,
@@ -20,6 +19,8 @@ import Card from '../ui/Card';
 import LevelQuestionBlock from './LevelQuestionBlock';
 import PracticeActivityRenderer from './PracticeActivityRenderer';
 import { packageText } from '../../lib/content/text';
+import WisdomCard from './WisdomCard';
+import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
@@ -63,7 +64,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     case 'activity':
       return <PracticeActivityRenderer activity={block.activity} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve()} />;
     case 'summary':
-      return <CanonicalSummaryBlock block={block} />;
+      return <WisdomCard block={block} repo={repo} />;
     default:
       return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
   }
@@ -93,11 +94,12 @@ function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: Content
     const track = repo.getRecitationTrackByAyah(ref, block.reciterId);
     return track ? [track] : [];
   });
-  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.listen')}</Text>{tracks.length === block.ayahRefs.length ? tracks.map(track => <Text key={track.id} style={styles.sourceValue}>{repo.getReciterById(track.reciterId)?.displayName ?? packageText(repo, 'content.sourceUnavailable')}</Text>) : <Text style={styles.translation}>{packageText(repo, 'content.audioUnavailable')}</Text>}</Card>;
+  if (tracks.length !== block.ayahRefs.length) return null;
+  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.listen')}</Text>{tracks.map(track => <Text key={track.id} style={styles.sourceValue}>{repo.getReciterById(track.reciterId)?.displayName ?? packageText(repo, 'content.sourceUnavailable')}</Text>)}</Card>;
 }
 
 function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: ContentRepository }) {
-  const asset = repo.getActivePackage()?.mediaAssets.find(candidate => candidate.id === block.assetId);
+  const asset = repo.getPackageForBlock(block.id)?.mediaAssets.find(candidate => candidate.id === block.assetId);
   if (!asset) return null;
   return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /><Text style={styles.source}>{asset.altText}</Text></Card>;
 }
@@ -129,18 +131,18 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
 
   return (
     <Card variant="tafsir">
-      <TouchableOpacity
+      <Pressable
         accessibilityRole="button"
         accessibilityLabel={packageText(repo, 'content.toggleDetails')}
         accessibilityState={{ expanded }}
         onPress={() => setExpanded(value => !value)}
-        activeOpacity={0.8}
+        style={({ pressed }) => [styles.tafsirControl, pressed && styles.pressed]}
       >
         <View style={styles.tafsirHeader}>
           <Text style={styles.tafsirLabel}>{packageText(repo, 'content.tafsir')}</Text>
           <Text style={styles.toggle}>{expanded ? '▲' : '▼'}</Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
       {expanded ? (
         <View>
           {entry.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
@@ -179,7 +181,7 @@ function WordExplorerBlock({ words, repo }: { words: WordMeaning[]; repo: Conten
       <Text style={styles.wordTitle}>{packageText(repo, 'content.wordByWord')}</Text>
       {words.map(word => (
         <View key={word.id} style={styles.wordRow}>
-          <Text style={styles.wordArabic}>{repo.getWordToken(word.wordTokenId)?.arabicText ?? ''}</Text>
+          <Text style={styles.wordArabic}>{resolveWordMeaningArabic(word, repo)}</Text>
           <View style={styles.wordMeaning}>
             <Text style={styles.wordTransliteration}>{word.transliteration}</Text>
             <Text style={styles.wordText}>{word.meaning}</Text>
@@ -190,18 +192,8 @@ function WordExplorerBlock({ words, repo }: { words: WordMeaning[]; repo: Conten
   );
 }
 
-function CanonicalSummaryBlock({ block }: { block: SummaryLevelBlock }) {
-  return (
-    <Card style={styles.summaryCard}>
-      <Text style={styles.summaryTitle}>{block.title}</Text>
-      {block.points.map((point, index) => (
-        <View key={`${block.id}-${index}`} style={styles.summaryPoint}>
-          <Text style={styles.summaryBullet}>•</Text>
-          <Text style={styles.summaryText}>{point}</Text>
-        </View>
-      ))}
-    </Card>
-  );
+export function resolveWordMeaningArabic(word: WordMeaning, repo: Pick<ContentRepository, 'getWordToken'>): string {
+  return word.wordTokenId ? repo.getWordToken(word.wordTokenId)?.arabicText ?? '' : '';
 }
 
 function ReviewBadge({ repo }: { repo: ContentRepository }) {
@@ -213,41 +205,38 @@ function ReviewBadge({ repo }: { repo: ContentRepository }) {
 }
 
 const styles = StyleSheet.create({
-  unsupported: { color: '#7F8C8D', fontSize: 14, lineHeight: 21 },
+  unsupported: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   ayahCard: { alignItems: 'center' },
-  passageAyah: { width: '100%', paddingVertical: 6 },
-  arabic: { fontSize: 30, fontFamily: 'serif', textAlign: 'right', color: '#1A1A1A', lineHeight: 48, width: '100%', writingDirection: 'rtl' },
-  transliteration: { fontSize: 15, fontStyle: 'italic', color: '#666', textAlign: 'center', marginTop: 8, lineHeight: 22 },
-  divider: { height: 1, backgroundColor: '#EEE', width: '100%', marginVertical: 12 },
-  translation: { fontSize: 17, color: '#2C3E50', lineHeight: 26, textAlign: 'center', fontWeight: '500' },
+  passageAyah: { paddingVertical: spacing.sm, width: '100%' },
+  arabic: { color: colors.text, fontFamily: fonts.arabic, fontSize: 31, lineHeight: 52, textAlign: 'right', width: '100%', writingDirection: 'rtl' },
+  transliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 15, fontStyle: 'italic', lineHeight: 22, marginTop: 8, textAlign: 'center' },
+  divider: { backgroundColor: colors.border, height: 1, marginVertical: 12, width: '100%' },
+  translation: { color: colors.text, fontFamily: fonts.regular, fontSize: 17, fontWeight: '500', lineHeight: 26, textAlign: 'center' },
   translationEntry: { marginBottom: 12 },
-  sourceGroup: { width: '100%', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
-  sourceLabel: { fontSize: 11, color: '#7F8C8D', textTransform: 'uppercase', letterSpacing: 0.6, textAlign: 'center' },
-  sourceValue: { fontSize: 12, color: '#566573', marginTop: 2, marginBottom: 8, textAlign: 'center' },
-  tafsirHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  tafsirLabel: { fontSize: 16, fontWeight: '700', color: '#7D6608' },
-  toggle: { fontSize: 12, color: '#999' },
-  tafsirText: { fontSize: 16, color: '#2C3E50', lineHeight: 26 },
-  explanationSection: { marginTop: 12, padding: 12, backgroundColor: '#FFFDE7', borderRadius: 10 },
-  explanationLabel: { fontSize: 12, fontWeight: '700', color: '#7D6608', textTransform: 'uppercase', marginBottom: 4 },
-  explanationText: { fontSize: 14, color: '#444', lineHeight: 22 },
-  reviewBadge: { backgroundColor: '#FCF3CF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
-  reviewBadgeText: { fontSize: 12, fontWeight: '700', color: '#9A7D0A', textAlign: 'center' },
-  source: { fontSize: 11, color: '#AAA', marginTop: 12 },
-  contextLabel: { fontSize: 12, fontWeight: '700', color: '#1E5631', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
-  contextTitle: { fontSize: 18, fontWeight: '700', color: '#1E5631', marginBottom: 10 },
-  contextText: { fontSize: 16, color: '#2C3E50', lineHeight: 26 },
+  sourceGroup: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.md, paddingTop: spacing.md, width: '100%' },
+  sourceLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.6, textAlign: 'center', textTransform: 'uppercase' },
+  sourceValue: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, marginBottom: spacing.sm, marginTop: 2, textAlign: 'center' },
+  tafsirControl: { justifyContent: 'center', minHeight: touch.minimum },
+  tafsirHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  tafsirLabel: { color: colors.warning, fontFamily: fonts.bold, fontSize: 16 },
+  toggle: { color: colors.textMuted, fontSize: 12 },
+  tafsirText: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, lineHeight: 26 },
+  explanationSection: { backgroundColor: colors.goldSoft, borderRadius: radii.md, marginTop: spacing.md, padding: spacing.md },
+  explanationLabel: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12, marginBottom: spacing.xs, textTransform: 'uppercase' },
+  explanationText: { color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 22 },
+  reviewBadge: { backgroundColor: colors.warningSoft, borderRadius: radii.md, marginBottom: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  reviewBadgeText: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12, textAlign: 'center' },
+  source: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: spacing.md },
+  contextLabel: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.6, marginBottom: spacing.sm, textTransform: 'uppercase' },
+  contextTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 18, marginBottom: 10 },
+  contextText: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, lineHeight: 26 },
   wordCard: { marginBottom: 16 },
-  wordTitle: { fontSize: 14, fontWeight: '700', color: '#1B4F72', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.8 },
-  wordRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  wordArabic: { width: 90, fontSize: 22, fontFamily: 'serif', textAlign: 'right', color: '#1B4F72' },
+  wordTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 14, fontWeight: '700', letterSpacing: 0.8, marginBottom: 12, textTransform: 'uppercase' },
+  wordRow: { alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 10 },
+  wordArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 24, textAlign: 'right', width: 90 },
   wordMeaning: { flex: 1, marginLeft: 14 },
-  wordTransliteration: { fontSize: 13, color: '#7F8C8D', fontStyle: 'italic', marginBottom: 2 },
-  wordText: { fontSize: 14, color: '#2C3E50', fontWeight: '600' },
-  summaryCard: { backgroundColor: '#EBF5FB' },
-  summaryTitle: { fontSize: 18, fontWeight: '700', color: '#1B4F72', marginBottom: 16 },
-  summaryPoint: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
-  summaryBullet: { fontSize: 18, color: '#1B4F72', marginRight: 10, lineHeight: 24 },
-  summaryText: { fontSize: 15, color: '#2C3E50', lineHeight: 24, flex: 1 },
+  wordTransliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 13, fontStyle: 'italic', marginBottom: 2 },
+  wordText: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
   media: { width: '100%', minHeight: 180 },
+  pressed: { opacity: 0.68 },
 });

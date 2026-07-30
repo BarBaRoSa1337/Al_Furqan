@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { Pressable, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { colors, fonts, radii, touch } from '../../theme/tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'success' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -17,17 +18,17 @@ interface ButtonProps {
 }
 
 const VARIANT_STYLES: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-  primary: { bg: '#1B4F72', text: '#FFFFFF' },
-  secondary: { bg: '#FDFAF6', text: '#1B4F72', border: '#1B4F72' },
-  ghost: { bg: 'transparent', text: '#1B4F72' },
-  success: { bg: '#1E8449', text: '#FFFFFF' },
-  danger: { bg: '#C0392B', text: '#FFFFFF' },
+  primary: { bg: colors.primary, text: colors.surface },
+  secondary: { bg: colors.surface, text: colors.primary, border: colors.borderStrong },
+  ghost: { bg: 'transparent', text: colors.primary },
+  success: { bg: colors.success, text: colors.surface },
+  danger: { bg: colors.danger, text: colors.surface },
 };
 
 const SIZE_STYLES: Record<ButtonSize, { padding: number; fontSize: number; radius: number }> = {
-  sm: { padding: 8, fontSize: 14, radius: 8 },
-  md: { padding: 14, fontSize: 16, radius: 12 },
-  lg: { padding: 18, fontSize: 18, radius: 14 },
+  sm: { padding: 8, fontSize: 14, radius: radii.md },
+  md: { padding: 14, fontSize: 16, radius: radii.md },
+  lg: { padding: 18, fontSize: 18, radius: radii.lg },
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -45,14 +46,13 @@ const Button: React.FC<ButtonProps> = ({
   const s = SIZE_STYLES[size];
 
   return (
-    <TouchableOpacity
+    <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
-      style={[
+      style={({ pressed }) => [
         styles.base,
         {
           backgroundColor: v.bg,
@@ -62,6 +62,7 @@ const Button: React.FC<ButtonProps> = ({
           borderColor: v.border ?? 'transparent',
           opacity: disabled || loading ? 0.5 : 1,
         },
+        pressed && !disabled && !loading && styles.pressed,
         style,
       ]}
     >
@@ -72,20 +73,22 @@ const Button: React.FC<ButtonProps> = ({
           {title}
         </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
-    justifyContent: 'center',
     flexDirection: 'row',
+    justifyContent: 'center',
+    minHeight: touch.minimum,
   },
   text: {
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     letterSpacing: 0.3,
   },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
 });
 
 export default Button;

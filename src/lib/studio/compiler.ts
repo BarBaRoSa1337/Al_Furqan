@@ -23,6 +23,7 @@ export function compilePackage(draft: PublishablePackageDraft, canonical: Conten
     ayat: sortById(ayat),
     wordTokens: sortById(wordTokens),
     divisions: sortById(divisions),
+    structureIndex: canonical.structureIndex?.filter(entry => ayat.some(ayah => sameRef(ayah.ref, entry.ayahRef))),
     sources: sortById(draft.curriculum.sources),
     reciters: sortById(draft.curriculum.reciters),
     recitationTracks: sortById(draft.curriculum.recitationTracks),

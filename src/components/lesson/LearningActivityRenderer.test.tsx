@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { getContentRepository } from '../../lib/content/repository';
+import { colors } from '../../theme/tokens';
 import LearningActivityRenderer, { createMatchLayout, shuffle } from './LearningActivityRenderer';
 
 test('shuffles ordering choices without mutating authored stable-ID order', () => {
@@ -17,8 +18,7 @@ test('exposes an RTL typed-recall input and evaluates canonical text through the
   const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
   const input = screen.getByLabelText('Arabic answer from memory');
   fireEvent.changeText(input, 'ألم تر كيف فعل ربك بأصحاب ٱلفيل');
-  fireEvent.press(screen.getByRole('button', { name: 'Check Answer' }));
-  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('ألم تر كيف فعل ربك بأصحاب ٱلفيل', true));
+  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('ألم تر كيف فعل ربك بأصحاب ٱلفيل', false));
   expect(input).toHaveStyle({ writingDirection: 'rtl' });
 });
 
@@ -28,6 +28,66 @@ test('creates independently shuffled prompt and choice columns', () => {
   expect(layout.prompts).not.toEqual(['p1', 'p2', 'p3']);
   expect(layout.choices).not.toEqual(['c1', 'c2', 'c3']);
   expect(layout.prompts.map(id => id.slice(1))).not.toEqual(layout.choices.map(id => id.slice(1)));
+});
+
+test('renders word matching as accessible two-column selections and submits stable pairs', async () => {
+  const repo = getContentRepository();
+  const activity = repo.getActivityById('l1-match-meaning');
+  expect(activity?.kind).toBe('match_word_meaning');
+  if (!activity || activity.kind !== 'match_word_meaning') throw new Error('Match fixture unavailable');
+  const onAnswer = jest.fn();
+  const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
+
+  activity.config.pairs.forEach(pair => {
+    const arabic = repo.getWordToken(pair.promptTokenId)?.arabicText ?? pair.promptTokenId;
+    const meaning = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []).find(item => item.id === pair.meaningId)?.meaning ?? pair.meaningId;
+    fireEvent.press(screen.getByRole('button', { name: arabic }));
+    fireEvent.press(screen.getByRole('button', { name: meaning }));
+  });
+  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(expect.objectContaining({
+    [activity.config.pairs[0].promptTokenId]: activity.config.pairs[0].meaningId,
+    [activity.config.pairs[1].promptTokenId]: activity.config.pairs[1].meaningId,
+  }), false));
+});
+
+test('keeps vocabulary prompts in authored order and requires an explicit word selection', () => {
+  const repo = getContentRepository();
+  const activity = repo.getActivityById('l1-match-meaning');
+  expect(activity?.kind).toBe('match_word_meaning');
+  if (!activity || activity.kind !== 'match_word_meaning') throw new Error('Match fixture unavailable');
+  const screen = render(<LearningActivityRenderer activity={activity} />);
+  const promptLabels = activity.config.pairs.map(pair => repo.getWordToken(pair.promptTokenId)?.arabicText ?? pair.promptTokenId);
+  const promptButtons = screen.getAllByRole('button').filter(button => promptLabels.includes(button.props.accessibilityLabel));
+
+  expect(promptButtons.map(button => button.props.accessibilityLabel)).toEqual(promptLabels);
+  expect(promptButtons.every(button => button.props.accessibilityState.selected === false)).toBe(true);
+
+  const firstMeaning = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []).find(item => item.id === activity.config.pairs[0].meaningId)?.meaning;
+  if (!firstMeaning) throw new Error('Meaning fixture unavailable');
+  fireEvent.press(screen.getByRole('button', { name: firstMeaning }));
+  expect(screen.getByRole('button', { name: firstMeaning }).props.accessibilityState.selected).toBe(false);
+});
+
+test('marks an incorrect vocabulary pair red and removes a correct pair from both columns', () => {
+  const repo = getContentRepository();
+  const activity = repo.getActivityById('l1-match-meaning');
+  expect(activity?.kind).toBe('match_word_meaning');
+  if (!activity || activity.kind !== 'match_word_meaning') throw new Error('Match fixture unavailable');
+  const screen = render(<LearningActivityRenderer activity={activity} />);
+  const [firstPair, secondPair] = activity.config.pairs;
+  const firstArabic = repo.getWordToken(firstPair.promptTokenId)?.arabicText ?? firstPair.promptTokenId;
+  const secondMeaning = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []).find(item => item.id === secondPair.meaningId)?.meaning;
+  const firstMeaning = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []).find(item => item.id === firstPair.meaningId)?.meaning;
+  if (!secondMeaning || !firstMeaning) throw new Error('Meaning fixture unavailable');
+
+  fireEvent.press(screen.getByRole('button', { name: firstArabic }));
+  fireEvent.press(screen.getByRole('button', { name: secondMeaning }));
+  expect(screen.getByRole('button', { name: firstArabic })).toHaveStyle({ backgroundColor: colors.dangerSoft });
+  expect(screen.getByRole('button', { name: secondMeaning })).toHaveStyle({ backgroundColor: colors.dangerSoft });
+
+  fireEvent.press(screen.getByRole('button', { name: firstMeaning }));
+  expect(screen.queryByRole('button', { name: firstArabic })).toBeNull();
+  expect(screen.queryByRole('button', { name: firstMeaning })).toBeNull();
 });
 
 test('renders canonical continuation segments and submits the stable option ID', async () => {
@@ -43,9 +103,7 @@ test('renders canonical continuation segments and submits the stable option ID',
 
   fireEvent.press(screen.getByRole('button', { name: label }));
   expect(screen.getByRole('button', { name: label }).props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
-  fireEvent.press(screen.getByRole('button', { name: 'Check Answer' }));
-
-  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(activity.config.correctOptionId, true));
+  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(activity.config.correctOptionId, false));
 });
 
 test('orders canonical ayat while submitting stable reference keys', async () => {
@@ -59,7 +117,5 @@ test('orders canonical ayat while submitting stable reference keys', async () =>
   const optionButtons = labels.map(label => screen.getByRole('button', { name: label }));
 
   optionButtons.forEach(button => fireEvent.press(button));
-  fireEvent.press(screen.getByRole('button', { name: 'Check Answer' }));
-
-  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(['105:3', '105:4'], true));
+  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(['105:3', '105:4'], false));
 });
