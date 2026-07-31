@@ -466,6 +466,7 @@ export const surahAlFilLevels: Level[] = [
         title: 'Context',
         required: false,
         blocks: [
+          { id: 'l1-context-img', type: 'media', assetId: 'al-fil-context-img' },
           {
             id: 'l1-context-year',
             type: 'context',
@@ -553,24 +554,7 @@ export const surahAlFilLevels: Level[] = [
           },
         ],
       },
-      {
-        id: 'l1-order-words',
-        kind: 'memory_practice',
-        title: 'Extra: Rebuild the Ayah',
-        required: false,
-        blocks: [{
-          id: 'l1-order-ayah-1', type: 'activity', activity: {
-            id: 'l1-order-ayah-1', kind: 'order_tokens', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }],
-            instruction: 'Put every word of Ayah 1 in the correct order.', required: true, difficulty: 2,
-            knowledgeRefs: ['l1-ayah-1'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved',
-            reviewSchedule: { intervalDays: [1, 3, 7] },
-            config: {
-              itemIds: ['105:1:word:4', '105:1:word:1', '105:1:word:7', '105:1:word:3', '105:1:word:6', '105:1:word:2', '105:1:word:5'],
-              correctOrderIds: ['105:1:word:1', '105:1:word:2', '105:1:word:3', '105:1:word:4', '105:1:word:5', '105:1:word:6', '105:1:word:7'],
-            },
-          },
-        }],
-      },
+
       {
         id: 'l1-type-recall',
         kind: 'memory_practice',
@@ -657,8 +641,12 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l1-summary', kind: 'summary', title: 'Summary / Wisdom', blocks: [{
-          id: 'l1-summary-1', type: 'summary', title: 'Remember',
-          points: ['Ayah 1 invites reflection on how Allah dealt with the companions of the elephant.'],
+          id: 'l1-summary-1', type: 'summary', title: 'Reflect',
+          points: [
+            'Allah opens the surah with a question — inviting you to ponder His power and protection.',
+            'The "companions of the elephant" were Abraha\'s army, a force that seemed unstoppable — yet Allah had a plan.',
+            'Key vocabulary: كَيْفَ (how), رَبُّكَ (your Lord), ٱلْفِيلِ (the elephant).',
+          ],
           sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
         }],
       },
@@ -680,7 +668,10 @@ export const surahAlFilLevels: Level[] = [
     steps: [
       {
         id: 'l2-context', kind: 'context', title: 'Context', required: false,
-        blocks: [{ id: 'l2-context-plan', type: 'context', kind: 'tafsir_summary', title: 'The Ruined Plan', text: 'Allah made Abraha\'s careful planning futile. Human power cannot overcome Allah\'s decree.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+        blocks: [
+          { id: 'l2-context-img', type: 'media', assetId: 'al-fil-army-march-img' },
+          { id: 'l2-context-plan', type: 'context', kind: 'tafsir_summary', title: 'The Ruined Plan', text: 'Allah made Abraha\'s careful planning futile. Human power cannot overcome Allah\'s decree.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }
+        ],
       },
       {
         id: 'l2-read',
@@ -761,7 +752,15 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l2-summary', kind: 'summary', title: 'Summary / Wisdom',
-        blocks: [{ id: 'l2-summary-1', type: 'summary', title: 'Remember', points: ['Ayah 2 teaches that the army\'s plan was made futile.'], sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+        blocks: [{
+          id: 'l2-summary-1', type: 'summary', title: 'Reflect',
+          points: [
+            'No matter how powerful a plan seems, Allah can render it completely futile.',
+            'The word تَضْلِيلٍ (misguidance/ruin) emphasises total failure — not partial, but complete.',
+            'Key vocabulary: يَجْعَلْ (make/render), تَضْلِيلٍ (ruin/failure).',
+          ],
+          sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft'
+        }],
       },
     ],
   },
@@ -784,7 +783,10 @@ export const surahAlFilLevels: Level[] = [
     steps: [
       {
         id: 'l3-context', kind: 'context', title: 'Context', required: false,
-        blocks: [{ id: 'l3-context-birds', type: 'context', kind: 'tafsir_summary', title: 'Birds in Flocks', text: 'The birds came in groups, carrying stones by Allah\'s command.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+        blocks: [
+          { id: 'l3-context-img', type: 'media', assetId: 'al-fil-birds-stones-img' },
+          { id: 'l3-context-birds', type: 'context', kind: 'tafsir_summary', title: 'Birds in Flocks', text: 'The birds came in groups, carrying stones by Allah\'s command.', sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }
+        ],
       },
       {
         id: 'l3-read',
@@ -859,7 +861,15 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l3-summary', kind: 'summary', title: 'Summary / Wisdom',
-        blocks: [{ id: 'l3-summary-1', type: 'summary', title: 'Remember', points: ['Ayat 3 and 4 describe birds in flocks carrying stones of clay.'], sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft' }],
+        blocks: [{
+          id: 'l3-summary-1', type: 'summary', title: 'Reflect',
+          points: [
+            'Allah sent the smallest of creatures — birds — to destroy the mightiest of armies.',
+            'The stones of baked clay (سِجِّيلٍ) were small, yet devastating. True power belongs to Allah alone.',
+            'Key vocabulary: طَيْرًا (birds), أَبَابِيلَ (in flocks), بِحِجَارَةٍ (with stones), سِجِّيلٍ (baked clay).',
+          ],
+          sourceIds: [QURAN_ARABIC_SOURCE_ID, TAFSIR_SOURCE_ID], reviewerStatus: 'draft'
+        }],
       },
     ],
   },
@@ -883,11 +893,14 @@ export const surahAlFilLevels: Level[] = [
         kind: 'context',
         title: 'Context',
         required: false,
-        blocks: [{
-          id: 'l4-context-review', type: 'context', kind: 'occasion_of_revelation', title: 'Makkan Reminder',
-          text: 'Surah Al-Fil was revealed in Makkah and reminded Quraysh that Allah protected His House by His power.',
-          sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
-        }],
+        blocks: [
+          { id: 'l4-context-img', type: 'media', assetId: 'al-fil-aftermath-img' },
+          {
+            id: 'l4-context-review', type: 'context', kind: 'occasion_of_revelation', title: 'Makkan Reminder',
+            text: 'Surah Al-Fil was revealed in Makkah and reminded Quraysh that Allah protected His House by His power.',
+            sourceIds: [TAFSIR_SOURCE_ID], reviewerStatus: 'draft',
+          }
+        ],
       },
       {
         id: 'l4-read',
@@ -1003,7 +1016,48 @@ const surahAlFilPackage: ContentPackage = {
   reciters: [husaryReciter],
   recitationTracks: husaryTracks,
   localization,
-  mediaAssets: [],
+  mediaAssets: [
+    {
+      id: 'al-fil-context-img',
+      kind: 'image',
+      uri: require('../../../../assets/images/lessons/al_fil_context.jpg'),
+      altText: 'The Kaaba in Makkah surrounded by a desert landscape',
+      sourceIds: [TAFSIR_SOURCE_ID],
+      license: 'Generated by Antigravity',
+      checksum: '0000000000000000000000000000000000000000000000000000000000000000',
+      reviewerStatus: 'draft',
+    },
+    {
+      id: 'al-fil-army-march-img',
+      kind: 'image',
+      uri: require('../../../../assets/images/lessons/al_fil_army_march.jpg'),
+      altText: 'A vast desert with a dusty trail representing an army\'s march',
+      sourceIds: [TAFSIR_SOURCE_ID],
+      license: 'Generated by Antigravity',
+      checksum: '0000000000000000000000000000000000000000000000000000000000000000',
+      reviewerStatus: 'draft',
+    },
+    {
+      id: 'al-fil-birds-stones-img',
+      kind: 'image',
+      uri: require('../../../../assets/images/lessons/al_fil_birds_stones.jpg'),
+      altText: 'Birds in V-formation carrying small stones',
+      sourceIds: [TAFSIR_SOURCE_ID],
+      license: 'Generated by Antigravity',
+      checksum: '0000000000000000000000000000000000000000000000000000000000000000',
+      reviewerStatus: 'draft',
+    },
+    {
+      id: 'al-fil-aftermath-img',
+      kind: 'image',
+      uri: require('../../../../assets/images/lessons/al_fil_aftermath.jpg'),
+      altText: 'Scattered straw blowing in the wind across a desert',
+      sourceIds: [TAFSIR_SOURCE_ID],
+      license: 'Generated by Antigravity',
+      checksum: '0000000000000000000000000000000000000000000000000000000000000000',
+      reviewerStatus: 'draft',
+    }
+  ],
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,

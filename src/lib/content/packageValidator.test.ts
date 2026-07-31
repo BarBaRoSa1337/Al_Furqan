@@ -166,7 +166,7 @@ test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () 
     'understanding_practice', 'summary',
   ]);
   expect(getPracticeLevelSteps(surahAlFilPackage.levels[0]).map(step => step.id)).toEqual(expect.arrayContaining([
-    'l1-memory-practice', 'l1-order-words', 'l1-type-recall', 'l1-match-translation-practice', 'l1-quiz-practice',
+    'l1-memory-practice', 'l1-type-recall', 'l1-match-translation-practice', 'l1-quiz-practice',
   ]));
 });
 

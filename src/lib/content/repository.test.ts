@@ -111,7 +111,7 @@ test('keeps media and discovery ownership inside the package that declares the b
   repository.registerPackage(downloaded, false, 'downloaded');
 
   expect(repository.getPackageForBlock(mediaBlock.id)?.id).toBe(downloaded.id);
-  expect(repository.getPackageForBlock(mediaBlock.id)?.mediaAssets[0].uri).toBe('images/downloaded-context.png');
+  expect(repository.getPackageForBlock(mediaBlock.id)?.mediaAssets.find(a => a.id === 'downloaded-context-art')?.uri).toBe('images/downloaded-context.png');
   expect(repository.listLearningPaths({ downloadedOnly: true }).map(result => result.packageId)).toEqual([downloaded.id]);
 });
 

@@ -216,7 +216,7 @@ test('migrates V3 attempts and reviews to locale-scoped V4 records', async () =>
     levels: { [level.id]: progress },
     reviews: {
       legacy: {
-        activityId: 'l1-order-ayah-1', levelId: level.id, packageRevisionId: 'revision-r3',
+        activityId: 'l1-fill-gap-1', levelId: level.id, packageRevisionId: 'revision-r3',
         stage: 1, dueAt: '2026-01-02T00:00:00.000Z', lastReviewedAt: '2026-01-01T00:00:00.000Z',
         lastOutcome: 'correct', mastered: false,
       },
@@ -237,8 +237,8 @@ test('registers successfully practiced review activities once on level completio
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'revision-r3', now: new Date('2026-01-02T00:00:00.000Z') });
 
   const reviews = await getReviewStates();
-  expect(reviews.map(review => review.activityId)).toEqual(expect.arrayContaining(['l1-recall-ayah-1', 'l1-fill-gap-1', 'l1-order-ayah-1', 'l1-match-meaning']));
-  expect(reviews).toHaveLength(4);
+  expect(reviews.map(review => review.activityId)).toEqual(expect.arrayContaining(['l1-recall-ayah-1', 'l1-fill-gap-1', 'l1-match-meaning']));
+  expect(reviews).toHaveLength(3);
   expect(reviews.every(review => review.packageRevisionId === 'revision-r3')).toBe(true);
 });
 
@@ -248,12 +248,12 @@ test('stores a review attempt and advances its schedule atomically', async () =>
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'revision-r3', now: new Date('2026-01-01T00:00:00.000Z') });
 
   await recordReviewAttempt({
-    levelId: level.id, pathId: level.pathId, activityId: 'l1-order-ayah-1', answer: ['fixture'], correct: true,
+    levelId: level.id, pathId: level.pathId, activityId: 'l1-fill-gap-1', answer: ['fixture'], correct: true,
     evaluationVersion: '2', packageRevisionId: 'revision-r3', reviewSchedule: { intervalDays: [1, 3, 7] }, outcome: 'correct',
     now: new Date('2026-01-02T00:00:00.000Z'),
   });
 
-  const review = (await getReviewStates()).find(item => item.activityId === 'l1-order-ayah-1');
+  const review = (await getReviewStates()).find(item => item.activityId === 'l1-fill-gap-1');
   expect(review).toEqual(expect.objectContaining({ stage: 2, dueAt: '2026-01-05T00:00:00.000Z' }));
   expect((await getLevelProgress(level.id))?.activityAttempts.at(-1)?.evaluationVersion).toBe('2');
   expect(await getDueReviewStates(new Date('2026-01-04T23:59:59.000Z'))).not.toContainEqual(review);
@@ -268,8 +268,8 @@ test('keeps stale revision schedules while syncing the active package revision',
   await syncCompletedLevelReviews([{ level, packageRevisionId: 'revision-r3' }], new Date('2026-01-02T00:00:00.000Z'));
 
   const reviews = await getReviewStates();
-  expect(reviews.filter(review => review.packageRevisionId === 'revision-r2')).toHaveLength(4);
-  expect(reviews.filter(review => review.packageRevisionId === 'revision-r3')).toHaveLength(4);
+  expect(reviews.filter(review => review.packageRevisionId === 'revision-r2')).toHaveLength(3);
+  expect(reviews.filter(review => review.packageRevisionId === 'revision-r3')).toHaveLength(3);
 });
 
 test('backfills review state from the latest attempt instead of completion time', async () => {
