@@ -5,10 +5,21 @@ export const QURANENC_RESOURCES = {
 
 type QuranEncResourceId = keyof typeof QURANENC_RESOURCES;
 
+export interface QuranEncResult {
+  provider: 'quranenc';
+  resourceId: QuranEncResourceId;
+  providerResourceId: string;
+  version: string;
+  locale: string;
+  publisher: string;
+  attributionText: string;
+  data: unknown;
+}
+
 export class QuranEncClient {
   constructor(private readonly fetcher: typeof fetch = fetch) {}
 
-  async getSurah(resourceId: string, surah: number): Promise<unknown> {
+  async getSurah(resourceId: string, surah: number): Promise<QuranEncResult> {
     if (!(resourceId in QURANENC_RESOURCES)) throw new Error('QuranEnc resource is not approved');
     if (!Number.isInteger(surah) || surah < 1 || surah > 114) throw new Error('Invalid Surah');
     const resource = QURANENC_RESOURCES[resourceId as QuranEncResourceId];
@@ -20,6 +31,15 @@ export class QuranEncClient {
     if (current.version !== resource.version) throw new Error(`QuranEnc update candidate ${current.version} requires review; pinned ${resource.version}`);
     const response = await this.fetcher(`https://quranenc.com/api/v1/translation/sura/${resource.key}/${surah}`, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`QuranEnc translation returned ${response.status}`);
-    return response.json();
+    return {
+      provider: 'quranenc',
+      resourceId: resourceId as QuranEncResourceId,
+      providerResourceId: resource.key,
+      version: resource.version,
+      locale: resource.locale,
+      publisher: resource.publisher,
+      attributionText: `${resource.publisher}, provided by QuranEnc. Provider text is unmodified.`,
+      data: await response.json(),
+    };
   }
 }

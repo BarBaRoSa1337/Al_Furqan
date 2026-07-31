@@ -32,6 +32,11 @@ export default function AyahAudioPlayer({
   const handledFinish = useRef(false);
   const currentTrack = tracks[trackIndex];
   const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
+  const segmentStart = (currentTrack.startMs ?? 0) / 1000;
+  const segmentEnd = currentTrack.endMs !== undefined ? currentTrack.endMs / 1000 : undefined;
+  const segmentDuration = segmentEnd !== undefined
+    ? Math.max(segmentEnd - segmentStart, 0)
+    : status.duration;
 
   useEffect(() => {
     void setAudioModeAsync({
@@ -80,17 +85,17 @@ export default function AyahAudioPlayer({
   }, [currentUri, player]);
 
   useEffect(() => {
-    if (!status.isLoaded || !pendingPlay.current || !currentUri) return;
+    if (!status.isLoaded || !currentUri) return;
+    const shouldPlay = pendingPlay.current;
     pendingPlay.current = false;
-    try {
-      player.play();
-    } catch {
-      setMessage('Tap Play to start recitation.');
-    }
-  }, [currentUri, player, status.isLoaded]);
+    void player.seekTo(segmentStart).then(() => {
+      if (shouldPlay) player.play();
+    }).catch(() => setMessage('Tap Play to start recitation.'));
+  }, [currentUri, player, segmentStart, status.isLoaded]);
 
   useEffect(() => {
-    if (!status.didJustFinish) {
+    const segmentFinished = segmentEnd !== undefined && status.currentTime >= segmentEnd - 0.05;
+    if (!status.didJustFinish && !segmentFinished) {
       handledFinish.current = false;
       return;
     }
@@ -104,9 +109,11 @@ export default function AyahAudioPlayer({
       setRound(value => value + 1);
       setTrackIndex(0);
       pendingPlay.current = true;
-      void player.seekTo(0).then(() => player.play());
+      void player.seekTo((tracks[0]?.startMs ?? 0) / 1000).then(() => player.play());
+      return;
     }
-  }, [player, repeatCount, round, status.didJustFinish, trackIndex, tracks.length]);
+    player.pause();
+  }, [player, repeatCount, round, segmentEnd, status.currentTime, status.didJustFinish, trackIndex, tracks]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
@@ -127,10 +134,11 @@ export default function AyahAudioPlayer({
       player.pause();
       return;
     }
-    if (status.didJustFinish) void player.seekTo(0);
+    if (status.didJustFinish || (segmentEnd !== undefined && status.currentTime >= segmentEnd - 0.05)) void player.seekTo(segmentStart);
     player.play();
   };
-  const progress = status.duration > 0 ? Math.min(status.currentTime / status.duration, 1) : 0;
+  const elapsed = Math.max(status.currentTime - segmentStart, 0);
+  const progress = segmentDuration > 0 ? Math.min(elapsed / segmentDuration, 1) : 0;
 
   return (
     <Card style={styles.card}>
@@ -156,7 +164,7 @@ export default function AyahAudioPlayer({
       </View>
 
       <View style={styles.controls}>
-        <Pressable accessibilityLabel="Restart recitation" accessibilityRole="button" onPress={() => { void player.seekTo(0); }} style={({ pressed }) => [styles.secondaryControl, pressed && styles.pressed]}>
+        <Pressable accessibilityLabel="Restart recitation" accessibilityRole="button" onPress={() => { void player.seekTo(segmentStart); }} style={({ pressed }) => [styles.secondaryControl, pressed && styles.pressed]}>
           <Ionicons name="refresh" size={20} color={colors.primary} />
         </Pressable>
         <Pressable
@@ -168,10 +176,10 @@ export default function AyahAudioPlayer({
           <Ionicons name={status.playing ? 'pause' : 'play'} size={28} color={colors.surface} />
         </Pressable>
         <View style={styles.timeWrap}>
-          <View accessibilityLabel={`${formatTime(status.currentTime)} of ${formatTime(status.duration)}`} accessibilityRole="progressbar" style={styles.progress}>
+          <View accessibilityLabel={`${formatTime(elapsed)} of ${formatTime(segmentDuration)}`} accessibilityRole="progressbar" style={styles.progress}>
             <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
           </View>
-          <Text style={styles.time}>{formatTime(status.currentTime)} / {formatTime(status.duration || (currentTrack.durationMs ?? 0) / 1000)}</Text>
+          <Text style={styles.time}>{formatTime(elapsed)} / {formatTime(segmentDuration || (currentTrack.durationMs ?? 0) / 1000)}</Text>
         </View>
       </View>
 

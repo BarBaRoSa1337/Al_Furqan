@@ -19,6 +19,7 @@ import {
 import { validateActivity } from '../activities/activityEngine';
 import {
   getPackagePayloadHash,
+  getLocalePublicationHash,
   getSourceHash,
   getStructureSnapshotHash,
   grantCovers,
@@ -155,12 +156,17 @@ function validateLocalePublications(
     errors.push(`Package "${pkg.id}" schema v3 has no locale publications`);
     return;
   }
+  if (mode === 'production' && !publications.some(item => item.status === 'published')) {
+    errors.push(`Package "${pkg.id}" has no published lesson locale`);
+  }
   validateUniqueIds('locale publication', publications.map(item => item.locale), errors);
   publications.forEach(publication => {
     const label = `Locale publication "${publication.locale}"`;
     if (!SUPPORTED_LOCALES.includes(publication.locale)) errors.push(`${label} is unsupported`);
+    if (mode === 'production' && publication.status === 'draft') errors.push(`${label} remains draft`);
     if (publication.status === 'published') {
       if (!/^[a-f0-9]{64}$/i.test(publication.contentHash ?? '')) errors.push(`${label} has no exact content hash`);
+      if (publication.contentHash && publication.contentHash !== getLocalePublicationHash(pkg, publication.locale)) errors.push(`${label} content hash does not match its lesson payload`);
       const languageApproval = pkg.governance?.approvals.find(item => item.id === publication.languageApprovalId);
       const islamicApproval = pkg.governance?.approvals.find(item => item.id === publication.islamicApprovalId);
       if (!languageApproval || languageApproval.role !== 'editorial' || languageApproval.target.kind !== 'locale_publication' || languageApproval.target.id !== publication.locale || languageApproval.target.hash !== publication.contentHash) {

@@ -13,6 +13,7 @@ const app = createApp({
   quranEnc: new QuranEncClient(),
   mp3Quran: new Mp3QuranClient(),
   allowedOrigins: (process.env.FURQAN_ALLOWED_ORIGINS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
+  approvedQuranFoundationTafsirIds: (process.env.FURQAN_QF_TAFSIR_IDS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
 });
 
 const server = createServer(async (request, response) => {

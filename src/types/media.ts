@@ -35,6 +35,9 @@ export interface RecitationTrack {
   etag?: string;
   lastModified?: string;
   durationMs?: number;
+  /** Segment bounds within a provider Surah stream. */
+  startMs?: number;
+  endMs?: number;
   byteSize?: number;
   format?: string;
   asset: AudioAssetLocation;

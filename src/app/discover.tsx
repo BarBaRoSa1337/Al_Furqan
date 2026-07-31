@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { FlatList, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import BottomNavigation from '../components/furqan/BottomNavigation';
 import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
@@ -12,6 +12,7 @@ import { getAppProgress } from '../lib/progress/storage';
 import { isLevelAccessible } from '../lib/progress/lessonAccess';
 import { colors, fonts, radii, shadows, spacing } from '../theme/tokens';
 import { AppProgress, DEFAULT_PROGRESS } from '../types/progress';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
 
 type BrowseMode = 'search' | 'surah' | 'juz' | 'hizb';
 interface BrowseItem {
@@ -32,12 +33,12 @@ export default function DiscoverScreen() {
   const initialNumber = parseBrowseNumber(Array.isArray(params.number) ? params.number[0] : params.number);
   const router = useRouter();
   const dashboard = useFurqanDashboard();
+  const { preferences } = useLocalization();
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key);
+  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key, {}, preferences.interfaceLocale);
   const [query, setQuery] = useState(initialQuery);
   const [browseMode, setBrowseMode] = useState<BrowseMode>(initialMode);
   const [browseNumber, setBrowseNumber] = useState<number | undefined>(initialNumber);
-  const [downloadedOnly, setDownloadedOnly] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string>();
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
   const browseListRef = useRef<FlatList<BrowseItem>>(null);
@@ -55,7 +56,7 @@ export default function DiscoverScreen() {
   const scope = {
     activePackageIds: repo.getAllPackages().map(pkg => pkg.id),
     editionId: 'hafs-an-asim' as const,
-    studyLocale: 'en',
+    studyLocale: preferences.lessonLocale,
   };
   const effectiveQuery = browseMode === 'search'
     ? query
@@ -63,7 +64,7 @@ export default function DiscoverScreen() {
       ? `${browseMode === 'surah' ? 'Surah' : browseMode === 'juz' ? 'Juz' : 'Hizb'} ${browseNumber}`
       : '';
   const result = repo.searchDiscovery(effectiveQuery, {
-    downloadedOnly,
+    downloadedOnly: false,
     themeIds: selectedThemeId ? [selectedThemeId] : undefined,
     approvedOnly: !__DEV__,
   }, scope);
@@ -224,14 +225,6 @@ export default function DiscoverScreen() {
             </View>
           ) : null}
 
-          <View style={styles.switchRow}>
-            <View>
-              <Text style={styles.switchLabel}>{text('discovery.downloadedOnly')}</Text>
-              <Text style={styles.switchHint}>Show content ready for offline learning</Text>
-            </View>
-            <Switch accessibilityLabel={text('discovery.downloadedOnly')} onValueChange={setDownloadedOnly} trackColor={{ true: colors.successSoft }} thumbColor={downloadedOnly ? colors.success : colors.surfaceMuted} value={downloadedOnly} />
-          </View>
-
           {result.diagnostics.map(diagnostic => <Text key={diagnostic.code} style={styles.diagnostic}>{diagnostic.message}</Text>)}
 
           {result.quranReferences.length > 0 ? (
@@ -322,9 +315,6 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text, fontFamily: fonts.medium, fontSize: 13 },
   chipTextSelected: { color: colors.surface },
-  switchRow: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.md, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginVertical: spacing.lg, padding: spacing.md },
-  switchLabel: { color: colors.text, fontFamily: fonts.bold, fontSize: 14 },
-  switchHint: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
   diagnostic: { backgroundColor: colors.warningSoft, borderRadius: radii.sm, color: colors.warning, fontFamily: fonts.medium, marginBottom: spacing.md, padding: spacing.md },
   section: { gap: spacing.md, marginBottom: spacing.xl },
   sectionTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 18 },

@@ -22,6 +22,7 @@ import { packageText } from '../../lib/content/text';
 import WisdomCard from './WisdomCard';
 import AyahAudioPlayer from './AyahAudioPlayer';
 import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
+import { getCurrentLearnerPreferences } from '../../lib/localization/preferencesState';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
@@ -29,21 +30,20 @@ interface LevelBlockRendererProps {
   onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
 }
 
-const DEFAULT_TRANSLATION_LOCALE = 'en';
-
 export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivityAnswer }: LevelBlockRendererProps) {
   const repo = getContentRepository();
+  const preferences = getCurrentLearnerPreferences();
 
   switch (block.type) {
     case 'quran_passage':
-      return <CanonicalPassageBlock block={block} repo={repo} />;
+      return <CanonicalPassageBlock block={block} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} />;
     case 'translation':
       return <CanonicalTranslationBlock block={block} repo={repo} />;
     case 'word_meaning':
       return <SelectedWordMeaningBlock block={block} repo={repo} />;
     case 'ayah_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
-      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={block.translationLocale} repo={repo} /> : null;
+      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={block.translationLocale ?? preferences.lessonLocale} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} /> : null;
     }
     case 'tafsir_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
@@ -71,9 +71,9 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
   }
 }
 
-function CanonicalPassageBlock({ block, repo }: { block: QuranPassageBlock; repo: ContentRepository }) {
+function CanonicalPassageBlock({ block, repo, showTransliteration }: { block: QuranPassageBlock; repo: ContentRepository; showTransliteration: boolean }) {
   const ayat = repo.getAyatByRefs(block.ayahRefs);
-  return <Card variant="ayah" style={styles.ayahCard}>{ayat.map(ayah => <View key={ayah.id} style={styles.passageAyah}><Text style={styles.arabic}>{ayah.arabicText.text}</Text>{block.showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}</View>)}</Card>;
+  return <Card variant="ayah" style={styles.ayahCard}>{ayat.map(ayah => <View key={ayah.id} style={styles.passageAyah}><Text style={styles.arabic}>{ayah.arabicText.text}</Text>{showTransliteration && block.showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}</View>)}</Card>;
 }
 
 function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; repo: ContentRepository }) {
@@ -81,7 +81,7 @@ function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; r
     const selected = ayah.translations.filter(entry => entry.locale === block.locale && (!block.translationEntryIds || block.translationEntryIds.includes(entry.id)));
     return selected.map(entry => ({ ayah, entry, source: repo.getSourceById(entry.sourceId) }));
   });
-  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={styles.translation}>{entry.text}</Text><Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
+  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={[styles.translation, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.text}</Text>{entry.footnotes ? <Text style={[styles.footnotes, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.footnotes}</Text> : null}<Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
 }
 
 function SelectedWordMeaningBlock({ block, repo }: { block: WordMeaningBlock; repo: ContentRepository }) {
@@ -111,17 +111,18 @@ function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: Content
   return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /><Text style={styles.source}>{asset.altText}</Text></Card>;
 }
 
-function CanonicalAyahBlock({ ayah, locale, repo }: { ayah: AyahRecord; locale?: string; repo: ContentRepository }) {
-  const translation = ayah.translations.find(entry => entry.locale === (locale ?? DEFAULT_TRANSLATION_LOCALE)) ?? ayah.translations[0];
+function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
+  const translation = ayah.translations.find(entry => entry.locale === locale);
   const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
 
   return (
     <Card variant="ayah" style={styles.ayahCard}>
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
-      {ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
+      {showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
       <View style={styles.divider} />
-      <Text style={styles.translation}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
+      <Text style={[styles.translation, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
+      {translation?.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
       <View style={styles.sourceGroup}>
         <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}</Text>
         <Text style={styles.sourceValue}>{arabicSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
@@ -220,6 +221,9 @@ const styles = StyleSheet.create({
   divider: { backgroundColor: colors.border, height: 1, marginVertical: 12, width: '100%' },
   translation: { color: colors.text, fontFamily: fonts.regular, fontSize: 17, fontWeight: '500', lineHeight: 26, textAlign: 'center' },
   translationEntry: { marginBottom: 12 },
+  footnotes: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, marginTop: spacing.xs },
+  ltrText: { textAlign: 'left', writingDirection: 'ltr' },
+  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   sourceGroup: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.md, paddingTop: spacing.md, width: '100%' },
   sourceLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.6, textAlign: 'center', textTransform: 'uppercase' },
   sourceValue: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, marginBottom: spacing.sm, marginTop: 2, textAlign: 'center' },

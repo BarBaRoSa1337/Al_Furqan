@@ -3,8 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
 import { FurqanMark } from './FurqanArtwork';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export default function FurqanHeader({ streak, xp }: { streak: number; xp: number }) {
+  const { t } = useLocalization();
   return (
     <View style={styles.header}>
       <View style={styles.brand}>
@@ -12,8 +14,8 @@ export default function FurqanHeader({ streak, xp }: { streak: number; xp: numbe
         <Text accessibilityRole="header" style={styles.brandName}>Furqan</Text>
       </View>
       <View style={styles.stats}>
-        <Stat icon="flame" value={streak} label="Day streak" color={colors.gold} />
-        <Stat icon="sparkles" value={xp} label="Points" color={colors.success} />
+        <Stat icon="flame" value={streak} label={t('header.dayStreak')} color={colors.gold} />
+        <Stat icon="sparkles" value={xp} label={t('header.points')} color={colors.success} />
       </View>
     </View>
   );

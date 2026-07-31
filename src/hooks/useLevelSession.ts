@@ -16,11 +16,15 @@ import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../ty
 import { LevelStep, QuestionBlock } from '../types/content';
 import { getResumeStepIndex } from '../lib/progress/levelResume';
 import { getCoreLevelSteps } from '../lib/content/lessonSteps';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
+import { isLessonLocaleAvailable } from '../lib/content/publication';
 
-export type LevelSessionStatus = 'loading' | 'ready' | 'locked' | 'not_found' | 'error';
+export type LevelSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type SessionFeedback = { correct: boolean };
 
 export function useLevelSession(levelId: string | undefined) {
+  const { preferences } = useLocalization();
+  const lessonLocale = preferences.lessonLocale;
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
@@ -61,6 +65,11 @@ export function useLevelSession(levelId: string | undefined) {
         if (!cancelled) setStatus('not_found');
         return null;
       }
+      const contentPackage = repo.getPackageForLevel(level.id);
+      if (!contentPackage || !isLessonLocaleAvailable(contentPackage, lessonLocale)) {
+        if (!cancelled) setStatus('locale_unavailable');
+        return null;
+      }
 
       try {
         const appProgress = await getAppProgress();
@@ -74,11 +83,11 @@ export function useLevelSession(levelId: string | undefined) {
         const nextIndex = getResumeStepIndex(coreSteps, progress, level.steps);
         if (!cancelled) {
           setCurrentStepIndex(nextIndex);
-          setCorrectQuestionIds(getCorrectQuestionIds(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress));
-          setActivityResults(getLatestActivityResults(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress));
+          setCorrectQuestionIds(getCorrectQuestionIds(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress, lessonLocale));
+          setActivityResults(getLatestActivityResults(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress, lessonLocale));
           setDraftAnswer(null);
           setFeedback(null);
-          setRetryStepIds(getPendingRetryStepIds(coreSteps, progress));
+          setRetryStepIds(getPendingRetryStepIds(coreSteps, progress, lessonLocale));
           setWarning(getProgressRecoveryWarning());
           setStatus('ready');
         }
@@ -92,7 +101,7 @@ export function useLevelSession(levelId: string | undefined) {
 
     void loadSession();
     return () => { cancelled = true; };
-  }, [levelId]);
+  }, [lessonLocale, levelId]);
 
   async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
     if (!questionIds.includes(blockId) || operationLocked.current || feedback) return;
@@ -121,14 +130,14 @@ export function useLevelSession(levelId: string | undefined) {
         const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === draftAnswer.id);
         if (!block) throw new Error('Question is unavailable for this step.');
         correct = evaluateQuestion(block, draftAnswer.answer);
-        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct });
+        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct, locale: lessonLocale });
         if (correct) setCorrectQuestionIds(current => current.includes(block.id) ? current : [...current, block.id]);
       }
       if (needsCheck && draftAnswer?.kind === 'activity') {
         const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === draftAnswer.id)?.activity;
         if (!activity) throw new Error('Activity is unavailable for this step.');
         correct = evaluateActivity(activity, draftAnswer.answer, createActivityEvaluationContext(repo)).correct;
-        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1' });
+        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
         setActivityResults(current => ({ ...current, [activity.id]: correct }));
       }
       setFeedback({ correct });
@@ -150,21 +159,21 @@ export function useLevelSession(levelId: string | undefined) {
         const nextIndex = currentStepIndex + 1;
         setCurrentStepIndex(nextIndex);
         setRetryStepIds(nextRetryStepIds);
-        setCorrectQuestionIds(getCorrectQuestionIds(nextStep.blocks.map(block => block.id), progress));
-        setActivityResults(getLatestActivityResults(nextStep.blocks.map(block => block.id), progress));
+        setCorrectQuestionIds(getCorrectQuestionIds(nextStep.blocks.map(block => block.id), progress, lessonLocale));
+        setActivityResults(getLatestActivityResults(nextStep.blocks.map(block => block.id), progress, lessonLocale));
         return null;
       }
       if (retryStepId) {
         if (retryStep && retryStepIndex >= 0) {
           setCurrentStepIndex(retryStepIndex);
           setRetryStepIds(nextRetryStepIds.slice(1));
-          setCorrectQuestionIds(getCorrectQuestionIds(retryStep.blocks.map(block => block.id), progress));
-          setActivityResults(getLatestActivityResults(retryStep.blocks.map(block => block.id), progress));
+          setCorrectQuestionIds(getCorrectQuestionIds(retryStep.blocks.map(block => block.id), progress, lessonLocale));
+          setActivityResults(getLatestActivityResults(retryStep.blocks.map(block => block.id), progress, lessonLocale));
           return null;
         }
       }
       if (!correct) throw new Error('The exercise could not be scheduled for retry.');
-      return completeLevel(level!, path!, { packageRevisionId: repo.getPackageForLevel(level!.id)?.revisionId });
+      return completeLevel(level!, path!, { packageRevisionId: repo.getPackageForLevel(level!.id)?.revisionId, locale: lessonLocale });
   }
 
   async function runExclusive(operation: () => Promise<void>): Promise<boolean> {
@@ -205,27 +214,28 @@ export function useLevelSession(levelId: string | undefined) {
   };
 }
 
-function getCorrectQuestionIds(blockIds: string[], progress: LevelProgress): string[] {
-  return blockIds.filter(blockId => progress.questionAttempts.some(attempt => attempt.questionId === blockId && attempt.correct));
+function getCorrectQuestionIds(blockIds: string[], progress: LevelProgress, locale: string): string[] {
+  return blockIds.filter(blockId => progress.questionAttempts.some(attempt => attempt.questionId === blockId && attempt.correct && (attempt.locale ?? 'en') === locale));
 }
 
-function getLatestActivityResults(blockIds: string[], progress: LevelProgress): Record<string, boolean> {
+function getLatestActivityResults(blockIds: string[], progress: LevelProgress, locale: string): Record<string, boolean> {
   return progress.activityAttempts.reduce<Record<string, boolean>>((results, attempt) => {
-    if (blockIds.includes(attempt.activityId)) results[attempt.activityId] = attempt.correct;
+    if (blockIds.includes(attempt.activityId) && (attempt.languageIndependent || (attempt.locale ?? 'en') === locale)) results[attempt.activityId] = attempt.correct;
     return results;
   }, {});
 }
 
-function getPendingRetryStepIds(steps: readonly LevelStep[], progress: LevelProgress): string[] {
+function getPendingRetryStepIds(steps: readonly LevelStep[], progress: LevelProgress, locale: string): string[] {
   return steps.flatMap(step => {
     if (!progress.completedStepIds.includes(step.id) || step.required === false) return [];
     const questionIds = step.blocks.filter(block => block.type === 'question').map(block => block.id);
-    const activityIds = step.blocks
+    const activities = step.blocks
       .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
-      .map(block => block.activity.id);
-    const hasInteraction = questionIds.length > 0 || activityIds.length > 0;
-    const passed = questionIds.every(id => progress.questionAttempts.some(attempt => attempt.questionId === id && attempt.correct))
-      && activityIds.every(id => progress.activityAttempts.some(attempt => attempt.activityId === id && attempt.correct));
+      .map(block => block.activity);
+    const hasInteraction = questionIds.length > 0 || activities.length > 0;
+    const passed = questionIds.every(id => progress.questionAttempts.some(attempt => attempt.questionId === id && attempt.correct && (attempt.locale ?? 'en') === locale))
+      && activities.every(activity => progress.activityAttempts.some(attempt => attempt.activityId === activity.id && attempt.correct
+        && (activity.languageIndependent ? attempt.languageIndependent : (attempt.locale ?? 'en') === locale)));
     return hasInteraction && !passed ? [step.id] : [];
   });
 }

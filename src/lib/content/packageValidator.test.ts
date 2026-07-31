@@ -171,8 +171,8 @@ test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () 
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('2.10');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r12');
+  expect(surahAlFilPackage.version).toBe('3.0');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r13');
   expect(getCoreLevelSteps(surahAlFilPackage.levels[1]).map(step => step.kind)).toEqual([
     'context', 'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',

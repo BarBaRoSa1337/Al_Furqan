@@ -3,6 +3,39 @@
 This log records completed implementation milestones that change runtime
 behavior, data contracts, or release gates. Update it with each major change.
 
+## 2026-07-31 - Mobile multilingual runtime and direct recitation
+
+### Delivered
+
+- Added persisted, independent interface locale, lesson locale, translation,
+  Quran script, transliteration and reciter preferences. App chrome supports
+  Arabic RTL plus English and French LTR.
+- Added whole-lesson locale gating. The development Al-Fil English draft is
+  usable in development; Arabic and French show an explicit unavailable state
+  and may switch only to a complete available lesson locale.
+- Production no longer activates the built-in draft package. It requires a
+  validated runtime package from the Furqan backend and does not persist the
+  response. Downloaded package hydration and offline filtering are disabled.
+- Migrated Al-Fil translation records to exact pinned QuranEnc Rowwad payloads,
+  including provider IDs, version, attribution and footnotes.
+- Removed QuranicAudio files and import tooling. Al-Husary now streams directly
+  from MP3Quran with exact reciter/mushaf/riwayah IDs and ayah segment timing.
+
+### Release status
+
+English remains a draft candidate, not a published religious lesson. Arabic
+and French lesson publications remain unavailable. Existing Arabic text,
+structure, tafsir, word meanings, Wisdom Cards and source records still require
+the configured named reviews and legal approvals.
+
+### Compatibility
+
+- Level completion and XP remain shared across locales.
+- V4 attempts and review schedules are locale-specific unless an activity is
+  explicitly language-independent.
+- Schema v1 and v2 remain development-readable; schema v3 adds publication
+  metadata without changing renderer sequencing.
+
 ## 2026-07-31 - Provider backend and multilingual contracts
 
 ### Delivered

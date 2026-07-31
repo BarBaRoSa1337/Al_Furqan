@@ -64,7 +64,7 @@ Owns:
 
 Levels reference canonical ayat and resources. They do not duplicate Quran payloads.
 
-## Lesson schema v2
+## Lesson schema v3
 
 `LevelStep` has a semantic `kind` and optional `required` flag. Schema-v2 packages author these kinds:
 
@@ -82,7 +82,14 @@ Arabic Quran payloads remain canonical references. A passage or activity segment
 
 Completion rules are explicit on a level. A schema-v2 level requires all required teaching steps, one successful memory activity from `memorize` or `memory_practice`, and one successful understanding activity or question from `understanding_practice`.
 
-The current Al-Fil package is schema v2. Schema-v1 packages are adapted by inferring a step kind from their blocks and retain legacy completion behavior. If an in-progress learner resumes after required steps were inserted before their saved position, the session resumes at the earliest missing required step.
+Schema v3 adds whole-lesson locale publication records and creation provenance.
+The current Al-Fil package is a development-only English draft; Arabic and
+French explicitly report unavailable rather than mixing blocks from English.
+Schema-v1 and v2 packages remain development-readable. Schema-v1 packages are
+adapted by inferring a step kind from their blocks and retain legacy completion
+behavior. If an in-progress learner resumes after required steps were inserted
+before their saved position, the session resumes at the earliest missing
+required step.
 
 ### 4. Learner-state layer
 
@@ -98,7 +105,13 @@ Owns:
 
 Progress remains valid when a content package is updated, subject to explicit migration rules.
 
-Progress schema V3 adds revision-scoped `ActivityReviewState` beside level progress. V2 snapshots migrate atomically; Quran/package content is never copied into learner state. Due-review resolution joins learner state to the active package and ignores missing or stale-revision activities without deleting history.
+Progress schema V4 keeps level completion shared while scoping religious
+attempts and reviews by lesson locale. Only activities explicitly marked
+`languageIndependent` share review state. V2 and V3 snapshots migrate
+atomically, assigning legacy language-dependent work to English. Quran/package
+content is never copied into learner state. Due-review resolution joins learner
+state to the active package and ignores missing or stale-revision activities
+without deleting history.
 
 ### 5. Distribution layer
 
@@ -113,7 +126,10 @@ Owns:
 - installed package registry;
 - rollback.
 
-The app renders only active, validated packages.
+The app renders only active, validated packages. Production startup fetches an
+immutable runtime package from the Furqan backend and does not persist it.
+Downloaded package hydration is disabled while source-specific offline rights
+and update controls remain unresolved.
 
 ### 6. Studio publishing contract
 

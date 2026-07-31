@@ -8,14 +8,17 @@ import { useLevelSession } from '../../hooks/useLevelSession';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors } from '../../theme/tokens';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
+import { availableLessonLocales } from '../../lib/content/publication';
 
 export default function LessonPlayerScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const levelId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const session = useLevelSession(levelId);
+  const { preferences, setLessonLocale, t } = useLocalization();
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values);
+  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values, preferences.interfaceLocale);
 
   const confirmExit = () => {
     Alert.alert(text('lesson.leaveLevel'), text('lesson.leaveMessage'), [
@@ -38,6 +41,29 @@ export default function LessonPlayerScreen() {
 
   if (session.status === 'loading' || session.status === 'locked') {
     return <LoadingState label={text('lesson.loadingLevel')} />;
+  }
+
+  if (session.status === 'locale_unavailable' && session.level) {
+    const contentPackage = repo.getPackageForLevel(session.level.id);
+    const alternatives = contentPackage ? availableLessonLocales(contentPackage) : [];
+    const language = t(`locale.${preferences.lessonLocale}`);
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text accessibilityRole="header" style={styles.errorTitle}>{t('lesson.localeUnavailableTitle', { language })}</Text>
+          <Text style={styles.errorText}>{t('lesson.localeUnavailableBody')}</Text>
+          {alternatives.length === 0 ? <Text style={styles.errorText}>{t('lesson.noPublishedAlternative')}</Text> : alternatives.map(locale => (
+            <Button
+              key={locale}
+              title={t('lesson.switchLanguage', { language: t(`locale.${locale}`) })}
+              onPress={() => { void setLessonLocale(locale); }}
+              style={styles.stateButton}
+            />
+          ))}
+          <Button title={text('lesson.backToRoadmap')} onPress={() => router.replace('/roadmap')} variant="secondary" style={styles.stateButton} />
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (session.status === 'not_found' || !session.level || !session.path || !session.step) {

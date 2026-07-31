@@ -2,6 +2,7 @@ import type { ContentPackage } from '../types/content';
 import type { ApprovalAttestation, LicenseGrant } from '../types/governance';
 import {
   getPackagePayloadHash,
+  getLocalePublicationHash,
   getSourceHash,
   getStructureSnapshotHash,
 } from '../lib/content/governance';
@@ -41,6 +42,32 @@ export function createFullyApprovedPackage(
     approvals: [],
     licenseGrants: [],
   };
+
+  const localeApprovals: ApprovalAttestation[] = [];
+  pkg.localePublications?.forEach(publication => {
+    if (publication.status !== 'draft') return;
+    publication.status = 'published';
+    publication.contentHash = getLocalePublicationHash(pkg, publication.locale);
+    publication.languageApprovalId = `fixture-locale-${publication.locale}-editorial`;
+    publication.islamicApprovalId = `fixture-locale-${publication.locale}-shaykh`;
+    localeApprovals.push({
+      id: publication.languageApprovalId,
+      target: { kind: 'locale_publication', id: publication.locale, hash: publication.contentHash },
+      role: 'editorial',
+      reviewer: { id: 'fixture-language-reviewer', displayName: 'Fixture language reviewer' },
+      decision: 'approved',
+      reviewedAt: '2026-01-02T00:00:00.000Z',
+      evidenceRefId: 'fixture-review-evidence',
+    }, {
+      id: publication.islamicApprovalId,
+      target: { kind: 'locale_publication', id: publication.locale, hash: publication.contentHash },
+      role: 'shaykh',
+      reviewer: { id: 'fixture-islamic-reviewer', displayName: 'Fixture Islamic reviewer' },
+      decision: 'approved',
+      reviewedAt: '2026-01-02T00:00:00.000Z',
+      evidenceRefId: 'fixture-review-evidence',
+    });
+  });
 
   const packageHash = getPackagePayloadHash(pkg);
   const packageApprovals: ApprovalAttestation[] = (['editorial', 'shaykh', 'technical'] as const).map(role => ({
@@ -95,7 +122,7 @@ export function createFullyApprovedPackage(
         : { kind: 'none' },
     };
   });
-  pkg.governance.approvals = [...packageApprovals, structureApproval, ...sourceApprovals];
+  pkg.governance.approvals = [...packageApprovals, structureApproval, ...sourceApprovals, ...localeApprovals];
   pkg.governance.licenseGrants = licenseGrants;
   return pkg;
 }

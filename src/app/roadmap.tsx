@@ -12,14 +12,25 @@ import { getContentRepository } from '../lib/content/repository';
 import { hasPracticeSteps } from '../lib/content/lessonSteps';
 import { getLevelAccessState } from '../lib/progress/lessonAccess';
 import { colors, fonts, spacing } from '../theme/tokens';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
+import { availableLessonLocales, isLessonLocaleAvailable } from '../lib/content/publication';
+import Button from '../components/ui/Button';
 
 export default function RoadmapScreen() {
   const router = useRouter();
   const repo = getContentRepository();
   const dashboard = useFurqanDashboard();
+  const { preferences, setLessonLocale, t } = useLocalization();
   const [refreshing, setRefreshing] = useState(false);
+  const contentPackage = repo.getActivePackage();
+  const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
+  const localeAlternatives = contentPackage ? availableLessonLocales(contentPackage) : [];
 
   const openPrimaryAction = () => {
+    if (!lessonLocaleAvailable) {
+      router.push('/profile');
+      return;
+    }
     router.push(dashboard.primaryAction.href);
   };
 
@@ -53,7 +64,7 @@ export default function RoadmapScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DailyGoalCard
-          actionKind={dashboard.primaryAction.kind}
+          actionKind={lessonLocaleAvailable ? dashboard.primaryAction.kind : 'explore'}
           complete={dashboard.dailyGoalComplete}
           onPress={openPrimaryAction}
         />
@@ -64,12 +75,21 @@ export default function RoadmapScreen() {
 
         {dashboard.warning ? <Text style={styles.warning}>{dashboard.warning}</Text> : null}
         {dashboard.error ? <Text style={styles.error}>{dashboard.error}</Text> : null}
-        {dashboard.loading ? <Text style={styles.loading}>Loading your path…</Text> : null}
+        {dashboard.loading ? <Text style={styles.loading}>{t('home.loadingPath')}</Text> : null}
 
+        {!lessonLocaleAvailable ? (
+          <View style={styles.localeCard}>
+            <Text accessibilityRole="header" style={styles.localeTitle}>{t('lesson.localeUnavailableTitle', { language: t(`locale.${preferences.lessonLocale}`) })}</Text>
+            <Text style={styles.localeText}>{t('lesson.localeUnavailableBody')}</Text>
+            {localeAlternatives.length === 0 ? <Text style={styles.localeText}>{t('lesson.noPublishedAlternative')}</Text> : localeAlternatives.map(locale => (
+              <Button key={locale} title={t('lesson.switchLanguage', { language: t(`locale.${locale}`) })} onPress={() => { void setLessonLocale(locale); }} style={styles.localeButton} />
+            ))}
+          </View>
+        ) : <>
         <View style={styles.pathHeading}>
           <View>
-            <Text style={styles.pathEyebrow}>Your learning path</Text>
-            <Text style={styles.pathTitle}>{dashboard.path?.title ?? 'Quran path'}</Text>
+            <Text style={styles.pathEyebrow}>{t('home.learningPath')}</Text>
+            <Text style={styles.pathTitle}>{dashboard.path?.title ?? t('home.quranPath')}</Text>
           </View>
           <Text style={styles.pathProgress}>{dashboard.progress.completedLevelIds.filter(id => dashboard.levels.some(level => level.id === id)).length}/{dashboard.levels.length}</Text>
         </View>
@@ -87,7 +107,7 @@ export default function RoadmapScreen() {
             return (
               <RoadmapNode
                 ayahLabel={ayahLabel}
-                completedActionLabel={hasPracticeSteps(level) ? 'Practice' : 'Completed'}
+                completedActionLabel={hasPracticeSteps(level) ? t('home.practice') : t('home.completed')}
                 description={level.description}
                 durationMinutes={level.durationMinutes}
                 id={level.id}
@@ -104,31 +124,32 @@ export default function RoadmapScreen() {
 
         <View style={styles.supportGrid}>
           <SupportCard
-            badge={dashboard.dueReviewCount > 0 ? `${dashboard.dueReviewCount} ready` : 'Up to date'}
-            description={dashboard.dueReviewCount > 0 ? 'Strengthen what you learned while it is fresh.' : 'No activities are due right now.'}
+            badge={dashboard.dueReviewCount > 0 ? t('home.ready', { count: dashboard.dueReviewCount }) : t('home.upToDate')}
+            description={dashboard.dueReviewCount > 0 ? t('home.reviewDescription') : t('home.noReviews')}
             onPress={() => router.push('/review')}
-            title="Review due"
+            title={t('home.reviewDue')}
             variant="quran"
           />
           <SupportCard
             badge={activeOrPracticeLevel ? `${activeOrPracticeLevel.durationMinutes} min` : undefined}
-            description={activeOrPracticeLevel?.description ?? 'Choose a Quran path to begin memorizing.'}
+            description={activeOrPracticeLevel?.description ?? t('home.choosePath')}
             onPress={() => {
               if (dashboard.activeLevel) router.push(`/lesson/${dashboard.activeLevel.id}`);
               else if (dashboard.latestCompletedLevel && hasPracticeSteps(dashboard.latestCompletedLevel)) router.push(`/practice/${dashboard.latestCompletedLevel.id}`);
               else router.push('/discover');
             }}
-            title="Memorize"
+            title={t('home.memorize')}
             variant="lantern"
           />
           <SupportCard
-            description="Explore source-backed Quran paths, themes, and canonical references."
+            description={t('home.storiesDescription')}
             onPress={() => router.push({ pathname: '/discover', params: { q: 'stories' } })}
-            title="Stories & wisdom"
+            title={t('home.stories')}
             variant="stories"
             wide
           />
         </View>
+        </>}
       </ScrollView>
       <BottomNavigation active="home" reviewCount={dashboard.dueReviewCount} />
     </Screen>
@@ -147,4 +168,8 @@ const styles = StyleSheet.create({
   pathProgress: { color: colors.gold, fontFamily: fonts.bold, fontSize: 14 },
   roadmap: { paddingBottom: spacing.lg },
   supportGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  localeCard: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 18, borderWidth: 1, marginTop: spacing.xl, padding: spacing.lg },
+  localeTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 20, textAlign: 'center' },
+  localeText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, marginTop: spacing.sm, textAlign: 'center' },
+  localeButton: { marginTop: spacing.md },
 });

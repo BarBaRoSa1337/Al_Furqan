@@ -8,14 +8,16 @@ import { usePracticeSession } from '../../hooks/usePracticeSession';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors } from '../../theme/tokens';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export default function PracticeScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const levelId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
   const session = usePracticeSession(levelId);
+  const { preferences, t } = useLocalization();
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values);
+  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values, preferences.interfaceLocale);
 
   useEffect(() => {
     if (session.status === 'locked') router.replace('/roadmap');
@@ -23,6 +25,9 @@ export default function PracticeScreen() {
 
   if (session.status === 'loading' || session.status === 'locked') {
     return <Screen style={styles.center}><ActivityIndicator color={colors.primary} /><Text style={styles.loading}>{text('practice.title')}</Text></Screen>;
+  }
+  if (session.status === 'locale_unavailable') {
+    return <State title={t('lesson.localeUnavailableTitle', { language: t(`locale.${preferences.lessonLocale}`) })} action={text('practice.back')} onPress={() => router.replace('/roadmap')} />;
   }
   if (session.status === 'not_found' || !session.level || !session.step) {
     return <State title={text('practice.title')} action={text('practice.back')} onPress={() => router.replace('/roadmap')} />;

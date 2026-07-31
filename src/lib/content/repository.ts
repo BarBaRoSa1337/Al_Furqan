@@ -45,7 +45,7 @@ class ContentRepositoryImpl implements ContentRepository {
   private _learningPaths: LearningPath[] = [];
   private _levels: Level[] = [];
   private _activePackageId: string | undefined;
-  private _packageOrigins = new Map<string, 'built_in' | 'downloaded'>();
+  private _packageOrigins = new Map<string, 'built_in' | 'downloaded' | 'runtime'>();
   private _initialized = false;
 
   constructor() {
@@ -54,7 +54,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
   private _init(): void {
     // Register all content packages here
-    this._registerPackage(surahAlFilPackage, 'built_in');
+    if (__DEV__) this._registerPackage(surahAlFilPackage, 'built_in');
     this._initialized = true;
   }
 
@@ -75,7 +75,7 @@ class ContentRepositoryImpl implements ContentRepository {
     this._appendPackageIndexes(adaptedPackage);
   }
 
-  registerPackage(pkg: ContentPackage, activate = true, origin: 'built_in' | 'downloaded' = 'downloaded'): void {
+  registerPackage(pkg: ContentPackage, activate = true, origin: 'built_in' | 'downloaded' | 'runtime' = 'downloaded'): void {
     const adaptedPackage = adaptLegacyPackage(pkg);
     const validation = validatePackage(adaptedPackage, { mode: __DEV__ ? 'development' : 'production' });
     if (!validation.valid) throw new Error(`Invalid content package "${adaptedPackage.id}": ${validation.errors.join('; ')}`);
@@ -180,7 +180,7 @@ class ContentRepositoryImpl implements ContentRepository {
     const pkg = this.getActivePackage();
     const selectedLocale = locale ?? pkg?.localization.defaultLocale;
     const catalog = pkg?.localization.catalogs.find(item => item.locale === selectedLocale)
-      ?? pkg?.localization.catalogs.find(item => item.locale === pkg.localization.defaultLocale);
+      ?? (!locale ? pkg?.localization.catalogs.find(item => item.locale === pkg.localization.defaultLocale) : undefined);
     return catalog?.entries[key] ?? key;
   }
 

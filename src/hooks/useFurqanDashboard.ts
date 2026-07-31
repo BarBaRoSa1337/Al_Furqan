@@ -21,6 +21,7 @@ import {
 } from '../lib/progress/dashboard';
 import type { LearningPath, Level } from '../types/content';
 import { DEFAULT_PROGRESS, type AppProgress } from '../types/progress';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
 
 export interface FurqanDashboardState {
   progress: AppProgress;
@@ -49,6 +50,8 @@ const INITIAL_STATE: FurqanDashboardState = {
 };
 
 export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Promise<void> } {
+  const { preferences } = useLocalization();
+  const lessonLocale = preferences.lessonLocale;
   const [state, setState] = useState<FurqanDashboardState>(INITIAL_STATE);
 
   const refresh = useCallback(async () => {
@@ -58,11 +61,11 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
     try {
       await syncCompletedLevelReviews(levels.flatMap(level => {
         const pkg = repo.getPackageForLevel(level.id);
-        return pkg ? [{ level, packageRevisionId: pkg.revisionId }] : [];
+        return pkg ? [{ level, packageRevisionId: pkg.revisionId, locale: lessonLocale }] : [];
       }));
       const [progress, dueStates, reviewStates, receipt] = await Promise.all([
         getAppProgress(),
-        getDueReviewStates(),
+        getDueReviewStates(new Date(), lessonLocale),
         getReviewStates(),
         getLastCompletionReceipt(),
       ]);
@@ -101,7 +104,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
         error: cause instanceof Error ? cause.message : 'Progress could not be loaded.',
       }));
     }
-  }, []);
+  }, [lessonLocale]);
 
   useFocusEffect(useCallback(() => {
     void refresh();

@@ -97,9 +97,9 @@ export async function getReviewStates(): Promise<ActivityReviewState[]> {
   return Object.values((await readAfterMutations()).reviews);
 }
 
-export async function getDueReviewStates(now: Date = new Date()): Promise<ActivityReviewState[]> {
+export async function getDueReviewStates(now: Date = new Date(), locale?: string): Promise<ActivityReviewState[]> {
   return (await getReviewStates())
-    .filter(state => isReviewDue(state, now))
+    .filter(state => isReviewDue(state, now) && (!locale || state.languageIndependent || (state.locale ?? 'en') === locale))
     .sort((a, b) => (a.dueAt ?? '').localeCompare(b.dueAt ?? ''));
 }
 
@@ -712,7 +712,8 @@ function registerLevelReviews(snapshot: ProgressSnapshotV4, level: Level, packag
       return;
     }
     const attempts = (snapshot.levels[level.id]?.activityAttempts ?? [])
-      .filter(candidate => candidate.activityId === activity.id);
+      .filter(candidate => candidate.activityId === activity.id
+        && (activity.languageIndependent ? candidate.languageIndependent : (candidate.locale ?? 'en') === locale));
     if (!attempts.some(candidate => candidate.correct) || !activity.reviewSchedule) return;
     const attempt = attempts.at(-1)!;
     const attemptedAt = validDate(attempt.attemptedAt) ?? now;

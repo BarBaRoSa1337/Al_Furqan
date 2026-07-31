@@ -15,6 +15,9 @@ export interface Mp3QuranStream {
   approvedHostnames: readonly string[];
   segments: Array<{ ayah: number; startMs: number; endMs: number }>;
   deliveryMode: 'stream_only';
+  providerVersion: 'api-v3';
+  attributionText: string;
+  permissionEvidenceUrl: string;
 }
 
 export class Mp3QuranClient {
@@ -38,7 +41,9 @@ export class Mp3QuranClient {
     return {
       provider: 'mp3quran', reciterId: 118, mushafId: 118, riwayahId: 1, surahId: surah,
       uri, approvedHostnames: APPROVED_STREAM_HOSTS,
-      segments, deliveryMode: 'stream_only',
+      segments, deliveryMode: 'stream_only', providerVersion: 'api-v3',
+      attributionText: 'Recitation streamed directly from MP3Quran.net.',
+      permissionEvidenceUrl: 'https://www.mp3quran.net/privacy-en.html',
     };
   }
 

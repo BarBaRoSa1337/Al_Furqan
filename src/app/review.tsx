@@ -16,12 +16,15 @@ import { getDueReviewStates, recordReviewAttempt, syncCompletedLevelReviews } fr
 import { DueReviewItem, resolveDueReviewItems } from '../lib/progress/reviewQueue';
 import { colors, fonts, spacing } from '../theme/tokens';
 import type { RecallRating, ReviewOutcome } from '../types/activities';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
 
 export default function ReviewScreen() {
   const router = useRouter();
   const dashboard = useFurqanDashboard();
+  const { preferences } = useLocalization();
+  const lessonLocale = preferences.lessonLocale;
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key);
+  const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key, {}, preferences.interfaceLocale);
   const [items, setItems] = useState<DueReviewItem[]>([]);
   const [index, setIndex] = useState(0);
   const [passed, setPassed] = useState(false);
@@ -32,9 +35,9 @@ export default function ReviewScreen() {
     let cancelled = false;
     const catalog = repo.levels.flatMap(level => {
       const pkg = repo.getPackageForLevel(level.id);
-      return pkg ? [{ level, packageRevisionId: pkg.revisionId }] : [];
+      return pkg ? [{ level, packageRevisionId: pkg.revisionId, locale: lessonLocale }] : [];
     });
-    void syncCompletedLevelReviews(catalog).then(() => getDueReviewStates()).then(states => {
+    void syncCompletedLevelReviews(catalog).then(() => getDueReviewStates(new Date(), lessonLocale)).then(states => {
       if (!cancelled) setItems(resolveDueReviewItems(repo, states));
     }).catch(cause => {
       if (!cancelled) {
@@ -44,7 +47,7 @@ export default function ReviewScreen() {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [repo]);
+  }, [lessonLocale, repo]);
 
   if (loading) {
     return <ReviewShell reviewCount={dashboard.dueReviewCount}><View style={styles.center}><ActivityIndicator color={colors.success} /></View></ReviewShell>;
@@ -74,6 +77,8 @@ export default function ReviewScreen() {
         packageRevisionId: item.package.revisionId,
         reviewSchedule: item.activity.reviewSchedule!,
         outcome,
+        locale: lessonLocale,
+        languageIndependent: item.activity.languageIndependent,
       });
       setPassed(evaluation.correct);
     } catch (cause) {

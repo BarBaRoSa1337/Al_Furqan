@@ -159,6 +159,7 @@ export interface TranslationEntry {
   publisher?: string;
   attributionText?: string;
   transcriptInfo?: string;
+  footnotes?: string;
   contentHash?: string;
 }
 
@@ -563,7 +564,7 @@ export interface ContentRepository {
   getPackageForBlock(blockId: string): ContentPackage | undefined;
   getActivePackage(): ContentPackage | undefined;
   getText(key: PackageTextKey, locale?: string): string;
-  registerPackage(pkg: ContentPackage, activate?: boolean, origin?: 'built_in' | 'downloaded'): void;
+  registerPackage(pkg: ContentPackage, activate?: boolean, origin?: 'built_in' | 'downloaded' | 'runtime'): void;
   removePackage(id: string): void;
   getSourceById(id: string, scope?: ContentScope): ContentSource | undefined;
   getEdition(id: QuranEditionId): QuranEdition | undefined;

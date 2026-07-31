@@ -169,20 +169,18 @@ Audio tracks must declare:
 - ayah reference;
 - source;
 - license record;
-- checksum;
+- checksum when persistence is permitted;
 - local or remote asset location.
 
 Do not mix audio from another edition with Hafs text.
 
 ### Current implementation
 
-The current development package provides one Al-Husary Hafs manifest for
-Surah Al-Fil. `npm run audio:import -- 105` imports provider metadata, downloads
-each referenced MP3 during the CLI run, and writes byte-size/SHA-256-verified
-track records. The Expo client streams first and, on Android/iOS, caches only
-tracks that pass the declared size and checksum. Partial or mismatched files
-are deleted before they can be used.
+Offline package activation is deferred for production until every source has
+explicit storage rights and reliable update controls. The current app does not
+hydrate downloaded packages or expose an offline-only discovery filter.
 
-The web client streams remote audio and does not persist an unverified browser
-cache. The manifest and its source/license records are draft, so production
-package validation remains blocked pending approval.
+Al-Husary audio uses MP3Quran's direct Surah stream with provider timing bounds
+for each ayah. Android, iOS and web stream the same approved HTTPS URL and do
+not download, cache, rehost or redistribute it. Stream identity is pinned to
+reciter `118`, mushaf `118`, and Hafs riwayah `1`.

@@ -20,7 +20,6 @@
     "content:validate": "node --import tsx scripts/validate-content.ts",
     "structure:validate": "node --import tsx scripts/validate-quran-structure.ts",
     "structure:import": "node --import tsx scripts/import-quran-foundation-structure.ts",
-    "audio:import": "node --import tsx scripts/import-quran-foundation-audio.ts",
     "server:dev": "node --import tsx apps/server/src/index.ts",
     "server:test": "node --import tsx --test apps/server/test/*.test.ts",
     "server:typecheck": "tsc -p apps/server/tsconfig.json"

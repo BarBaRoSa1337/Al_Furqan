@@ -27,7 +27,7 @@ export function resolveAudioAccessPolicy(
     return { mode: 'blocked', reason: 'Audio is unavailable because no evidence-backed streaming grant covers this use.' };
   }
   const persistentGrant = audioGrantForTrack(pkg, track, platform, profile, true);
-  if (persistentGrant) {
+  if (persistentGrant && persistentGrant.retention.kind !== 'none') {
     return {
       mode: 'persist',
       grantId: persistentGrant.id,

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radii, shadows, spacing, touch } from '../../theme/tokens';
 import type { QuranLocationSummary } from '../../lib/progress/dashboard';
 import { CourseArtwork, ZelligeSeal } from './FurqanArtwork';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export function DailyGoalCard({
   complete,
@@ -14,20 +15,21 @@ export function DailyGoalCard({
   actionKind: 'review' | 'lesson' | 'practice' | 'explore';
   onPress: () => void;
 }) {
-  const actionLabel = actionKind === 'review' ? 'Review now' : actionKind === 'explore' ? 'Explore' : actionKind === 'practice' ? 'Practice' : 'Continue';
+  const { t } = useLocalization();
+  const actionLabel = actionKind === 'review' ? t('home.reviewNow') : actionKind === 'explore' ? t('home.explore') : actionKind === 'practice' ? t('home.practice') : t('home.continue');
   return (
     <View style={styles.goalCard}>
       <View style={styles.goalRing}>
         <View style={styles.goalRingInner}>
           <Text style={styles.goalValue}>{complete ? '1/1' : '0/1'}</Text>
-          <Text style={styles.goalUnit}>Session</Text>
+          <Text style={styles.goalUnit}>{t('home.session')}</Text>
         </View>
       </View>
       <View style={styles.goalCopy}>
-        <Text style={styles.goalTitle}>Today&apos;s goal</Text>
-        <Text style={styles.goalText}>{complete ? 'Daily session complete. Return when you are ready.' : actionKind === 'review' ? 'Strengthen what you learned before starting something new.' : 'One focused session keeps your Quran habit moving.'}</Text>
+        <Text style={styles.goalTitle}>{t('home.dailyGoal')}</Text>
+        <Text style={styles.goalText}>{complete ? t('home.sessionComplete') : actionKind === 'review' ? t('home.reviewFirst') : t('home.sessionPending')}</Text>
         <View style={styles.goalProgress}><View style={[styles.goalProgressFill, complete && styles.goalProgressComplete]} /></View>
-        <Text style={styles.goalEncouragement}>{complete ? 'Saved for today' : 'A little every day'}</Text>
+        <Text style={styles.goalEncouragement}>{complete ? t('home.savedToday') : t('home.littleDaily')}</Text>
       </View>
       <View style={styles.goalActionColumn}>
         <CourseArtwork variant="quran" size={50} />
@@ -47,10 +49,11 @@ export function LocationSelector({
   location?: QuranLocationSummary;
   onSelect: (mode: 'surah' | 'juz' | 'hizb', number: number) => void;
 }) {
+  const { t } = useLocalization();
   const items = [
-    { label: 'Juz', mode: 'juz' as const, value: location?.juzNumber, icon: 'book-outline' as const },
-    { label: 'Hizb', mode: 'hizb' as const, value: location?.hizbNumber, icon: 'options-outline' as const },
-    { label: 'Surah', mode: 'surah' as const, value: location?.surahNumber, icon: 'business-outline' as const },
+    { label: t('home.juz'), mode: 'juz' as const, value: location?.juzNumber, icon: 'book-outline' as const },
+    { label: t('home.hizb'), mode: 'hizb' as const, value: location?.hizbNumber, icon: 'options-outline' as const },
+    { label: t('home.surah'), mode: 'surah' as const, value: location?.surahNumber, icon: 'business-outline' as const },
   ];
   return (
     <View style={styles.selectorShell}>
@@ -72,9 +75,9 @@ export function LocationSelector({
       </View>
       <View style={styles.location}>
         <View style={styles.locationCopy}>
-          <Text style={styles.locationEyebrow}>Current Quran location</Text>
-          <Text style={styles.locationTitle}>{location ? `${location.surahName} · Ayah ${location.ayahLabel}` : 'Location unavailable'}</Text>
-          <Text style={styles.locationMeta}>{location?.pageNumber ? `Page ${location.pageNumber} · Rub ${location.rubNumber ?? '—'}` : 'Open Explore to browse Quran references'}</Text>
+          <Text style={styles.locationEyebrow}>{t('home.currentLocation')}</Text>
+          <Text style={styles.locationTitle}>{location ? `${location.surahName} · ${t('home.ayah', { ayah: location.ayahLabel })}` : t('home.locationUnavailable')}</Text>
+          <Text style={styles.locationMeta}>{location?.pageNumber ? t('home.pageRub', { page: location.pageNumber, rub: location.rubNumber ?? '-' }) : t('home.openExplore')}</Text>
         </View>
         <ZelligeSeal size={48} tone="gold"><Ionicons name="navigate-outline" size={19} color={colors.surface} /></ZelligeSeal>
       </View>

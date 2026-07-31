@@ -4,19 +4,21 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, spacing, touch } from '../../theme/tokens';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export type FurqanTab = 'home' | 'explore' | 'reviews' | 'profile';
 
-const ITEMS: { id: FurqanTab; label: string; route: '/roadmap' | '/discover' | '/review' | '/profile'; icon: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: 'home', label: 'Home', route: '/roadmap', icon: 'home-outline', activeIcon: 'home' },
-  { id: 'explore', label: 'Explore', route: '/discover', icon: 'compass-outline', activeIcon: 'compass' },
-  { id: 'reviews', label: 'Reviews', route: '/review', icon: 'reader-outline', activeIcon: 'reader' },
-  { id: 'profile', label: 'Profile', route: '/profile', icon: 'person-outline', activeIcon: 'person' },
+const ITEMS: { id: FurqanTab; labelKey: string; route: '/roadmap' | '/discover' | '/review' | '/profile'; icon: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'home', labelKey: 'nav.home', route: '/roadmap', icon: 'home-outline', activeIcon: 'home' },
+  { id: 'explore', labelKey: 'nav.explore', route: '/discover', icon: 'compass-outline', activeIcon: 'compass' },
+  { id: 'reviews', labelKey: 'nav.reviews', route: '/review', icon: 'reader-outline', activeIcon: 'reader' },
+  { id: 'profile', labelKey: 'nav.profile', route: '/profile', icon: 'person-outline', activeIcon: 'person' },
 ];
 
 export default function BottomNavigation({ active, reviewCount = 0 }: { active: FurqanTab; reviewCount?: number }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useLocalization();
   return (
     <View accessibilityRole="tablist" style={[styles.shell, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       {ITEMS.map(item => {
@@ -24,7 +26,7 @@ export default function BottomNavigation({ active, reviewCount = 0 }: { active: 
         return (
           <Pressable
             accessibilityRole="tab"
-            accessibilityLabel={item.label}
+            accessibilityLabel={t(item.labelKey)}
             accessibilityState={{ selected }}
             key={item.id}
             onPress={() => {
@@ -36,7 +38,7 @@ export default function BottomNavigation({ active, reviewCount = 0 }: { active: 
               <Ionicons name={selected ? item.activeIcon : item.icon} size={21} color={selected ? colors.success : colors.textMuted} />
               {item.id === 'reviews' && reviewCount > 0 ? <View style={styles.badge}><Text style={styles.badgeText}>{Math.min(reviewCount, 99)}</Text></View> : null}
             </View>
-            <Text style={[styles.label, selected && styles.labelActive]}>{item.label}</Text>
+            <Text style={[styles.label, selected && styles.labelActive]}>{t(item.labelKey)}</Text>
           </Pressable>
         );
       })}

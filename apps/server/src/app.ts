@@ -1,4 +1,4 @@
-import type { ApiErrorResponse, SupportedLocale } from '../../../packages/api-contracts/src';
+import type { ApiErrorResponse, SourceAttribution, SupportedLocale } from '../../../packages/api-contracts/src';
 import { isSupportedLocale } from '../../../packages/api-contracts/src';
 import type { QuranFoundationClient } from './quranFoundation';
 import type { QuranEncClient } from './quranEnc';
@@ -9,7 +9,8 @@ export interface ServerDependencies {
   quranEnc: QuranEncClient;
   mp3Quran: Mp3QuranClient;
   allowedOrigins: string[];
-  runtimePackage?: (packageId: string, locale: SupportedLocale) => Promise<unknown | undefined>;
+  approvedQuranFoundationTafsirIds?: string[];
+  runtimePackage?: (packageId: string, locale: SupportedLocale) => Promise<{ package: unknown; attributions: SourceAttribution[] } | undefined>;
   security?: {
     maxRequestsPerMinute?: number;
     now?: () => number;
@@ -49,6 +50,14 @@ export function createApp(dependencies: ServerDependencies): (request: Request) 
         const result = await dependencies.quranFoundation.get(`/verses/by_chapter/${surah}`, query);
         return json(result, 200, origin, 'no-store');
       }
+      const tafsir = url.pathname.match(/^\/v1\/tafsir\/quran-foundation\/(\d+)\/(\d{1,3})\/(\d{1,3})$/);
+      if (tafsir) {
+        const tafsirId = tafsir[1];
+        if (!dependencies.approvedQuranFoundationTafsirIds?.includes(tafsirId)) throw new Error('QF tafsir resource is not approved');
+        const [surah, ayah] = [bounded(tafsir[2], 114), bounded(tafsir[3], 300)];
+        const result = await dependencies.quranFoundation.get(`/quran/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`, new URLSearchParams());
+        return json(result, 200, origin, 'no-store');
+      }
       const translation = url.pathname.match(/^\/v1\/translations\/quranenc\/([a-z0-9-]+)\/(\d{1,3})$/);
       if (translation) return json(await dependencies.quranEnc.getSurah(translation[1], bounded(translation[2], 114)), 200, origin, 'no-store');
       const audio = url.pathname.match(/^\/v1\/audio\/mp3quran\/mahmoud-khalil-al-husary\/(\d{1,3})$/);
@@ -60,7 +69,7 @@ export function createApp(dependencies: ServerDependencies): (request: Request) 
         const selectedLocale = locale(url.searchParams.get('locale'));
         const contentPackage = await dependencies.runtimePackage?.(runtime[1], selectedLocale);
         if (!contentPackage) return error(404, 'not_available', 'Lesson package is not published in this locale', false, origin);
-        return json({ packageId: runtime[1], locale: selectedLocale, package: contentPackage, attributions: [] }, 200, origin, 'no-store');
+        return json({ packageId: runtime[1], locale: selectedLocale, package: contentPackage.package, attributions: contentPackage.attributions }, 200, origin, 'no-store');
       }
       return error(404, 'not_found', 'Route not found', false, origin);
     } catch (caught) {

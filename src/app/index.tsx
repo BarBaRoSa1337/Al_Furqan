@@ -5,11 +5,13 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getContentRepository } from '../lib/content/repository';
 import { packageText } from '../lib/content/text';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
 
 export default function IndexScreen() {
   const router = useRouter();
   const repo = getContentRepository();
-  const packageTitle = packageText(repo, 'app.title');
+  const { preferences } = useLocalization();
+  const packageTitle = packageText(repo, 'app.title', {}, preferences.interfaceLocale);
 
   useEffect(() => {
     // Small delay to let the layout settle, then go to roadmap
@@ -17,7 +19,7 @@ export default function IndexScreen() {
       router.replace('/roadmap');
     }, 100);
     return () => clearTimeout(t);
-  }, []);
+  }, [router]);
 
   return (
     <View style={styles.container}>

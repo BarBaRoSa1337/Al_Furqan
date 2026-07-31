@@ -15,15 +15,18 @@ test('returns a declared remote URL without fetching it', async () => {
   await expect(resolveRecitationAsset(remote, { resolveLocal: async () => { throw new Error('must not resolve'); } })).resolves.toEqual({ available: true, isLocal: false, uri: remote.asset.uri });
 });
 
-test('declares checksum-verified Al-Husary Hafs audio for every published Al-Fil ayah', () => {
+test('declares stream-only MP3Quran Al-Husary segments for every Al-Fil ayah', () => {
   const reciter = surahAlFilPackage.reciters.find(candidate => candidate.id === 'mahmoud-khalil-al-husary');
 
-  expect(reciter?.providerResourceId).toBe('6');
+  expect(reciter?.providerResourceId).toBe('mp3quran:reciter:118:mushaf:118');
   expect(surahAlFilPackage.recitationTracks).toHaveLength(5);
   surahAlFilPackage.recitationTracks.forEach((candidate, index) => {
     expect(candidate.ayahRef).toEqual({ surahNumber: 105, ayahNumber: index + 1 });
-    expect(candidate.asset.uri).toMatch(/^https:\/\/mirrors\.quranicaudio\.com\//);
-    expect(candidate.checksum).toMatch(/^[a-f0-9]{64}$/);
-    expect(candidate.byteSize).toBeGreaterThan(0);
+    expect(candidate.asset.uri).toBe('https://server13.mp3quran.net/husr/105.mp3');
+    expect(candidate.deliveryMode).toBe('stream_only');
+    expect(candidate.approvedHostnames).toContain('server13.mp3quran.net');
+    expect(candidate.startMs).toBeGreaterThanOrEqual(0);
+    expect(candidate.endMs).toBeGreaterThan(candidate.startMs!);
+    expect(candidate.checksum).toBeUndefined();
   });
 });

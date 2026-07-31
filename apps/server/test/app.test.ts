@@ -26,3 +26,10 @@ test('server rate limits repeated requests from one client', async () => {
   assert.equal((await app(new Request('https://server.test/health'))).status, 200);
   assert.equal((await app(new Request('https://server.test/health'))).status, 429);
 });
+
+test('server exposes only explicitly approved Quran Foundation tafsir resources', async () => {
+  const blocked = createApp(dependencies as never);
+  assert.equal((await blocked(new Request('https://server.test/v1/tafsir/quran-foundation/169/105/1'))).status, 400);
+  const allowed = createApp({ ...dependencies, approvedQuranFoundationTafsirIds: ['169'] } as never);
+  assert.equal((await allowed(new Request('https://server.test/v1/tafsir/quran-foundation/169/105/1'))).status, 200);
+});

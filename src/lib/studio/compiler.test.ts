@@ -22,7 +22,16 @@ function fixture(approved = false): { draft: PublishablePackageDraft; canonical:
   };
   if (approved) {
     const preview = compilePackage(draft, canonical, { hash: () => 'preview' }).package;
-    draft.curriculum.governance = createFullyApprovedPackage(preview).governance;
+    preview.localePublications = preview.localePublications?.map(publication => publication.status === 'published' ? {
+      ...publication,
+      status: 'draft',
+      contentHash: undefined,
+      languageApprovalId: undefined,
+      islamicApprovalId: undefined,
+    } : publication);
+    const approvedPreview = createFullyApprovedPackage(preview);
+    draft.curriculum.governance = approvedPreview.governance;
+    draft.curriculum.localePublications = approvedPreview.localePublications;
   }
   return { draft, canonical };
 }

@@ -1,4 +1,6 @@
 import { ContentRepository, PackageTextKey } from '../../types/content';
+import type { SupportedLocale } from '../../../packages/api-contracts/src';
+import { appText, getCurrentInterfaceLocale } from '../localization/catalogs';
 
 const OPTIONAL_TEXT_DEFAULTS: Record<string, string> = {
   'nav.home': 'Home',
@@ -59,10 +61,11 @@ const OPTIONAL_TEXT_DEFAULTS: Record<string, string> = {
   'activity.keyboardBackspace': 'Backspace',
 };
 
-export function packageText(repo: ContentRepository, key: PackageTextKey, values: Record<string, string | number> = {}): string {
-  const resolvedText = repo.getText(key);
+export function packageText(repo: ContentRepository, key: PackageTextKey, values: Record<string, string | number> = {}, locale: SupportedLocale = getCurrentInterfaceLocale()): string {
+  const resolvedText = repo.getText(key, locale);
+  const appResolved = appText(locale, key, values);
   return Object.entries(values).reduce(
     (text, [name, value]) => text.split(`{${name}}`).join(String(value)),
-    resolvedText === key ? OPTIONAL_TEXT_DEFAULTS[key] ?? key : resolvedText
+    resolvedText === key ? appResolved === key ? OPTIONAL_TEXT_DEFAULTS[key] ?? key : appResolved : resolvedText
   );
 }

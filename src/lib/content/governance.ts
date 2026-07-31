@@ -43,6 +43,11 @@ export function getStructureSnapshotHash(pkg: ContentPackage): string {
   });
 }
 
+export function getLocalePublicationHash(pkg: ContentPackage, locale: string): string {
+  const { governance: _governance, localePublications: _localePublications, ...payload } = pkg;
+  return hashGovernedValue({ locale, payload });
+}
+
 export function grantCovers(
   grant: LicenseGrant,
   input: {

@@ -36,7 +36,11 @@ test('QuranEnc preserves provider payload and blocks unreviewed version updates'
   const fetcher = async (input: string | URL | Request) => String(input).includes('/translations/list/')
     ? Response.json([{ key: 'english_rwwad', version: '1.0.19' }])
     : Response.json(translation);
-  assert.deepEqual(await new QuranEncClient(fetcher as typeof fetch).getSurah('quranenc-english-rowwad', 105), translation);
+  assert.deepEqual(await new QuranEncClient(fetcher as typeof fetch).getSurah('quranenc-english-rowwad', 105), {
+    provider: 'quranenc', resourceId: 'quranenc-english-rowwad', providerResourceId: 'english_rwwad',
+    version: '1.0.19', locale: 'en', publisher: 'Rowwad Translation Center',
+    attributionText: 'Rowwad Translation Center, provided by QuranEnc. Provider text is unmodified.', data: translation,
+  });
 
   const updated = async () => Response.json([{ key: 'english_rwwad', version: '1.0.20' }]);
   await assert.rejects(new QuranEncClient(updated as typeof fetch).getSurah('quranenc-english-rowwad', 105), /requires review/);

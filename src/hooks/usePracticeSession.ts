@@ -5,11 +5,15 @@ import { createActivityEvaluationContext } from '../lib/activities/activityConte
 import { getPracticeLevelSteps } from '../lib/content/lessonSteps';
 import { getAppProgress, recordActivityAttempt, recordQuestionAttempt } from '../lib/progress/storage';
 import type { QuestionBlock } from '../types/content';
+import { useLocalization } from '../lib/localization/LocalizationProvider';
+import { isLessonLocaleAvailable } from '../lib/content/publication';
 
-export type PracticeSessionStatus = 'loading' | 'ready' | 'locked' | 'not_found' | 'error';
+export type PracticeSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type PracticeFeedback = { correct: boolean };
 
 export function usePracticeSession(levelId: string | undefined) {
+  const { preferences } = useLocalization();
+  const lessonLocale = preferences.lessonLocale;
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
@@ -43,6 +47,11 @@ export function usePracticeSession(levelId: string | undefined) {
         if (!cancelled) setStatus('not_found');
         return;
       }
+      const contentPackage = repo.getPackageForLevel(level.id);
+      if (!contentPackage || !isLessonLocaleAvailable(contentPackage, lessonLocale)) {
+        if (!cancelled) setStatus('locale_unavailable');
+        return;
+      }
       try {
         const progress = await getAppProgress();
         if (!progress.completedLevelIds.includes(level.id)) {
@@ -59,7 +68,7 @@ export function usePracticeSession(levelId: string | undefined) {
     }
     void load();
     return () => { cancelled = true; };
-  }, [levelId]);
+  }, [lessonLocale, levelId]);
 
   async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
     if (!questionIds.includes(blockId) || operationLocked.current || feedback) return;
@@ -88,14 +97,14 @@ export function usePracticeSession(levelId: string | undefined) {
         const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === draftAnswer.id);
         if (!block) throw new Error('Practice question is unavailable.');
         correct = evaluateQuestion(block, draftAnswer.answer);
-        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct });
+        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct, locale: lessonLocale });
         if (correct) setCorrectQuestionIds(current => current.includes(block.id) ? current : [...current, block.id]);
       }
       if (needsCheck && draftAnswer?.kind === 'activity') {
         const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === draftAnswer.id)?.activity;
         if (!activity) throw new Error('Practice activity is unavailable.');
         correct = evaluateActivity(activity, draftAnswer.answer, createActivityEvaluationContext(repo)).correct;
-        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1' });
+        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
         setActivityResults(current => ({ ...current, [activity.id]: correct }));
       }
       setFeedback({ correct });

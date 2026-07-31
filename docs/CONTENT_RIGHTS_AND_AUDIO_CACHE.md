@@ -44,7 +44,8 @@ A production package requires:
 - a current license grant covering the selected release profile and all target
   platforms;
 - exact citations for tafsir records;
-- exact audio resource IDs and checksums in audio grants.
+- exact audio resource IDs in audio grants; checksums are mandatory only for
+  resources that may be persisted.
 
 Use `npm run content:audit` for grouped blockers or
 `npm run content:audit -- --json` for Studio/CI diagnostics.
@@ -65,19 +66,23 @@ verified bytes and IndexedDB for source, grant, hash, fetch, and expiry
 metadata. Expired, corrupt, grant-mismatched, and legacy unversioned entries are
 deleted. Expiry is never extended while offline.
 
-Quran Foundation grants default to a maximum seven-day retention unless a
-separate written permission explicitly replaces that limit. See the
-[Quran Foundation Developer Terms](https://api-docs.quran.foundation/legal/developer-terms/).
+Quran Foundation data is fetched only by the Furqan backend. Server cache
+entries honor `no-store` and upstream expiry and have a hard seven-day maximum.
+Expired responses are deleted and are never served as stale fallback. The Expo
+client receives `no-store` responses and does not persist provider payloads.
 
 ## Provider status
 
-- Quran Foundation structure and Al-Husary audio remain development-only.
-- QuranicAudio personal-use language is not treated as public-app permission.
-- Sahih International and the current summarized tafsir remain unverified.
-- MP3QuranNet remains disabled until a secure permission reference and
-  repository-safe attestation cover the exact reciter/resources, public app
-  distribution, streaming, segmentation, platform caching, and offline use.
+- Quran Foundation supplies canonical text, words, structure and approved
+  tafsir through the backend; production credentials never enter Expo.
+- QuranEnc Rowwad English `1.0.19` and Rashid French `1.0.3` are pinned. Their
+  provider payloads are not rewritten and updates fail closed pending review.
+- QuranicAudio is excluded.
+- MP3Quran Al-Husary reciter `118`, mushaf `118`, riwayah `1` streams directly
+  from the approved provider host. Furqan does not download, rehost or persist
+  it. The published permission page is hash-bound as evidence; named legal
+  approval is still required before the draft source can pass production.
+- Current Furqan tafsir summaries remain draft and unverified.
 
-Provider credentials are build/CLI secrets. Import scripts require
-`QF_CLIENT_ID` and a short-lived `QF_ACCESS_TOKEN` and target the authenticated
-Quran Foundation content endpoint. Credentials never enter the Expo bundle.
+Provider credentials are backend deployment secrets. `QF_CLIENT_ID` and
+`QF_CLIENT_SECRET` are used only by `apps/server` for OAuth client credentials.

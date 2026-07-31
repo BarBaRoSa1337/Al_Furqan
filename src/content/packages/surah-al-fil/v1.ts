@@ -16,14 +16,13 @@ import {
 } from '../../../types/content';
 import type { RecitationTrack, Reciter } from '../../../types/media';
 import { importQuranStructureSnapshot } from '../../../lib/content/structureImporter';
-import husaryAudioManifest from '../../audio/hafs/husary-surah-105.json';
 import fullStructureSnapshot from '../../structure/hafs/full.json';
 
 const QURAN_ARABIC_SOURCE_ID = 'quran-arabic-madani';
-const TRANSLATION_SOURCE_ID = 'quran-translation-sahih-international';
+const TRANSLATION_SOURCE_ID = 'quranenc-english-rowwad';
 const TAFSIR_SOURCE_ID = 'tafsir-ibn-kathir-summarised';
 const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
-const AUDIO_SOURCE_ID = 'quran-foundation-husary-audio-v4';
+const AUDIO_SOURCE_ID = 'mp3quran-husary-hafs-118';
 const HUSARY_RECITER_ID = 'mahmoud-khalil-al-husary';
 export const HAFS_AN_ASIM_ID = 'hafs-an-asim' as const;
 
@@ -51,14 +50,14 @@ const quranArabicSource: ContentSource = {
 
 const quranTranslationSource: ContentSource = {
   id: TRANSLATION_SOURCE_ID,
-  name: 'Quran Translation - Sahih International',
-  author: 'Saheeh International',
-  publisher: 'Saheeh International',
-  version: '1.0',
+  name: 'The Clear Quranic Translation - Rowwad Translation Center',
+  author: 'Rowwad Translation Center',
+  publisher: 'QuranEnc',
+  version: '1.0.19',
   language: 'en',
   reviewerStatus: 'draft',
-  license: 'Unverified - production distribution disabled',
-  notes: 'No public-domain or public-app distribution evidence is attached. Keep this translation development-only.',
+  license: 'QuranEnc provider terms require evidence review - production disabled',
+  notes: 'Verbatim pinned QuranEnc resource english_rwwad version 1.0.19. Updates require a new review.',
 };
 
 const tafsirSource: ContentSource = {
@@ -86,13 +85,13 @@ const structureSource: ContentSource = {
 
 const audioSource: ContentSource = {
   id: AUDIO_SOURCE_ID,
-  name: 'Quran Foundation ayah recitation - Mahmoud Khalil Al-Husary',
-  publisher: 'Quran Foundation / QuranicAudio',
-  version: husaryAudioManifest.source.version,
+  name: 'MP3Quran Al-Husary Hafs recitation',
+  publisher: 'MP3Quran.net',
+  version: 'api-v3:reciter-118:mushaf-118',
   language: 'ar',
   reviewerStatus: 'draft',
-  notes: 'Development streaming only. QuranicAudio personal-use language does not establish public-app distribution or persistence rights.',
-  license: 'Unverified - persistence and production distribution disabled',
+  notes: 'Direct provider streaming only. No download, rehosting, redistribution, or offline persistence.',
+  license: 'Published permission evidence captured; legal approval remains required for production.',
 };
 
 const sources = [quranArabicSource, quranTranslationSource, tafsirSource, structureSource, audioSource];
@@ -169,12 +168,17 @@ const structureSurahs: SurahRecord[] = fullStructure.surahs.map(surah => ({
   },
 }));
 
-const translation = (id: string, text: string) => ({
-  id,
+const translation = (providerResourceId: string, text: string, footnotes = '') => ({
+  id: `${providerResourceId}-rowwad-en`,
   locale: 'en',
   text,
   sourceId: TRANSLATION_SOURCE_ID,
-  reviewerStatus: 'approved' as const,
+  reviewerStatus: 'draft' as const,
+  providerResourceId,
+  resourceVersion: '1.0.19',
+  publisher: 'QuranEnc / Rowwad Translation Center',
+  attributionText: 'The Clear Quranic Translation by Rowwad Translation Center, provided by QuranEnc.',
+  footnotes,
 });
 
 const tafsir = (id: string, text: string, explanation?: string) => ({
@@ -212,33 +216,48 @@ const wordTokenIds = (ayahNumber: number) => surahAlFilWordTokens
 
 const husaryReciter: Reciter = {
   id: HUSARY_RECITER_ID,
-  displayName: husaryAudioManifest.reciter.displayName,
-  providerResourceId: husaryAudioManifest.reciter.providerResourceId,
+  displayName: 'Mahmoud Khalil Al-Husary',
+  providerResourceId: 'mp3quran:reciter:118:mushaf:118',
+  providerReciterId: '118',
+  providerMushafId: '118',
+  providerRiwayahId: '1',
   editionId: HAFS_AN_ASIM_ID,
   sourceId: AUDIO_SOURCE_ID,
-  license: 'Unverified - development streaming only',
+  license: 'Direct MP3Quran streaming only',
   reviewerStatus: 'draft',
 };
 
-const husaryTracks: RecitationTrack[] = husaryAudioManifest.tracks.map(track => {
-  const [surahNumber, ayahNumber] = track.verseKey.split(':').map(Number);
-  return {
-    id: `husary-${surahNumber}-${ayahNumber}`,
-    providerResourceId: track.providerResourceId,
+const HUSARY_AL_FIL_SEGMENTS = [
+  { ayahNumber: 1, startMs: 8236, endMs: 18571 },
+  { ayahNumber: 2, startMs: 18571, endMs: 27033 },
+  { ayahNumber: 3, startMs: 27033, endMs: 36311 },
+  { ayahNumber: 4, startMs: 36311, endMs: 46142 },
+  { ayahNumber: 5, startMs: 46142, endMs: 54628 },
+] as const;
+
+const husaryTracks: RecitationTrack[] = HUSARY_AL_FIL_SEGMENTS.map(({ ayahNumber, startMs, endMs }) => ({
+    id: `husary-105-${ayahNumber}`,
+    providerResourceId: `mp3quran:118:118:105:${ayahNumber}`,
+    providerReciterId: '118',
+    providerMushafId: '118',
+    providerRiwayahId: '1',
+    providerSurahId: 105,
     reciterId: HUSARY_RECITER_ID,
     editionId: HAFS_AN_ASIM_ID,
-    ayahRef: { surahNumber, ayahNumber },
+    ayahRef: { surahNumber: 105, ayahNumber },
     sourceId: AUDIO_SOURCE_ID,
-    license: 'Unverified - development streaming only',
-    checksum: track.checksum,
-    byteSize: track.byteSize,
+    license: 'Direct MP3Quran streaming only',
+    deliveryMode: 'stream_only',
+    approvedHostnames: ['server13.mp3quran.net'],
+    startMs,
+    endMs,
+    durationMs: endMs - startMs,
     format: 'mp3',
     asset: {
       kind: 'remote',
-      uri: track.uri,
+      uri: 'https://server13.mp3quran.net/husr/105.mp3',
     },
-  };
-});
+  }));
 
 const word = (wordTokenId: string, transliteration: string, meaning: string, root?: string) => ({
   id: `${wordTokenId}:meaning`,
@@ -267,8 +286,9 @@ export const surahAlFilAyat: AyahRecord[] = [
     transliteration: 'Alam tara kayfa fa\'ala rabbuka bi-as\'habi l-feel',
     translations: [
       translation(
-        '105-1-sahih-en',
-        'Have you not considered how your Lord dealt with the companions of the elephant?'
+        '6189',
+        'Have you not seen how your Lord dealt with the people of the Elephant[1]?',
+        '[1] The army of Abrahah al-Ashram was accompanied by a huge elephant who came with the intention of demolishing the Kaʿba.'
       ),
     ],
     tafsirEntries: [
@@ -302,7 +322,7 @@ export const surahAlFilAyat: AyahRecord[] = [
       reviewerStatus: 'approved',
     },
     transliteration: "Alam yaj'al kaydahum fee tadleel",
-    translations: [translation('105-2-sahih-en', 'Did He not make their plan into misguidance?')],
+    translations: [translation('6190', 'Did He not turn their scheme into a total loss[2]?', '[2] Leading them to perish.')],
     tafsirEntries: [
       tafsir(
         '105-2-ibn-kathir-summary',
@@ -332,7 +352,7 @@ export const surahAlFilAyat: AyahRecord[] = [
       reviewerStatus: 'approved',
     },
     transliteration: 'Wa-arsala alayhim tayran ababeel',
-    translations: [translation('105-3-sahih-en', 'And He sent against them birds in flocks,')],
+    translations: [translation('6191', 'He sent against them swarms of birds,')],
     tafsirEntries: [
       tafsir(
         '105-3-ibn-kathir-summary',
@@ -361,7 +381,7 @@ export const surahAlFilAyat: AyahRecord[] = [
       reviewerStatus: 'approved',
     },
     transliteration: 'Tarmeehim bihijaaratin min sijjeel',
-    translations: [translation('105-4-sahih-en', 'Striking them with stones of hard clay,')],
+    translations: [translation('6192', 'pelting them with stones of baked clay,')],
     tafsirEntries: [
       tafsir(
         '105-4-ibn-kathir-summary',
@@ -390,7 +410,7 @@ export const surahAlFilAyat: AyahRecord[] = [
       reviewerStatus: 'approved',
     },
     transliteration: "Faja'alahum ka'asfin ma'kool",
-    translations: [translation('105-5-sahih-en', 'And He made them like eaten straw.')],
+    translations: [translation('6193', 'leaving them like chewed-up chaff.')],
     tafsirEntries: [
       tafsir(
         '105-5-ibn-kathir-summary',
@@ -471,7 +491,7 @@ export const surahAlFilLevels: Level[] = [
         id: 'l1-meaning',
         kind: 'translation',
         title: 'Translation',
-        blocks: [{ id: 'l1-translation-1', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], locale: 'en', translationEntryIds: ['105-1-sahih-en'] }],
+        blocks: [{ id: 'l1-translation-1', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 1 }], locale: 'en', translationEntryIds: ['6189-rowwad-en'] }],
       },
       {
         id: 'l1-word-meaning',
@@ -602,8 +622,8 @@ export const surahAlFilLevels: Level[] = [
                   { id: 'l1-segment-b', tokenIds: ['105:1:word:5', '105:1:word:6', '105:1:word:7'] },
                 ],
                 translationSegments: [
-                  { id: 'l1-translation-a', text: 'Have you not considered how your Lord dealt', translationEntryId: '105-1-sahih-en' },
-                  { id: 'l1-translation-b', text: 'with the companions of the elephant?', translationEntryId: '105-1-sahih-en' },
+                  { id: 'l1-translation-a', text: 'Have you not seen how your Lord dealt', translationEntryId: '6189-rowwad-en' },
+                  { id: 'l1-translation-b', text: 'with the people of the Elephant[1]?', translationEntryId: '6189-rowwad-en' },
                 ],
                 pairs: [
                   { ayahSegmentId: 'l1-segment-a', translationSegmentId: 'l1-translation-a' },
@@ -673,7 +693,7 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l2-translation', kind: 'translation', title: 'Translation',
-        blocks: [{ id: 'l2-translation-2', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], locale: 'en', translationEntryIds: ['105-2-sahih-en'] }],
+        blocks: [{ id: 'l2-translation-2', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 2 }], locale: 'en', translationEntryIds: ['6190-rowwad-en'] }],
       },
       {
         id: 'l2-retrieval', kind: 'memory_practice', title: 'Continue the Ayah',
@@ -777,7 +797,7 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l3-translation', kind: 'translation', title: 'Translation',
-        blocks: [{ id: 'l3-translation-3-4', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], locale: 'en', translationEntryIds: ['105-3-sahih-en', '105-4-sahih-en'] }],
+        blocks: [{ id: 'l3-translation-3-4', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 3 }, { surahNumber: 105, ayahNumber: 4 }], locale: 'en', translationEntryIds: ['6191-rowwad-en', '6192-rowwad-en'] }],
       },
       {
         id: 'l3-retrieval', kind: 'memory_practice', title: 'Order the Ayat',
@@ -880,7 +900,7 @@ export const surahAlFilLevels: Level[] = [
       },
       {
         id: 'l4-translation', kind: 'translation', title: 'Translation',
-        blocks: [{ id: 'l4-translation-5', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }], locale: 'en', translationEntryIds: ['105-5-sahih-en'] }],
+        blocks: [{ id: 'l4-translation-5', type: 'translation', ayahRefs: [{ surahNumber: 105, ayahNumber: 5 }], locale: 'en', translationEntryIds: ['6193-rowwad-en'] }],
       },
       {
         id: 'l4-retrieval', kind: 'memory_practice', title: 'Extra: Continue the Ayah', required: false,
@@ -967,9 +987,9 @@ export const surahAlFilLevels: Level[] = [
 
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '2.10',
-  schemaVersion: 2,
-  revisionId: 'surah-al-fil-v1-r12',
+  version: '3.0',
+  schemaVersion: 3,
+  revisionId: 'surah-al-fil-v1-r13',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
   type: 'surah',
@@ -987,10 +1007,33 @@ const surahAlFilPackage: ContentPackage = {
   learningPaths: [surahAlFilLearningPath],
   levels: surahAlFilLevels,
   sources,
+  localePublications: [
+    { locale: 'en', status: 'draft', version: '3.0-candidate', availableAlternatives: [] },
+    { locale: 'ar', status: 'unavailable', version: '0', availableAlternatives: ['en'] },
+    { locale: 'fr', status: 'unavailable', version: '0', availableAlternatives: ['en'] },
+  ],
+  creationMethod: 'mixed_human_and_provider',
   governance: {
-    evidence: [],
+    evidence: [{
+      id: 'mp3quran-published-permission-2026-07-31',
+      kind: 'published_terms',
+      reference: 'https://www.mp3quran.net/privacy-en.html',
+      sha256: 'b05a23c4f763f260d64148c395c31c266097f4e506f8ccf1333b5b03ab168bf9',
+      capturedAt: '2026-07-31T00:00:00.000Z',
+    }],
     approvals: [],
-    licenseGrants: [],
+    licenseGrants: [{
+      id: 'mp3quran-direct-stream-public-free-v1',
+      sourceId: AUDIO_SOURCE_ID,
+      evidenceRefId: 'mp3quran-published-permission-2026-07-31',
+      releaseProfiles: ['public-free'],
+      platforms: ['android', 'ios', 'web'],
+      permittedUses: ['public_distribution', 'streaming'],
+      resourceIds: husaryTracks.map(track => track.id),
+      validFrom: '2026-07-31T00:00:00.000Z',
+      retention: { kind: 'none' },
+      attributionText: 'Recitation streamed from MP3Quran.net.',
+    }],
   },
   metadata: {
     totalLevels: surahAlFilLevels.length,
