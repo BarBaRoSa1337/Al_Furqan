@@ -39,13 +39,14 @@ export default function PracticeScreen() {
   const activeLevel = session.level;
   const finish = async () => {
     const advanced = await session.advance();
-    if (advanced && session.isLastStep) router.replace(`/complete/${activeLevel.id}`);
+    if (advanced) router.replace(`/complete/${activeLevel.id}`);
   };
 
   return <DailyLearningLoop
     level={activeLevel}
     step={session.step}
-    currentStepIndex={session.currentStepIndex}
+    stepRenderKey={session.stepRenderKey}
+    currentStepIndex={session.displayStepIndex}
     totalSteps={session.totalSteps}
     canProceed={session.canProceed}
     needsCheck={session.needsCheck}

@@ -11,6 +11,7 @@ import StepRenderer from './StepRenderer';
 interface DailyLearningLoopProps {
   level: Level;
   step: LevelStep;
+  stepRenderKey?: string;
   currentStepIndex: number;
   totalSteps?: number;
   canProceed: boolean;
@@ -36,6 +37,7 @@ interface DailyLearningLoopProps {
 export default function DailyLearningLoop({
   level,
   step,
+  stepRenderKey,
   currentStepIndex,
   totalSteps,
   canProceed,
@@ -100,7 +102,7 @@ export default function DailyLearningLoop({
             {feedback.correct ? correctFeedbackLabel : retryFeedbackLabel}
           </Text>
         </View> : null}
-        <StepRenderer step={step} onQuestionAnswer={onQuestionAnswer} onActivityAnswer={onActivityAnswer} />
+        <StepRenderer key={stepRenderKey ?? step.id} step={step} onQuestionAnswer={onQuestionAnswer} onActivityAnswer={onActivityAnswer} />
       </ScrollView>
 
       <View style={styles.footer}>

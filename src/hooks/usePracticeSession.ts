@@ -7,6 +7,7 @@ import { getAppProgress, recordActivityAttempt, recordQuestionAttempt } from '..
 import type { QuestionBlock } from '../types/content';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
+import { advanceSessionCursor, createSessionCursor } from '../lib/progress/sessionSequence';
 
 export type PracticeSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type PracticeFeedback = { correct: boolean };
@@ -19,15 +20,16 @@ export function usePracticeSession(levelId: string | undefined) {
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
   const steps = level ? getPracticeLevelSteps(level) : [];
   const [status, setStatus] = useState<PracticeSessionStatus>('loading');
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [cursor, setCursor] = useState(() => createSessionCursor(0));
   const [correctQuestionIds, setCorrectQuestionIds] = useState<string[]>([]);
   const [activityResults, setActivityResults] = useState<Record<string, boolean>>({});
   const [draftAnswer, setDraftAnswer] = useState<{ id: string; answer: unknown; kind: 'activity' | 'question' } | null>(null);
-  const [retryStepIndexes, setRetryStepIndexes] = useState<number[]>([]);
   const [feedback, setFeedback] = useState<PracticeFeedback | null>(null);
+  const [stepRevision, setStepRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const operationLocked = useRef(false);
+  const currentStepIndex = cursor.currentStepIndex;
   const step = steps[currentStepIndex];
   const questionIds = step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
   const activityIds = step?.blocks.filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity').map(block => block.activity.id) ?? [];
@@ -36,7 +38,9 @@ export function usePracticeSession(levelId: string | undefined) {
   const hasDraftAnswer = Boolean(draftAnswer && (questionIds.includes(draftAnswer.id) || activityIds.includes(draftAnswer.id)));
   const canProceed = feedback !== null || (hasInteraction ? interactionComplete || hasDraftAnswer : true);
   const needsCheck = feedback === null && hasInteraction && !interactionComplete && hasDraftAnswer;
-  const isLastStep = currentStepIndex === steps.length - 1;
+  const isLastStep = cursor.phase === 'retry'
+    ? cursor.retryStepIndexes.length === 1
+    : currentStepIndex === steps.length - 1 && cursor.retryStepIndexes.length === 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +62,15 @@ export function usePracticeSession(levelId: string | undefined) {
           if (!cancelled) setStatus('locked');
           return;
         }
-        if (!cancelled) setStatus('ready');
+        if (!cancelled) {
+          setCursor(createSessionCursor(0));
+          setCorrectQuestionIds([]);
+          setActivityResults({});
+          setDraftAnswer(null);
+          setFeedback(null);
+          setStepRevision(0);
+          setStatus('ready');
+        }
       } catch (cause) {
         if (!cancelled) {
           setError(toErrorMessage(cause));
@@ -113,14 +125,12 @@ export function usePracticeSession(levelId: string | undefined) {
   }
 
   async function moveToNextStep(correct: boolean): Promise<boolean> {
-      const nextRetries = correct || retryStepIndexes.includes(currentStepIndex) ? retryStepIndexes : [...retryStepIndexes, currentStepIndex];
-      const nextIndex = currentStepIndex + 1;
-      const targetIndex = nextIndex < steps.length ? nextIndex : nextRetries[0];
+      const next = advanceSessionCursor(steps.length, cursor, correct);
       setDraftAnswer(null);
       setFeedback(null);
-      if (targetIndex === undefined) return true;
-      setCurrentStepIndex(targetIndex);
-      setRetryStepIndexes(nextIndex < steps.length ? nextRetries : nextRetries.slice(1));
+      if (next.complete) return true;
+      setCursor(next.cursor);
+      setStepRevision(current => current + 1);
       setCorrectQuestionIds([]);
       setActivityResults({});
       return false;
@@ -142,7 +152,25 @@ export function usePracticeSession(levelId: string | undefined) {
     }
   }
 
-  return { level, step, status, currentStepIndex, totalSteps: steps.length, canProceed, needsCheck, feedback, retryCount: retryStepIndexes.length, isLastStep, busy, error, answerQuestion, answerActivity, advance };
+  return {
+    level,
+    step,
+    status,
+    currentStepIndex,
+    displayStepIndex: cursor.phase === 'retry' ? Math.max(0, steps.length - 1) : currentStepIndex,
+    stepRenderKey: `${step?.id ?? 'missing'}:${stepRevision}`,
+    totalSteps: steps.length,
+    canProceed,
+    needsCheck,
+    feedback,
+    retryCount: cursor.phase === 'retry' ? cursor.retryStepIndexes.length : 0,
+    isLastStep,
+    busy,
+    error,
+    answerQuestion,
+    answerActivity,
+    advance,
+  };
 }
 
 function toErrorMessage(cause: unknown): string {

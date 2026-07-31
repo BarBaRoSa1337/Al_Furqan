@@ -29,8 +29,8 @@ test('completes the daily goal from a same-day level receipt or review', () => {
 test('prioritizes due review, then active learning, then practice', () => {
   const level = surahAlFilLevels[0];
   expect(resolveHomePrimaryAction(2, level, undefined, false)).toEqual({ kind: 'review', href: '/review' });
-  expect(resolveHomePrimaryAction(0, level, undefined, false)).toEqual({ kind: 'lesson', href: `/lesson/${level.id}` });
-  expect(resolveHomePrimaryAction(0, undefined, level, true)).toEqual({ kind: 'practice', href: `/practice/${level.id}` });
+  expect(resolveHomePrimaryAction(0, level, undefined, false)).toEqual({ kind: 'lesson', href: `/level/${level.id}` });
+  expect(resolveHomePrimaryAction(0, undefined, level, true)).toEqual({ kind: 'practice', href: `/level/${level.id}` });
 });
 
 test('derives source-backed Quran location without exposing thumun', () => {

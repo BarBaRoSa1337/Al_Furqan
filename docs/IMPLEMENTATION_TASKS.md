@@ -172,6 +172,18 @@ Run:
 
 Use the repository's current package manager and command names.
 
+## Lesson-entry and practice-session alignment
+
+- Route every unlocked roadmap level through context-aware entry options.
+- Offer start for new levels, continue/start-over for unfinished levels, and
+  learn-again/extra-practice for completed levels.
+- Preserve historical progress when starting over; reset only the active step
+  pointer and local exercise answer.
+- Postpone incorrect steps to a shared FIFO retry round without replaying later
+  authored steps.
+- Keep successful matching pairs visible, green, disabled, and accessible.
+- Guarantee matching choices do not begin in a solved row alignment.
+
 ## Required completion report
 
 Report:

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { LearningActivity } from '../../types/activities';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
@@ -57,14 +58,21 @@ function WordMeaningMatch({ activity, onAnswer }: { activity: Extract<LearningAc
   const repo = getContentRepository();
   const meanings = repo.getAyatByRefs(activity.ayahRefs).flatMap(ayah => ayah.wordMeanings ?? []);
   const promptIds = activity.config.pairs.map(pair => pair.promptTokenId);
-  const [meaningIds] = useState(() => shuffle(activity.config.pairs.map(pair => pair.meaningId)));
-  return <MatchActivity activity={activity} prompts={promptIds.map(id => ({ id, label: repo.getWordToken(id)?.arabicText ?? id }))} choices={meaningIds.map(id => ({ id, label: meanings.find(meaning => meaning.id === id)?.meaning ?? id }))} hint={packageText(repo, 'activity.matchWordPrompt')} onAnswer={onAnswer} />;
+  const [meaningIds] = useState(() => derange(activity.config.pairs.map(pair => pair.meaningId)));
+  return <MatchActivity activity={activity} prompts={promptIds.map(id => ({ id, label: repo.getWordToken(id)?.arabicText ?? id }))} choices={meaningIds.map(id => ({ id, label: meanings.find(meaning => meaning.id === id)?.meaning ?? id }))} hint={packageText(repo, 'activity.matchWordPrompt')} promptLabel={packageText(repo, 'content.wordByWord')} onAnswer={onAnswer} />;
 }
 
 function AyahTranslationMatch({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'match_ayah_translation' }>; onAnswer?: Props['onAnswer'] }) {
   const repo = getContentRepository();
-  const [layout] = useState(() => createMatchLayout(activity.config.ayahSegments, activity.config.translationSegments));
-  return <MatchActivity activity={activity} prompts={layout.prompts.map(segment => ({ id: segment.id, label: segment.tokenIds.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ') }))} choices={layout.choices.map(segment => ({ id: segment.id, label: segment.text }))} hint={packageText(repo, 'activity.matchTranslationHint')} onAnswer={onAnswer} />;
+  const [layout] = useState(() => {
+    const prompts = shuffle(activity.config.ayahSegments);
+    const alignedChoices = prompts.map(prompt => {
+      const choiceId = activity.config.pairs.find(pair => pair.ayahSegmentId === prompt.id)?.translationSegmentId;
+      return activity.config.translationSegments.find(choice => choice.id === choiceId)!;
+    });
+    return { prompts, choices: derange(alignedChoices) };
+  });
+  return <MatchActivity activity={activity} prompts={layout.prompts.map(segment => ({ id: segment.id, label: segment.tokenIds.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ') }))} choices={layout.choices.map(segment => ({ id: segment.id, label: segment.text }))} hint={packageText(repo, 'activity.matchTranslationHint')} promptLabel={packageText(repo, 'activity.quranPhrase')} onAnswer={onAnswer} />;
 }
 
 function ContinuationActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'choose_continuation' }>; onAnswer?: Props['onAnswer'] }) {
@@ -78,7 +86,7 @@ function ContinuationActivity({ activity, onAnswer }: { activity: Extract<Learni
   </ActivityCard>;
 }
 
-function MatchActivity({ activity, prompts, choices, hint, onAnswer }: Props & { prompts: { id: string; label: string }[]; choices: { id: string; label: string }[]; hint: string }) {
+function MatchActivity({ activity, prompts, choices, hint, promptLabel, onAnswer }: Props & { prompts: { id: string; label: string }[]; choices: { id: string; label: string }[]; hint: string; promptLabel: string }) {
   const repo = getContentRepository();
   const [activePrompt, setActivePrompt] = useState<string>();
   const [matchedPairs, setMatchedPairs] = useState<Record<string, string>>({});
@@ -103,15 +111,21 @@ function MatchActivity({ activity, prompts, choices, hint, onAnswer }: Props & {
     <Text accessibilityLiveRegion="polite" style={styles.matchProgress}>{packageText(repo, 'activity.matchProgress', { current: matchedCount, total: prompts.length })}</Text>
     <View style={styles.matchColumns}>
       <View style={styles.matchColumn}>
-        <Text style={styles.columnLabel}>{packageText(repo, 'content.wordByWord')}</Text>
-        {prompts.filter(prompt => !matchedPairs[prompt.id]).map(prompt => <Option key={prompt.id} label={prompt.label} selected={activePrompt === prompt.id} incorrect={incorrectPair?.promptId === prompt.id} onPress={() => { setActivePrompt(prompt.id); setIncorrectPair(undefined); }} />)}
+        <Text style={styles.columnLabel}>{promptLabel}</Text>
+        {prompts.map(prompt => {
+          const choiceId = matchedPairs[prompt.id];
+          const choice = choices.find(candidate => candidate.id === choiceId);
+          const matchedLabel = choice ? packageText(repo, 'activity.matchedCorrectly', { prompt: prompt.label, choice: choice.label }) : undefined;
+          return <Option key={prompt.id} label={prompt.label} accessibilityLabel={matchedLabel} correct={Boolean(choiceId)} disabled={Boolean(choiceId)} selected={activePrompt === prompt.id} incorrect={incorrectPair?.promptId === prompt.id} onPress={() => { setActivePrompt(prompt.id); setIncorrectPair(undefined); }} />;
+        })}
       </View>
       <View style={styles.matchColumn}>
         <Text style={styles.columnLabel}>{packageText(repo, 'content.translation')}</Text>
         {choices.map(choice => {
           const used = Object.values(matchedPairs).includes(choice.id);
-          if (used) return null;
-          return <Option key={choice.id} label={choice.label} selected={incorrectPair?.choiceId === choice.id} incorrect={incorrectPair?.choiceId === choice.id} onPress={() => choose(choice.id)} />;
+          const prompt = used ? prompts.find(candidate => matchedPairs[candidate.id] === choice.id) : undefined;
+          const matchedLabel = prompt ? packageText(repo, 'activity.matchedCorrectly', { prompt: prompt.label, choice: choice.label }) : undefined;
+          return <Option key={choice.id} label={choice.label} accessibilityLabel={matchedLabel} correct={used} disabled={used} selected={incorrectPair?.choiceId === choice.id} incorrect={incorrectPair?.choiceId === choice.id} onPress={() => choose(choice.id)} />;
         })}
       </View>
     </View>
@@ -161,10 +175,11 @@ function ActivityCard({ instruction, children }: { instruction: string; children
   return <Card style={styles.card}><Text style={styles.instruction}>{instruction}</Text>{children}</Card>;
 }
 
-function Option({ label, selected = false, disabled = false, fullWidth = false, incorrect = false, marker, onPress }: { label: string; selected?: boolean; disabled?: boolean; fullWidth?: boolean; incorrect?: boolean; marker?: string; onPress: () => void }) {
+function Option({ label, accessibilityLabel, selected = false, disabled = false, fullWidth = false, incorrect = false, correct = false, marker, onPress }: { label: string; accessibilityLabel?: string; selected?: boolean; disabled?: boolean; fullWidth?: boolean; incorrect?: boolean; correct?: boolean; marker?: string; onPress: () => void }) {
   const arabic = containsArabic(label);
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={marker ? `${label}, ${marker}` : label} disabled={disabled} style={[styles.option, fullWidth && styles.optionFullWidth, selected && !incorrect && styles.selected, incorrect && styles.incorrect, disabled && styles.used]} onPress={onPress}>
+  return <Pressable accessibilityRole="button" accessibilityState={{ selected: selected || correct, disabled }} accessibilityLabel={accessibilityLabel ?? (marker ? `${label}, ${marker}` : label)} disabled={disabled} style={[styles.option, fullWidth && styles.optionFullWidth, selected && !incorrect && !correct && styles.selected, correct && styles.correct, incorrect && styles.incorrect, disabled && !correct && styles.used]} onPress={onPress}>
     <Text style={[styles.optionText, arabic && styles.rtlText]}>{label}</Text>
+    {correct ? <Ionicons name="checkmark-circle" size={17} color={colors.success} /> : null}
     {marker ? <Text style={styles.optionMarker}>{marker}</Text> : null}
   </Pressable>;
 }
@@ -202,6 +217,12 @@ export function createMatchLayout<P, C>(prompts: readonly P[], choices: readonly
   return { prompts: shuffle(prompts, random), choices: shuffle(choices, random) };
 }
 
+export function derange<T>(items: readonly T[], random: () => number = Math.random): T[] {
+  if (items.length < 2) return [...items];
+  const offset = 1 + Math.floor(random() * (items.length - 1));
+  return items.map((_, index) => items[(index + offset) % items.length]);
+}
+
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderColor: colors.border },
   unsupported: { color: colors.textMuted, fontSize: 14, lineHeight: 21 },
@@ -217,6 +238,7 @@ const styles = StyleSheet.create({
   option: { alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, flexDirection: 'row', gap: spacing.xs, justifyContent: 'center', minHeight: 46, paddingHorizontal: spacing.md, paddingVertical: 10 },
   optionFullWidth: { width: '100%' },
   selected: { backgroundColor: colors.successSoft, borderColor: colors.success },
+  correct: { backgroundColor: colors.successSoft, borderColor: colors.success, borderWidth: 2 },
   incorrect: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
   used: { opacity: 0.42 },
   optionText: { color: colors.text, flexShrink: 1, fontSize: 16, textAlign: 'center' },

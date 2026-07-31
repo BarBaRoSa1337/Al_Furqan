@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DailyLearningLoop from '../../components/lesson/DailyLearningLoop';
 import Button from '../../components/ui/Button';
-import { useLevelSession } from '../../hooks/useLevelSession';
+import { type LevelStartMode, useLevelSession } from '../../hooks/useLevelSession';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors } from '../../theme/tokens';
@@ -12,10 +12,12 @@ import { useLocalization } from '../../lib/localization/LocalizationProvider';
 import { availableLessonLocales } from '../../lib/content/publication';
 
 export default function LessonPlayerScreen() {
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; mode?: string | string[] }>();
   const levelId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const startMode: LevelStartMode = rawMode === 'start_over' ? 'start_over' : 'resume';
   const router = useRouter();
-  const session = useLevelSession(levelId);
+  const session = useLevelSession(levelId, startMode);
   const { preferences, setLessonLocale, t } = useLocalization();
   const repo = getContentRepository();
   const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values, preferences.interfaceLocale);
@@ -100,7 +102,8 @@ export default function LessonPlayerScreen() {
     <DailyLearningLoop
       level={activeLevel}
       step={session.step}
-      currentStepIndex={session.currentStepIndex}
+      stepRenderKey={session.stepRenderKey}
+      currentStepIndex={session.displayStepIndex}
       totalSteps={session.totalCoreSteps}
       canProceed={session.canProceed}
       needsCheck={session.needsCheck}

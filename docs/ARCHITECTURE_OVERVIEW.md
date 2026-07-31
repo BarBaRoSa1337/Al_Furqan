@@ -91,6 +91,18 @@ behavior. If an in-progress learner resumes after required steps were inserted
 before their saved position, the session resumes at the earliest missing
 required step.
 
+Level entry is context-aware. A new level starts normally, an in-progress level
+offers continue or start-over, and a completed level offers replay or optional
+extra practice. Start-over resets only the active step pointer and never erases
+attempt history, completion, XP, streaks, or scheduled reviews. Leaving during
+an exercise preserves completed steps but remounts the current exercise with an
+empty local answer when the learner returns.
+
+Incorrect activities use a two-phase session queue: the authored main pass
+continues once, then failed steps are retried from a FIFO queue. A failed retry
+returns to the end of that queue without replaying unrelated steps. This queue
+is shared by core lessons and extra practice.
+
 ### 4. Learner-state layer
 
 Owns:
@@ -283,7 +295,8 @@ Published package
 -> schema/content validation
 -> atomic activation
 -> repositories
--> roadmap/level session
+-> roadmap/level entry
+-> core lesson or extra-practice session
 -> blocks and activities
 -> progress storage
 ```

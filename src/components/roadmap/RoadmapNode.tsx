@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radii, shadows, spacing } from '../../theme/tokens';
 import { ZelligeSeal } from '../furqan/FurqanArtwork';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export type NodeStatus = 'completed' | 'active' | 'locked';
 
@@ -31,6 +32,7 @@ export default function RoadmapNode({
   isLast = false,
   completedActionLabel = 'Practice',
 }: RoadmapNodeProps) {
+  const { t } = useLocalization();
   const locked = status === 'locked';
   const completed = status === 'completed';
   const active = status === 'active';
@@ -46,7 +48,7 @@ export default function RoadmapNode({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${title}, ${status}, ${durationMinutes} minutes`}
+        accessibilityLabel={`${title}, ${t(`roadmap.status.${status}`)}, ${t('levelEntry.minutes', { count: durationMinutes })}`}
         accessibilityState={{ disabled: locked, selected: active }}
         disabled={locked}
         onPress={() => onPress(id)}
@@ -60,10 +62,10 @@ export default function RoadmapNode({
       >
         <View style={styles.cardCopy}>
           <View style={styles.titleRow}>
-            <Text style={[styles.circleLabel, locked && styles.lockedText]}>Circle {index + 1}</Text>
+            <Text style={[styles.circleLabel, locked && styles.lockedText]}>{t('roadmap.circle', { count: index + 1 })}</Text>
             <View style={[styles.statusPill, completed && styles.completedPill, active && styles.activePill, locked && styles.lockedPill]}>
               <Text style={[styles.statusText, completed && styles.completedStatus, active && styles.activeStatus]}>
-                {completed ? 'Completed' : active ? 'Current' : 'Locked'}
+                {t(`roadmap.status.${status}`)}
               </Text>
             </View>
           </View>
@@ -74,7 +76,7 @@ export default function RoadmapNode({
             <Text style={[styles.meta, locked && styles.lockedText]}>{ayahLabel}</Text>
             <View style={styles.metaDot} />
             <Ionicons name="time-outline" size={12} color={locked ? colors.locked : colors.textMuted} />
-            <Text style={[styles.meta, locked && styles.lockedText]}>{durationMinutes} min</Text>
+            <Text style={[styles.meta, locked && styles.lockedText]}>{t('levelEntry.minutes', { count: durationMinutes })}</Text>
           </View>
           {completed ? <Text style={styles.practiceLabel}>{completedActionLabel}</Text> : null}
         </View>

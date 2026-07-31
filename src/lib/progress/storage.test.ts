@@ -17,6 +17,7 @@ import {
   recordReviewAttempt,
   isLevelReadyForCompletion,
   resetProgress,
+  restartLevel,
   startLevel,
   syncCompletedLevelReviews,
 } from './storage';
@@ -62,6 +63,20 @@ test('serializes concurrent question attempts without data loss', async () => {
   ]);
 
   expect((await getLevelProgress(level.id))?.questionAttempts).toHaveLength(2);
+});
+
+test('restarts a level pointer without erasing learning history', async () => {
+  const level = surahAlFilLevels[0];
+  const existing = completedProgress(level);
+  await seedSnapshot({ [level.id]: existing });
+
+  const restarted = await restartLevel(level.id, level.pathId, level.steps[0].id);
+
+  expect(restarted.currentStepId).toBe(level.steps[0].id);
+  expect(restarted.completed).toBe(true);
+  expect(restarted.completedStepIds).toEqual(existing.completedStepIds);
+  expect(restarted.activityAttempts.map(attempt => attempt.activityId)).toEqual(existing.activityAttempts.map(attempt => attempt.activityId));
+  expect(restarted.questionAttempts.map(attempt => attempt.questionId)).toEqual(existing.questionAttempts.map(attempt => attempt.questionId));
 });
 
 test('requires a correct word-bank answer for memorization completion', async () => {

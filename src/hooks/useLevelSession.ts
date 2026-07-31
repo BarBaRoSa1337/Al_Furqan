@@ -10,6 +10,7 @@ import {
   getProgressRecoveryWarning,
   recordQuestionAttempt,
   recordActivityAttempt,
+  restartLevel,
   startLevel,
 } from '../lib/progress/storage';
 import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../types/progress';
@@ -18,11 +19,13 @@ import { getResumeStepIndex } from '../lib/progress/levelResume';
 import { getCoreLevelSteps } from '../lib/content/lessonSteps';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
+import { advanceSessionCursor, createSessionCursor } from '../lib/progress/sessionSequence';
 
 export type LevelSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type SessionFeedback = { correct: boolean };
+export type LevelStartMode = 'resume' | 'start_over';
 
-export function useLevelSession(levelId: string | undefined) {
+export function useLevelSession(levelId: string | undefined, startMode: LevelStartMode = 'resume') {
   const { preferences } = useLocalization();
   const lessonLocale = preferences.lessonLocale;
   const repo = getContentRepository();
@@ -30,17 +33,18 @@ export function useLevelSession(levelId: string | undefined) {
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
   const coreSteps = level ? getCoreLevelSteps(level) : [];
   const [status, setStatus] = useState<LevelSessionStatus>('loading');
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [cursor, setCursor] = useState(() => createSessionCursor(0));
   const [correctQuestionIds, setCorrectQuestionIds] = useState<string[]>([]);
   const [activityResults, setActivityResults] = useState<Record<string, boolean>>({});
   const [draftAnswer, setDraftAnswer] = useState<{ id: string; answer: unknown; kind: 'activity' | 'question' } | null>(null);
-  const [retryStepIds, setRetryStepIds] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<SessionFeedback | null>(null);
+  const [stepRevision, setStepRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<ProgressRecoveryWarning | null>(null);
   const operationLocked = useRef(false);
 
+  const currentStepIndex = cursor.currentStepIndex;
   const step = coreSteps[currentStepIndex];
   const questionIds = step?.required === false ? [] : step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
   const requiredActivityIds = step?.required === false ? [] : step?.blocks
@@ -53,7 +57,9 @@ export function useLevelSession(levelId: string | undefined) {
   const hasDraftAnswer = Boolean(draftAnswer && (questionIds.includes(draftAnswer.id) || requiredActivityIds.includes(draftAnswer.id)));
   const canAdvance = feedback !== null || (hasRequiredInteraction ? interactionComplete || hasDraftAnswer : true);
   const needsCheck = feedback === null && hasRequiredInteraction && !interactionComplete && hasDraftAnswer;
-  const isLastStep = Boolean(level && currentStepIndex === coreSteps.length - 1);
+  const isLastStep = cursor.phase === 'retry'
+    ? cursor.retryStepIndexes.length === 1
+    : Boolean(level && currentStepIndex === coreSteps.length - 1 && cursor.retryStepIndexes.length === 0);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,15 +85,26 @@ export function useLevelSession(levelId: string | undefined) {
           return null;
         }
 
-        const progress = await startLevel(level.id, path.id, coreSteps[0]?.id ?? '');
-        const nextIndex = getResumeStepIndex(coreSteps, progress, level.steps);
+        const initialStepId = coreSteps[0]?.id ?? '';
+        const progress = startMode === 'start_over'
+          ? await restartLevel(level.id, path.id, initialStepId)
+          : await startLevel(level.id, path.id, initialStepId);
+        const nextIndex = startMode === 'start_over' ? 0 : getResumeStepIndex(coreSteps, progress, level.steps);
+        const pendingRetryIndexes = startMode === 'start_over'
+          ? []
+          : getPendingRetryStepIds(coreSteps, progress, lessonLocale)
+            .map(id => coreSteps.findIndex(candidate => candidate.id === id))
+            .filter(index => index >= 0);
+        const retryPhase = coreSteps.length > 0
+          && coreSteps.every(candidate => progress.completedStepIds.includes(candidate.id))
+          && pendingRetryIndexes.length > 0;
         if (!cancelled) {
-          setCurrentStepIndex(nextIndex);
-          setCorrectQuestionIds(getCorrectQuestionIds(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress, lessonLocale));
-          setActivityResults(getLatestActivityResults(coreSteps[nextIndex]?.blocks.map(block => block.id) ?? [], progress, lessonLocale));
+          setCursor(createSessionCursor(nextIndex, pendingRetryIndexes, retryPhase));
+          setCorrectQuestionIds([]);
+          setActivityResults({});
           setDraftAnswer(null);
           setFeedback(null);
-          setRetryStepIds(getPendingRetryStepIds(coreSteps, progress, lessonLocale));
+          setStepRevision(0);
           setWarning(getProgressRecoveryWarning());
           setStatus('ready');
         }
@@ -101,7 +118,7 @@ export function useLevelSession(levelId: string | undefined) {
 
     void loadSession();
     return () => { cancelled = true; };
-  }, [lessonLocale, levelId]);
+  }, [lessonLocale, levelId, startMode]);
 
   async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
     if (!questionIds.includes(blockId) || operationLocked.current || feedback) return;
@@ -146,33 +163,18 @@ export function useLevelSession(levelId: string | undefined) {
   }
 
   async function moveToNextStep(correct: boolean): Promise<CompletionReceipt | null> {
-      const nextRetryStepIds = correct || retryStepIds.includes(step!.id) ? retryStepIds : [...retryStepIds, step!.id];
-      const nextStep = coreSteps[currentStepIndex + 1];
-      const retryStepId = nextRetryStepIds[0];
-      const retryStepIndex = retryStepId ? coreSteps.findIndex(candidate => candidate.id === retryStepId) : -1;
-      const retryStep = retryStepIndex >= 0 ? coreSteps[retryStepIndex] : undefined;
-      const targetStep = nextStep ?? retryStep;
-      const progress = await completeLevelStep(level!.id, path!.id, step!.id, targetStep?.id);
+      const next = advanceSessionCursor(coreSteps.length, cursor, correct);
+      const targetStep = next.complete ? undefined : coreSteps[next.cursor.currentStepIndex];
+      await completeLevelStep(level!.id, path!.id, step!.id, targetStep?.id);
       setDraftAnswer(null);
       setFeedback(null);
-      if (nextStep) {
-        const nextIndex = currentStepIndex + 1;
-        setCurrentStepIndex(nextIndex);
-        setRetryStepIds(nextRetryStepIds);
-        setCorrectQuestionIds(getCorrectQuestionIds(nextStep.blocks.map(block => block.id), progress, lessonLocale));
-        setActivityResults(getLatestActivityResults(nextStep.blocks.map(block => block.id), progress, lessonLocale));
+      if (!next.complete) {
+        setCursor(next.cursor);
+        setStepRevision(current => current + 1);
+        setCorrectQuestionIds([]);
+        setActivityResults({});
         return null;
       }
-      if (retryStepId) {
-        if (retryStep && retryStepIndex >= 0) {
-          setCurrentStepIndex(retryStepIndex);
-          setRetryStepIds(nextRetryStepIds.slice(1));
-          setCorrectQuestionIds(getCorrectQuestionIds(retryStep.blocks.map(block => block.id), progress, lessonLocale));
-          setActivityResults(getLatestActivityResults(retryStep.blocks.map(block => block.id), progress, lessonLocale));
-          return null;
-        }
-      }
-      if (!correct) throw new Error('The exercise could not be scheduled for retry.');
       return completeLevel(level!, path!, { packageRevisionId: repo.getPackageForLevel(level!.id)?.revisionId, locale: lessonLocale });
   }
 
@@ -198,11 +200,13 @@ export function useLevelSession(levelId: string | undefined) {
     step,
     status,
     currentStepIndex,
+    displayStepIndex: cursor.phase === 'retry' ? Math.max(0, coreSteps.length - 1) : currentStepIndex,
+    stepRenderKey: `${step?.id ?? 'missing'}:${stepRevision}`,
     totalCoreSteps: coreSteps.length,
     canProceed: canAdvance,
     needsCheck,
     feedback,
-    retryCount: retryStepIds.length,
+    retryCount: cursor.phase === 'retry' ? cursor.retryStepIndexes.length : 0,
     isLastStep,
     busy,
     error,
@@ -214,17 +218,6 @@ export function useLevelSession(levelId: string | undefined) {
   };
 }
 
-function getCorrectQuestionIds(blockIds: string[], progress: LevelProgress, locale: string): string[] {
-  return blockIds.filter(blockId => progress.questionAttempts.some(attempt => attempt.questionId === blockId && attempt.correct && (attempt.locale ?? 'en') === locale));
-}
-
-function getLatestActivityResults(blockIds: string[], progress: LevelProgress, locale: string): Record<string, boolean> {
-  return progress.activityAttempts.reduce<Record<string, boolean>>((results, attempt) => {
-    if (blockIds.includes(attempt.activityId) && (attempt.languageIndependent || (attempt.locale ?? 'en') === locale)) results[attempt.activityId] = attempt.correct;
-    return results;
-  }, {});
-}
-
 function getPendingRetryStepIds(steps: readonly LevelStep[], progress: LevelProgress, locale: string): string[] {
   return steps.flatMap(step => {
     if (!progress.completedStepIds.includes(step.id) || step.required === false) return [];
@@ -233,9 +226,13 @@ function getPendingRetryStepIds(steps: readonly LevelStep[], progress: LevelProg
       .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
       .map(block => block.activity);
     const hasInteraction = questionIds.length > 0 || activities.length > 0;
-    const passed = questionIds.every(id => progress.questionAttempts.some(attempt => attempt.questionId === id && attempt.correct && (attempt.locale ?? 'en') === locale))
-      && activities.every(activity => progress.activityAttempts.some(attempt => attempt.activityId === activity.id && attempt.correct
-        && (activity.languageIndependent ? attempt.languageIndependent : (attempt.locale ?? 'en') === locale)));
+    const passed = questionIds.every(id => progress.questionAttempts
+      .filter(attempt => attempt.questionId === id && (attempt.locale ?? 'en') === locale)
+      .at(-1)?.correct === true)
+      && activities.every(activity => progress.activityAttempts
+        .filter(attempt => attempt.activityId === activity.id
+          && (activity.languageIndependent ? attempt.languageIndependent : (attempt.locale ?? 'en') === locale))
+        .at(-1)?.correct === true);
     return hasInteraction && !passed ? [step.id] : [];
   });
 }

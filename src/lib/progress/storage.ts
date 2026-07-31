@@ -143,6 +143,28 @@ export async function startLevel(levelId: string, pathId: string, initialStepId:
   });
 }
 
+export async function restartLevel(levelId: string, pathId: string, initialStepId: string): Promise<LevelProgress> {
+  return mutateSnapshot(snapshot => {
+    const now = new Date().toISOString();
+    const existing = snapshot.levels[levelId];
+    const progress: LevelProgress = {
+      levelId,
+      pathId,
+      completed: existing?.completed ?? false,
+      startedAt: existing?.startedAt ?? now,
+      completedAt: existing?.completedAt,
+      currentStepId: initialStepId,
+      completedStepIds: existing?.completedStepIds ?? [],
+      questionAttempts: existing?.questionAttempts ?? [],
+      activityAttempts: existing?.activityAttempts ?? [],
+    };
+    snapshot.levels[levelId] = progress;
+    snapshot.app.currentLevelId = levelId;
+    snapshot.app.lastActiveAt = now;
+    return progress;
+  });
+}
+
 export async function completeLevelStep(
   levelId: string,
   pathId: string,

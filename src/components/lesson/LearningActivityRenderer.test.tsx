@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { getContentRepository } from '../../lib/content/repository';
 import { colors } from '../../theme/tokens';
-import LearningActivityRenderer, { createMatchLayout, shuffle } from './LearningActivityRenderer';
+import LearningActivityRenderer, { createMatchLayout, derange, shuffle } from './LearningActivityRenderer';
 
 test('shuffles ordering choices without mutating authored stable-ID order', () => {
   const authored = ['token-1', 'token-2', 'token-3'];
@@ -28,6 +28,12 @@ test('creates independently shuffled prompt and choice columns', () => {
   expect(layout.prompts).not.toEqual(['p1', 'p2', 'p3']);
   expect(layout.choices).not.toEqual(['c1', 'c2', 'c3']);
   expect(layout.prompts.map(id => id.slice(1))).not.toEqual(layout.choices.map(id => id.slice(1)));
+});
+
+test('deranges matching choices so no answer starts on its matching row', () => {
+  const authored = ['a', 'b', 'c'];
+  const choices = derange(authored, () => 0);
+  expect(choices.every((choice, index) => choice !== authored[index])).toBe(true);
 });
 
 test('renders word matching as accessible two-column selections and submits stable pairs', async () => {
@@ -68,7 +74,7 @@ test('keeps vocabulary prompts in authored order and requires an explicit word s
   expect(screen.getByRole('button', { name: firstMeaning }).props.accessibilityState.selected).toBe(false);
 });
 
-test('marks an incorrect vocabulary pair red and removes a correct pair from both columns', () => {
+test('marks an incorrect vocabulary pair red and keeps a correct pair visible in green', () => {
   const repo = getContentRepository();
   const activity = repo.getActivityById('l1-match-meaning');
   expect(activity?.kind).toBe('match_word_meaning');
@@ -86,8 +92,13 @@ test('marks an incorrect vocabulary pair red and removes a correct pair from bot
   expect(screen.getByRole('button', { name: secondMeaning })).toHaveStyle({ backgroundColor: colors.dangerSoft });
 
   fireEvent.press(screen.getByRole('button', { name: firstMeaning }));
-  expect(screen.queryByRole('button', { name: firstArabic })).toBeNull();
-  expect(screen.queryByRole('button', { name: firstMeaning })).toBeNull();
+  const matchedLabel = `${firstArabic}, matched correctly with ${firstMeaning}`;
+  const matchedButtons = screen.getAllByRole('button', { name: matchedLabel });
+  expect(matchedButtons).toHaveLength(2);
+  matchedButtons.forEach(button => {
+    expect(button).toHaveStyle({ backgroundColor: colors.successSoft });
+    expect(button.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true, selected: true }));
+  });
 });
 
 test('renders canonical continuation segments and submits the stable option ID', async () => {

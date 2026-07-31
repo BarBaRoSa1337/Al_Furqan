@@ -13,8 +13,8 @@ export interface QuranLocationSummary {
 
 export type HomePrimaryAction =
   | { kind: 'review'; href: '/review' }
-  | { kind: 'lesson'; href: `/lesson/${string}` }
-  | { kind: 'practice'; href: `/practice/${string}` }
+  | { kind: 'lesson'; href: `/level/${string}` }
+  | { kind: 'practice'; href: `/level/${string}` }
   | { kind: 'explore'; href: '/discover' };
 
 export function isDailyGoalComplete(
@@ -35,9 +35,9 @@ export function resolveHomePrimaryAction(
   latestHasPractice: boolean
 ): HomePrimaryAction {
   if (dueReviewCount > 0) return { kind: 'review', href: '/review' };
-  if (activeLevel) return { kind: 'lesson', href: `/lesson/${activeLevel.id}` };
+  if (activeLevel) return { kind: 'lesson', href: `/level/${activeLevel.id}` };
   if (latestCompletedLevel && latestHasPractice) {
-    return { kind: 'practice', href: `/practice/${latestCompletedLevel.id}` };
+    return { kind: 'practice', href: `/level/${latestCompletedLevel.id}` };
   }
   return { kind: 'explore', href: '/discover' };
 }

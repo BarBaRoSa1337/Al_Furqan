@@ -34,14 +34,7 @@ export default function RoadmapScreen() {
     router.push(dashboard.primaryAction.href);
   };
 
-  const openLevel = (levelId: string, status: NodeStatus) => {
-    const level = repo.getLevelById(levelId);
-    if (status === 'completed' && level && hasPracticeSteps(level)) {
-      router.push(`/practice/${levelId}`);
-      return;
-    }
-    router.push(`/lesson/${levelId}`);
-  };
+  const openLevel = (levelId: string) => router.push(`/level/${levelId}`);
 
   const openLocation = (mode: 'surah' | 'juz' | 'hizb', number: number) => {
     router.push({ pathname: '/discover', params: { mode, number: String(number) } });
@@ -107,14 +100,14 @@ export default function RoadmapScreen() {
             return (
               <RoadmapNode
                 ayahLabel={ayahLabel}
-                completedActionLabel={hasPracticeSteps(level) ? t('home.practice') : t('home.completed')}
+                completedActionLabel={t('home.options')}
                 description={level.description}
                 durationMinutes={level.durationMinutes}
                 id={level.id}
                 index={index}
                 isLast={index === dashboard.levels.length - 1}
                 key={level.id}
-                onPress={levelId => openLevel(levelId, status)}
+                onPress={openLevel}
                 status={status}
                 title={level.title}
               />
@@ -134,8 +127,8 @@ export default function RoadmapScreen() {
             badge={activeOrPracticeLevel ? `${activeOrPracticeLevel.durationMinutes} min` : undefined}
             description={activeOrPracticeLevel?.description ?? t('home.choosePath')}
             onPress={() => {
-              if (dashboard.activeLevel) router.push(`/lesson/${dashboard.activeLevel.id}`);
-              else if (dashboard.latestCompletedLevel && hasPracticeSteps(dashboard.latestCompletedLevel)) router.push(`/practice/${dashboard.latestCompletedLevel.id}`);
+              if (dashboard.activeLevel) router.push(`/level/${dashboard.activeLevel.id}`);
+              else if (dashboard.latestCompletedLevel && hasPracticeSteps(dashboard.latestCompletedLevel)) router.push(`/level/${dashboard.latestCompletedLevel.id}`);
               else router.push('/discover');
             }}
             title={t('home.memorize')}

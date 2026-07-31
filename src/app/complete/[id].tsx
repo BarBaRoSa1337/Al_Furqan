@@ -123,7 +123,7 @@ export default function CompleteScreen() {
       </View>
       <View style={styles.footer}>
         {nextLevel ? (
-          <Button title={text('completion.startNextLevel')} onPress={() => router.replace(`/lesson/${nextLevel.id}`)} size="lg" variant="success" />
+          <Button title={text('completion.startNextLevel')} onPress={() => router.replace(`/level/${nextLevel.id}`)} size="lg" variant="success" />
         ) : null}
         {hasPracticeSteps(level) ? (
           <Button title={text('completion.extraPractice')} onPress={() => router.replace(`/practice/${level.id}`)} size="md" variant="secondary" />
