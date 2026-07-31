@@ -7,11 +7,13 @@ import {
   completeLevel,
   completeLevelStep,
   getAppProgress,
+  getLevelProgress,
   getProgressRecoveryWarning,
   recordQuestionAttempt,
   recordActivityAttempt,
   restartLevel,
   startLevel,
+  abandonLevel,
 } from '../lib/progress/storage';
 import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../types/progress';
 import { LevelStep, QuestionBlock } from '../types/content';
@@ -43,6 +45,7 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<ProgressRecoveryWarning | null>(null);
   const operationLocked = useRef(false);
+  const preSessionRef = useRef<LevelProgress | undefined>(undefined);
 
   const currentStepIndex = cursor.currentStepIndex;
   const step = coreSteps[currentStepIndex];
@@ -86,6 +89,11 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
         }
 
         const initialStepId = coreSteps[0]?.id ?? '';
+        const existingProgress = await getLevelProgress(level.id);
+        if (!cancelled) {
+          preSessionRef.current = existingProgress ?? undefined;
+        }
+
         const progress = startMode === 'start_over'
           ? await restartLevel(level.id, path.id, initialStepId)
           : await startLevel(level.id, path.id, initialStepId);
@@ -214,6 +222,10 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     answerQuestion,
     answerActivity,
     advance,
+    abandonSession: async () => {
+      if (!level) return;
+      await abandonLevel(level.id, preSessionRef.current);
+    },
     clearError: () => setError(null),
   };
 }

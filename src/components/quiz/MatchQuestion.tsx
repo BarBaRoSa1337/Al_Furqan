@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Animated } from 'react-native';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
@@ -23,6 +23,7 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
   const [shuffledMeanings] = useState(() => derangeMeanings(pairs));
   const [incorrectPair, setIncorrectPair] = useState<{ promptId: string; choiceId: string }>();
   const [saving, setSaving] = useState(false);
+  const [shakeAnim] = useState(new Animated.Value(0));
 
   const handleArabicPress = (id: string) => {
     if (selections[id] || saving) return;
@@ -34,9 +35,17 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
     if (!selectedArabic || saving) return;
     if (choiceId !== selectedArabic) {
       setIncorrectPair({ promptId: selectedArabic, choiceId });
+      shakeAnim.setValue(0);
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true })
+      ]).start();
       return;
     }
     const nextSelections = { ...selections, [selectedArabic]: choiceId };
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSelections(nextSelections);
     setSelectedArabic(null);
     setIncorrectPair(undefined);
@@ -58,40 +67,48 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
       <Text style={styles.hint}>{packageText(repo, 'question.matchHint')}</Text>
       <View style={styles.columns}>
         <View style={styles.col}>
-          {pairs.map(p => (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`${p.arabic}${selections[p.id] ? ` matched with ${pairs.find(choice => choice.id === selections[p.id])?.meaning ?? ''}` : ''}`}
-              accessibilityState={{ selected: selectedArabic === p.id || Boolean(selections[p.id]), disabled: Boolean(selections[p.id]) || saving }}
-              key={p.id}
-              style={[
-                styles.arabicItem,
-                selectedArabic === p.id && styles.arabicSelected,
-                selections[p.id] && styles.correct,
-                incorrectPair?.promptId === p.id && styles.wrong,
-              ]}
-              onPress={() => handleArabicPress(p.id)}
-              disabled={Boolean(selections[p.id]) || saving}
-            >
-              <Text style={styles.arabicText}>{p.arabic}</Text>
-              {selections[p.id] ? <Text style={styles.matchedText}>{pairs.find(choice => choice.id === selections[p.id])?.meaning}</Text> : null}
-            </TouchableOpacity>
-          ))}
+          {pairs.map(p => {
+            const isWrong = incorrectPair?.promptId === p.id;
+            return (
+              <Animated.View key={p.id} style={isWrong ? { transform: [{ translateX: shakeAnim }] } : undefined}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`${p.arabic}${selections[p.id] ? ` matched with ${pairs.find(choice => choice.id === selections[p.id])?.meaning ?? ''}` : ''}`}
+                  accessibilityState={{ selected: selectedArabic === p.id || Boolean(selections[p.id]), disabled: Boolean(selections[p.id]) || saving }}
+                  style={[
+                    styles.arabicItem,
+                    selectedArabic === p.id && styles.arabicSelected,
+                    selections[p.id] && styles.correct,
+                    isWrong && styles.wrong,
+                  ]}
+                  onPress={() => handleArabicPress(p.id)}
+                  disabled={Boolean(selections[p.id]) || saving}
+                >
+                  <Text style={styles.arabicText}>{p.arabic}</Text>
+                  {selections[p.id] ? <Text style={styles.matchedText}>{pairs.find(choice => choice.id === selections[p.id])?.meaning}</Text> : null}
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
         </View>
         <View style={styles.col}>
           {shuffledMeanings.map(choice => {
             const usedByAnotherPair = Object.entries(selections).some(([id, choiceId]) => id !== selectedArabic && choiceId === choice.id);
-            return <TouchableOpacity
-              key={choice.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Meaning: ${choice.meaning}`}
-              accessibilityState={{ selected: usedByAnotherPair, disabled: saving || usedByAnotherPair }}
-              style={[styles.meaningItem, selectedArabic ? styles.meaningHint : null, usedByAnotherPair && styles.correct, incorrectPair?.choiceId === choice.id && styles.wrong]}
-              onPress={() => { void handleMeaningPress(choice.id); }}
-              disabled={saving || usedByAnotherPair}
-            >
-              <Text style={styles.meaningText}>{choice.meaning}</Text>
-            </TouchableOpacity>;
+            const isWrong = incorrectPair?.choiceId === choice.id;
+            return (
+              <Animated.View key={choice.id} style={isWrong ? { transform: [{ translateX: shakeAnim }] } : undefined}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Meaning: ${choice.meaning}`}
+                  accessibilityState={{ selected: usedByAnotherPair, disabled: saving || usedByAnotherPair }}
+                  style={[styles.meaningItem, selectedArabic ? styles.meaningHint : null, usedByAnotherPair && styles.correct, isWrong && styles.wrong]}
+                  onPress={() => { void handleMeaningPress(choice.id); }}
+                  disabled={saving || usedByAnotherPair}
+                >
+                  <Text style={styles.meaningText}>{choice.meaning}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            );
           })}
         </View>
       </View>

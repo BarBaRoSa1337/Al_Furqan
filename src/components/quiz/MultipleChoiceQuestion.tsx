@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Pressable, LayoutAnimation } from 'react-native';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
+import { colors, fonts, radii, spacing } from '../../theme/tokens';
 
 export interface MCQOption {
   id: string;
@@ -31,6 +32,7 @@ const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOpt
     setSaving(true);
     try {
       await onResult(selectedId === correctOptionId, selectedId);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSubmitted(true);
     } catch {
       // Session displays persistence error; keep answer retryable.
@@ -40,6 +42,7 @@ const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOpt
   };
 
   const handleRetry = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSelectedId(null);
     setSubmitted(false);
   };
@@ -52,17 +55,23 @@ const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOpt
         const correct = submitted && opt.id === correctOptionId;
         const wrong = submitted && sel && opt.id !== correctOptionId;
         return (
-          <TouchableOpacity
+          <Pressable
             accessibilityRole="radio"
             accessibilityLabel={opt.text}
             accessibilityState={{ selected: sel, disabled: submitted || saving }}
             key={opt.id}
-            style={[styles.option, sel && !submitted && styles.selected, correct && styles.correct, wrong && styles.wrong]}
+            style={({ pressed }) => [
+              styles.option,
+              sel && !submitted && styles.selected,
+              correct && styles.correct,
+              wrong && styles.wrong,
+              pressed && !submitted && !saving && styles.pressed
+            ]}
             onPress={() => handleSelect(opt.id)}
             disabled={submitted || saving}
           >
             <Text style={[styles.optText, (correct || (sel && !submitted)) && styles.optTextSelected]}>{opt.text}</Text>
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
       {!submitted ? (
@@ -91,19 +100,20 @@ const MultipleChoiceQuestion: React.FC<Props> = ({ question, options, correctOpt
 };
 
 const styles = StyleSheet.create({
-  question: { fontSize: 17, fontWeight: '600', color: '#1A1A1A', marginBottom: 16, lineHeight: 26 },
-  option: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent' },
-  selected: { borderColor: '#1B4F72', backgroundColor: '#EBF5FB' },
-  correct: { borderColor: '#1E8449', backgroundColor: '#D5F5E3' },
-  wrong: { borderColor: '#C0392B', backgroundColor: '#FDEDEC' },
-  optText: { fontSize: 15, color: '#333' },
-  optTextSelected: { fontWeight: '700' },
-  submit: { backgroundColor: '#1B4F72', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 4 },
-  submitDisabled: { backgroundColor: '#AAA' },
-  submitText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
-  explanation: { marginTop: 12, fontSize: 14, color: '#555', lineHeight: 22, backgroundColor: '#F9F9F9', padding: 12, borderRadius: 8 },
-  retry: { borderWidth: 1, borderColor: '#1B4F72', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 12 },
-  retryText: { color: '#1B4F72', fontWeight: '700', fontSize: 15 },
+  question: { fontFamily: fonts.medium, fontSize: 17, color: colors.text, marginBottom: spacing.lg, lineHeight: 26 },
+  option: { backgroundColor: colors.surface, borderRadius: radii.sm, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent' },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
+  selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  correct: { borderColor: colors.success, backgroundColor: colors.successSoft },
+  wrong: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
+  optText: { fontFamily: fonts.regular, fontSize: 15, color: colors.text },
+  optTextSelected: { fontFamily: fonts.bold },
+  submit: { backgroundColor: colors.primary, borderRadius: radii.sm, padding: 14, alignItems: 'center', marginTop: 4 },
+  submitDisabled: { backgroundColor: colors.locked },
+  submitText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 15 },
+  explanation: { marginTop: 12, fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, lineHeight: 22, backgroundColor: colors.surfaceMuted, padding: 12, borderRadius: radii.sm },
+  retry: { borderWidth: 1, borderColor: colors.primary, borderRadius: radii.sm, padding: 12, alignItems: 'center', marginTop: 12 },
+  retryText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 15 },
 });
 
 export default MultipleChoiceQuestion;

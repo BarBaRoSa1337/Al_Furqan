@@ -165,6 +165,23 @@ export async function restartLevel(levelId: string, pathId: string, initialStepI
   });
 }
 
+export async function abandonLevel(
+  levelId: string,
+  preSessionSnapshot: LevelProgress | undefined
+): Promise<void> {
+  return mutateSnapshot(snapshot => {
+    if (!preSessionSnapshot) {
+      delete snapshot.levels[levelId];
+    } else {
+      snapshot.levels[levelId] = preSessionSnapshot;
+    }
+    if (snapshot.app.currentLevelId === levelId) {
+      snapshot.app.currentLevelId = undefined;
+    }
+  });
+}
+
+
 export async function completeLevelStep(
   levelId: string,
   pathId: string,

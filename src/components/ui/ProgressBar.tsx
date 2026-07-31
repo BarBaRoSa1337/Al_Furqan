@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { colors, fonts, radii } from '../../theme/tokens';
 
 interface ProgressBarProps {
@@ -23,6 +23,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
 
+  const animatedWidth = React.useRef(new Animated.Value(pct)).current;
+
+  React.useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: pct,
+      duration: 400,
+      useNativeDriver: false, // width cannot use native driver
+    }).start();
+  }, [pct, animatedWidth]);
+
   return (
     <View
       accessibilityRole="progressbar"
@@ -37,10 +47,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         </View>
       )}
       <View style={[styles.track, { height }]}>
-        <View
+        <Animated.View
           style={[
             styles.fill,
-            { width: `${pct}%`, backgroundColor: color, height, borderRadius: height / 2 },
+            {
+              width: animatedWidth.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%'],
+              }),
+              backgroundColor: color,
+              height,
+              borderRadius: height / 2,
+            },
           ]}
         />
       </View>

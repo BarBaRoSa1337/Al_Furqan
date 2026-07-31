@@ -20,6 +20,7 @@ import {
   restartLevel,
   startLevel,
   syncCompletedLevelReviews,
+  abandonLevel,
 } from './storage';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -330,3 +331,40 @@ async function seedSnapshot(levels: Record<string, LevelProgress>): Promise<void
   snapshot.app.completedLevelIds = Object.values(levels).filter(level => level.completed).map(level => level.levelId);
   await AsyncStorage.setItem('qlp_progress_v2', JSON.stringify(snapshot));
 }
+
+test('abandonLevel deletes level progress if there was no pre-session progress', async () => {
+  const level = surahAlFilLevels[0];
+  
+  // Start level creates the in-session progress
+  await startLevel(level.id, level.pathId, level.steps[0].id);
+  await recordQuestionAttempt({ levelId: level.id, pathId: level.pathId, questionId: 'q1', selectedAnswer: 1, correct: true });
+  
+  expect(await getLevelProgress(level.id)).not.toBeNull();
+  
+  // Abandon with undefined preSessionSnapshot (new level)
+  await abandonLevel(level.id, undefined);
+  
+  expect(await getLevelProgress(level.id)).toBeNull();
+});
+
+test('abandonLevel restores pre-session progress if level was already started/completed', async () => {
+  const level = surahAlFilLevels[0];
+  const oldProgress = completedProgress(level);
+  await seedSnapshot({ [level.id]: oldProgress });
+  
+  // Re-enter / modify progress in new session
+  await restartLevel(level.id, level.pathId, level.steps[0].id);
+  await recordQuestionAttempt({ levelId: level.id, pathId: level.pathId, questionId: 'new-q', selectedAnswer: 2, correct: false });
+  
+  const currentProgress = await getLevelProgress(level.id);
+  expect(currentProgress?.questionAttempts).toHaveLength(oldProgress.questionAttempts.length + 1);
+  
+  // Abandon and restore to oldProgress
+  await abandonLevel(level.id, oldProgress);
+  
+  const restoredProgress = await getLevelProgress(level.id);
+  expect(restoredProgress).not.toBeNull();
+  expect(restoredProgress?.questionAttempts).toHaveLength(oldProgress.questionAttempts.length);
+  expect(restoredProgress?.completed).toBe(true);
+});
+

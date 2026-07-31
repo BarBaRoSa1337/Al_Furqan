@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, LayoutAnimation } from 'react-native';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
+import { colors, fonts, radii, spacing } from '../../theme/tokens';
 
 interface Props {
   question: string;
@@ -27,6 +28,7 @@ const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer
     setSaving(true);
     try {
       await onResult(isCorrect, answer);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setCorrect(isCorrect);
       setSubmitted(true);
     } catch {
@@ -39,6 +41,7 @@ const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer
   const displayText = blankText.replace('___', '_____');
 
   const handleRetry = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setAnswer('');
     setSubmitted(false);
     setCorrect(false);
@@ -81,20 +84,20 @@ const FillBlankQuestion: React.FC<Props> = ({ question, blankText, correctAnswer
 };
 
 const styles = StyleSheet.create({
-  question: { fontSize: 17, fontWeight: '600', color: '#1A1A1A', marginBottom: 10, lineHeight: 26 },
-  blank: { fontSize: 15, color: '#555', marginBottom: 14, fontStyle: 'italic' },
-  input: { borderWidth: 2, borderColor: '#DDD', borderRadius: 10, padding: 14, fontSize: 15, color: '#1A1A1A', backgroundColor: '#FAFAFA' },
-  inputCorrect: { borderColor: '#1E8449', backgroundColor: '#D5F5E3' },
-  inputWrong: { borderColor: '#C0392B', backgroundColor: '#FDEDEC' },
-  submit: { backgroundColor: '#1B4F72', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 12 },
-  submitDisabled: { backgroundColor: '#AAA' },
-  submitText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
-  result: { fontSize: 16, fontWeight: '700', marginTop: 12, marginBottom: 8 },
-  resultCorrect: { color: '#1E8449' },
-  resultWrong: { color: '#C0392B' },
-  explanation: { fontSize: 14, color: '#555', lineHeight: 22, backgroundColor: '#F9F9F9', padding: 12, borderRadius: 8 },
-  retry: { borderWidth: 1, borderColor: '#1B4F72', borderRadius: 10, padding: 12, alignItems: 'center', marginTop: 12 },
-  retryText: { color: '#1B4F72', fontWeight: '700', fontSize: 15 },
+  question: { fontFamily: fonts.medium, fontSize: 17, color: colors.text, marginBottom: spacing.md, lineHeight: 26 },
+  blank: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted, marginBottom: 14, fontStyle: 'italic' },
+  input: { fontFamily: fonts.medium, borderWidth: 2, borderColor: colors.border, borderRadius: radii.sm, padding: 14, fontSize: 15, color: colors.text, backgroundColor: colors.surface },
+  inputCorrect: { borderColor: colors.success, backgroundColor: colors.successSoft },
+  inputWrong: { borderColor: colors.danger, backgroundColor: colors.dangerSoft },
+  submit: { backgroundColor: colors.primary, borderRadius: radii.sm, padding: 14, alignItems: 'center', marginTop: 12 },
+  submitDisabled: { backgroundColor: colors.locked },
+  submitText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 15 },
+  result: { fontSize: 16, fontFamily: fonts.bold, marginTop: 12, marginBottom: 8 },
+  resultCorrect: { color: colors.success },
+  resultWrong: { color: colors.danger },
+  explanation: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, lineHeight: 22, backgroundColor: colors.surfaceMuted, padding: 12, borderRadius: radii.sm },
+  retry: { borderWidth: 1, borderColor: colors.primary, borderRadius: radii.sm, padding: 12, alignItems: 'center', marginTop: 12 },
+  retryText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 15 },
 });
 
 export default FillBlankQuestion;

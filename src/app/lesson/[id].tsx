@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Alert, BackHandler, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, StyleSheet, Text, View, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DailyLearningLoop from '../../components/lesson/DailyLearningLoop';
@@ -23,9 +23,27 @@ export default function LessonPlayerScreen() {
   const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values, preferences.interfaceLocale);
 
   const confirmExit = () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`${text('lesson.leaveLevel')}\n\n${text('lesson.leaveMessage')}`);
+      if (confirmed) {
+        void (async () => {
+          await session.abandonSession();
+          router.back();
+        })();
+      }
+      return;
+    }
+
     Alert.alert(text('lesson.leaveLevel'), text('lesson.leaveMessage'), [
       { text: text('lesson.keepLearning'), style: 'cancel' },
-      { text: text('lesson.leave'), style: 'destructive', onPress: () => router.back() },
+      {
+        text: text('lesson.leave'),
+        style: 'destructive',
+        onPress: async () => {
+          await session.abandonSession();
+          router.back();
+        },
+      },
     ]);
   };
 
