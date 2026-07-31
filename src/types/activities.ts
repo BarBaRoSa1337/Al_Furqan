@@ -32,6 +32,8 @@ interface ActivityBase {
   sourceIds: string[];
   reviewerStatus: ReviewerStatus;
   reviewSchedule?: ActivityReviewSchedule;
+  /** True only when prompts, accepted answers, and evaluation are identical in every locale. */
+  languageIndependent?: boolean;
 }
 
 export interface RecallThenRevealActivity extends ActivityBase { kind: 'recall_then_reveal'; config: Record<string, never>; }

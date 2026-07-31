@@ -13,6 +13,7 @@ export async function resolveAndCacheRecitation(
   if (track.asset.kind === 'local') return { status: 'verified_offline', uri: track.asset.uri };
   if (policy.mode === 'blocked') return { status: 'unavailable', reason: policy.reason };
   if (policy.mode === 'stream') return { status: 'streaming', uri: track.asset.uri, reason: policy.reason };
+  if (!track.checksum) return { status: 'unavailable', reason: 'Cacheable audio requires an integrity checksum.' };
 
   removeLegacyUnversionedCache(track);
   const directory = new Directory(Paths.cache, 'furqan-audio-v2', track.editionId, track.reciterId);
@@ -63,6 +64,7 @@ async function readValidCache(
   track: RecitationTrack,
   policy: Extract<AudioAccessPolicy, { mode: 'persist' }>,
 ): Promise<AudioCacheResult | undefined> {
+  if (!track.checksum) return undefined;
   if (!target.exists || !metadataFile.exists) return undefined;
   try {
     const metadata = JSON.parse(await metadataFile.text()) as AudioCacheMetadata;
@@ -85,6 +87,7 @@ async function readValidCache(
 }
 
 async function fileMatches(file: File, track: RecitationTrack): Promise<boolean> {
+  if (!track.checksum) return false;
   if (track.byteSize !== undefined && file.size !== track.byteSize) return false;
   return sha256Hex(await file.bytes()) === track.checksum.toLowerCase();
 }

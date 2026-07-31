@@ -28,6 +28,7 @@ export interface QuestionAttempt {
   selectedAnswer: unknown;
   correct: boolean;
   attemptedAt: string;
+  locale?: string;
 }
 
 export interface ActivityAttempt {
@@ -37,6 +38,8 @@ export interface ActivityAttempt {
   correct: boolean;
   attemptedAt: string;
   evaluationVersion: string;
+  locale?: string;
+  languageIndependent?: boolean;
 }
 
 export interface ActivityReviewState {
@@ -48,6 +51,8 @@ export interface ActivityReviewState {
   lastOutcome: import('./activities').ReviewOutcome;
   lastReviewedAt: string;
   mastered: boolean;
+  locale?: string;
+  languageIndependent?: boolean;
 }
 
 export interface LevelProgress {
@@ -98,8 +103,16 @@ export interface ProgressSnapshotV3 {
   lastCompletionReceipt?: CompletionReceipt;
 }
 
+export interface ProgressSnapshotV4 {
+  schemaVersion: 4;
+  app: AppProgress;
+  levels: Record<string, LevelProgress>;
+  reviews: Record<string, ActivityReviewState>;
+  lastCompletionReceipt?: CompletionReceipt;
+}
+
 export interface ProgressRecoveryWarning {
-  code: 'corrupt_v2' | 'corrupt_v3' | 'partial_legacy_migration';
+  code: 'corrupt_v2' | 'corrupt_v3' | 'corrupt_v4' | 'partial_legacy_migration';
   message: string;
 }
 

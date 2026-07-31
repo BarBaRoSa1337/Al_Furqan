@@ -158,7 +158,7 @@ function validateBundledAudioRights(manifest: ContentPackageManifest, content: D
       platforms: ['android', 'ios', 'web'],
       rights: ['public_distribution', 'redistribution', 'download', 'offline_storage', 'segmentation'],
       resourceIds: tracks.map(track => track.id),
-      contentHashes: tracks.map(track => track.checksum),
+      contentHashes: tracks.flatMap(track => track.checksum ? [track.checksum] : []),
     }));
     if (!grant) {
       throw new PackageInstallError(`Bundled audio from source "${sourceId}" lacks exact redistribution and offline-package rights`);

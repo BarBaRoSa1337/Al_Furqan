@@ -2,6 +2,7 @@
 import type { LearningActivity } from './activities';
 import type { ContentGovernance } from './governance';
 import type { Reciter, RecitationTrack } from './media';
+import type { LocalePublication, SupportedLocale } from '../../packages/api-contracts/src';
 
 export const CORE_PACKAGE_TEXT_KEYS = [
   'app.title', 'app.loading', 'app.errorLearningPathNotFound', 'roadmap.levels', 'roadmap.pathProgress', 'roadmap.loadingProgress', 'roadmap.progressUnavailable',
@@ -152,6 +153,13 @@ export interface TranslationEntry {
   text: string;
   sourceId: string;
   reviewerStatus: ReviewerStatus;
+  /** Provider text is immutable; updates create a new reviewed resource version. */
+  providerResourceId?: string;
+  resourceVersion?: string;
+  publisher?: string;
+  attributionText?: string;
+  transcriptInfo?: string;
+  contentHash?: string;
 }
 
 export interface TafsirEntry {
@@ -524,10 +532,13 @@ export interface ContentPackage {
   levels: Level[];
   /** Optional for legacy/development packages; mandatory at the production boundary. */
   governance?: ContentGovernance;
+  /** Schema v3 publishes complete lesson locales, never mixed religious blocks. */
+  localePublications?: LocalePublication[];
+  creationMethod?: 'human_authored' | 'provider_verbatim' | 'mixed_human_and_provider';
   metadata: {
     totalLevels: number;
     totalDuration?: number;
-    language: string;
+    language: SupportedLocale | string;
     targetAudience: 'children' | 'teens' | 'adults' | 'family';
     defaultLearningPathId?: string;
   };

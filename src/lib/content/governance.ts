@@ -71,9 +71,8 @@ export function requiredRightsForSource(pkg: ContentPackage, sourceId: string, p
   if (profile === 'commercial') rights.add('commercial_use');
   const tracks = pkg.recitationTracks.filter(track => track.sourceId === sourceId);
   if (tracks.length > 0) {
-    ['streaming', 'segmentation'].forEach(
-      right => rights.add(right as UsageRight),
-    );
+    rights.add('streaming');
+    if (tracks.some(track => track.deliveryMode !== 'stream_only')) rights.add('segmentation');
   }
   return [...rights];
 }
@@ -85,7 +84,8 @@ export function audioGrantForTrack(
   profile: ReleaseUsageProfile,
   persistent: boolean,
 ): LicenseGrant | undefined {
-  const rights: UsageRight[] = ['public_distribution', 'streaming', 'segmentation'];
+  const rights: UsageRight[] = ['public_distribution', 'streaming'];
+  if (track.deliveryMode !== 'stream_only') rights.push('segmentation');
   if (profile === 'commercial') rights.push('commercial_use');
   if (persistent) rights.push(platform === 'web' ? 'web_cache' : 'native_cache', 'offline_storage');
   return pkg.governance?.licenseGrants.find(grant => grantCovers(grant, {
@@ -94,6 +94,6 @@ export function audioGrantForTrack(
     platforms: [platform],
     rights,
     resourceIds: [track.id],
-    contentHashes: [track.checksum],
+    ...(track.checksum ? { contentHashes: [track.checksum] } : {}),
   }));
 }

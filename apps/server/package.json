@@ -1,0 +1,10 @@
+{
+  "name": "@furqan/server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --import tsx src/index.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

@@ -8,6 +8,9 @@ export interface Reciter {
   sourceId: string;
   license: string;
   reviewerStatus: 'draft' | 'reviewed' | 'approved';
+  providerReciterId?: string;
+  providerMushafId?: string;
+  providerRiwayahId?: string;
 }
 
 export type AudioAssetLocation =
@@ -21,8 +24,16 @@ export interface RecitationTrack {
   ayahRef: AyahRef;
   sourceId: string;
   license: string;
-  checksum: string;
+  deliveryMode?: 'stream_only' | 'cache_allowed';
+  checksum?: string;
   providerResourceId?: string;
+  providerReciterId?: string;
+  providerMushafId?: string;
+  providerRiwayahId?: string;
+  providerSurahId?: number;
+  approvedHostnames?: string[];
+  etag?: string;
+  lastModified?: string;
   durationMs?: number;
   byteSize?: number;
   format?: string;

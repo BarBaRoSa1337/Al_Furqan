@@ -7,6 +7,8 @@ export interface ScheduleReviewInput {
   packageRevisionId: string;
   outcome: ReviewOutcome;
   schedule: ActivityReviewSchedule;
+  locale?: string;
+  languageIndependent?: boolean;
 }
 
 export function scheduleActivityReview(
@@ -34,6 +36,8 @@ export function scheduleActivityReview(
     lastOutcome: input.outcome,
     lastReviewedAt: now.toISOString(),
     mastered,
+    locale: input.languageIndependent ? 'shared' : input.locale ?? 'en',
+    ...(input.languageIndependent ? { languageIndependent: true } : {}),
   };
 }
 
@@ -41,8 +45,14 @@ export function isReviewDue(state: ActivityReviewState, now: Date = new Date()):
   return !state.mastered && Boolean(state.dueAt) && new Date(state.dueAt!).getTime() <= now.getTime();
 }
 
-export function reviewStateKey(levelId: string, activityId: string, packageRevisionId: string): string {
-  return `${levelId}:${activityId}:${packageRevisionId}`;
+export function reviewStateKey(
+  levelId: string,
+  activityId: string,
+  packageRevisionId: string,
+  locale = 'en',
+  languageIndependent = false,
+): string {
+  return `${levelId}:${activityId}:${packageRevisionId}:${languageIndependent ? 'shared' : locale}`;
 }
 
 export function restorePendingFinalInterval(state: ActivityReviewState, schedule: ActivityReviewSchedule): ActivityReviewState {

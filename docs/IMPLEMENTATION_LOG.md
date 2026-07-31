@@ -3,6 +3,39 @@
 This log records completed implementation milestones that change runtime
 behavior, data contracts, or release gates. Update it with each major change.
 
+## 2026-07-31 - Provider backend and multilingual contracts
+
+### Delivered
+
+- Added independent interface locale, lesson locale, Quran translation,
+  script, transliteration and reciter preference contracts for Arabic, English
+  and French.
+- Added locale publication metadata and Progress V4. Level completion remains
+  shared; language-dependent attempts and reviews carry a locale.
+- Added the Furqan provider backend boundary. Quran Foundation OAuth secrets
+  remain server-only, caching honors upstream controls with a seven-day hard
+  maximum, and stale data is never served.
+- Pinned exact QuranEnc Rowwad English and Rashid French resources. Provider
+  version changes fail closed pending review.
+- Added exact MP3Quran Al-Husary Hafs identity checks, ayah timing resolution,
+  stream metadata probing, host validation, and stream-only delivery.
+- Added origin, method, URL-size and rate-limit guards. Mafateeh remains disabled.
+
+### Release status
+
+No religious package is published by this backend yet. Runtime package serving
+is an explicit injection boundary and returns an unavailable response unless an
+approved immutable package is configured. Production must replace the in-memory
+cache with an expiry-reliable cache implementation.
+
+### Compatibility
+
+- Existing V3 progress migrates to V4; completed levels remain complete.
+- Existing attempts and reviews are assigned the English locale unless marked
+  language-independent.
+- Content schema v1 and v2 remain development-readable; schema v3 adds locale
+  publication records.
+
 ## 2026-07-30 - Evidence-bound governance and licensed audio cache
 
 ### Delivered

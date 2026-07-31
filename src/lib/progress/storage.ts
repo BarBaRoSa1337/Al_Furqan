@@ -12,6 +12,7 @@ import {
   ProgressRecoveryWarning,
   ProgressSnapshotV2,
   ProgressSnapshotV3,
+  ProgressSnapshotV4,
   QuestionAttempt,
   ActivityAttempt,
   ActivityReviewState,
@@ -20,7 +21,8 @@ import {
 } from '../../types/progress';
 
 const KEYS = {
-  SNAPSHOT: 'qlp_progress_v3',
+  SNAPSHOT: 'qlp_progress_v4',
+  SNAPSHOT_V3: 'qlp_progress_v3',
   SNAPSHOT_V2: 'qlp_progress_v2',
   APP_PROGRESS: 'qlp_app_progress',
   LEVEL_PREFIX: 'qlp_level_',
@@ -54,8 +56,9 @@ export interface RecordQuestionAttemptInput {
   questionId: string;
   selectedAnswer: unknown;
   correct: boolean;
+  locale?: string;
 }
-export interface RecordActivityAttemptInput { levelId: string; pathId: string; activityId: string; answer: unknown; correct: boolean; evaluationVersion: string; }
+export interface RecordActivityAttemptInput { levelId: string; pathId: string; activityId: string; answer: unknown; correct: boolean; evaluationVersion: string; locale?: string; languageIndependent?: boolean; }
 export interface RecordReviewAttemptInput extends RecordActivityAttemptInput {
   packageRevisionId: string;
   reviewSchedule: ActivityReviewSchedule;
@@ -66,8 +69,9 @@ export interface RecordReviewAttemptInput extends RecordActivityAttemptInput {
 export interface CompleteLevelOptions {
   packageRevisionId?: string;
   now?: Date;
+  locale?: string;
 }
-export interface ReviewCatalogEntry { level: Level; packageRevisionId: string; }
+export interface ReviewCatalogEntry { level: Level; packageRevisionId: string; locale?: string; }
 
 export class ProgressStorageError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -101,9 +105,9 @@ export async function getDueReviewStates(now: Date = new Date()): Promise<Activi
 
 export async function syncCompletedLevelReviews(entries: ReviewCatalogEntry[], now: Date = new Date()): Promise<void> {
   await mutateSnapshot(snapshot => {
-    entries.forEach(({ level, packageRevisionId }) => {
+    entries.forEach(({ level, packageRevisionId, locale }) => {
       const progress = snapshot.levels[level.id];
-      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, now);
+      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, now, locale);
     });
   });
 }
@@ -176,6 +180,7 @@ export async function recordQuestionAttempt(input: RecordQuestionAttemptInput): 
       selectedAnswer: input.selectedAnswer,
       correct: input.correct,
       attemptedAt: now,
+      locale: input.locale ?? 'en',
     };
     snapshot.levels[input.levelId] = {
       levelId: input.levelId,
@@ -195,7 +200,7 @@ export async function recordQuestionAttempt(input: RecordQuestionAttemptInput): 
 export async function recordActivityAttempt(input: RecordActivityAttemptInput): Promise<ActivityAttempt> {
   return mutateSnapshot(snapshot => {
     const now = new Date().toISOString(); const existing = snapshot.levels[input.levelId];
-    const attempt: ActivityAttempt = { activityId: input.activityId, levelId: input.levelId, answer: input.answer, correct: input.correct, attemptedAt: now, evaluationVersion: input.evaluationVersion };
+    const attempt: ActivityAttempt = { activityId: input.activityId, levelId: input.levelId, answer: input.answer, correct: input.correct, attemptedAt: now, evaluationVersion: input.evaluationVersion, locale: input.locale ?? 'en', ...(input.languageIndependent ? { languageIndependent: true } : {}) };
     snapshot.levels[input.levelId] = { levelId: input.levelId, pathId: input.pathId, completed: existing?.completed ?? false, startedAt: existing?.startedAt ?? now, completedAt: existing?.completedAt, currentStepId: existing?.currentStepId, completedStepIds: existing?.completedStepIds ?? [], questionAttempts: existing?.questionAttempts ?? [], activityAttempts: [...(existing?.activityAttempts ?? []), attempt] };
     return attempt;
   });
@@ -213,6 +218,8 @@ export async function recordReviewAttempt(input: RecordReviewAttemptInput): Prom
       correct: input.correct,
       attemptedAt,
       evaluationVersion: input.evaluationVersion,
+      locale: input.locale ?? 'en',
+      ...(input.languageIndependent ? { languageIndependent: true } : {}),
     };
     snapshot.levels[input.levelId] = {
       levelId: input.levelId,
@@ -225,13 +232,15 @@ export async function recordReviewAttempt(input: RecordReviewAttemptInput): Prom
       questionAttempts: existing?.questionAttempts ?? [],
       activityAttempts: [...(existing?.activityAttempts ?? []), attempt],
     };
-    const key = reviewStateKey(input.levelId, input.activityId, input.packageRevisionId);
+    const key = reviewStateKey(input.levelId, input.activityId, input.packageRevisionId, input.locale, input.languageIndependent);
     snapshot.reviews[key] = scheduleActivityReview(snapshot.reviews[key], {
       activityId: input.activityId,
       levelId: input.levelId,
       packageRevisionId: input.packageRevisionId,
       outcome: input.outcome,
       schedule: input.reviewSchedule,
+      locale: input.locale,
+      languageIndependent: input.languageIndependent,
     }, now);
     snapshot.app.lastActiveAt = attemptedAt;
     return attempt;
@@ -272,7 +281,7 @@ export async function completeLevel(level: Level, path: LearningPath, options: C
     if (awardedLevelXp > 0) addXpToSnapshot(snapshot, awardedLevelXp, `Completed level: ${level.id}`, now);
     if (awardedLearningPathXp > 0) addXpToSnapshot(snapshot, awardedLearningPathXp, `Completed learning path: ${path.id}`, now);
     if (!alreadyCompleted) updateStreakInSnapshot(snapshot, nowDate);
-    if (options.packageRevisionId) registerLevelReviews(snapshot, level, options.packageRevisionId, nowDate);
+    if (options.packageRevisionId) registerLevelReviews(snapshot, level, options.packageRevisionId, nowDate, options.locale);
 
     const currentIndex = path.levelIds.indexOf(level.id);
     snapshot.app.currentLevelId = path.levelIds[currentIndex + 1] ?? level.id;
@@ -377,13 +386,13 @@ export async function resetProgress(): Promise<void> {
   });
 }
 
-function addXpToSnapshot(snapshot: ProgressSnapshotV3, amount: number, reason: string, earnedAt: string): void {
+function addXpToSnapshot(snapshot: ProgressSnapshotV4, amount: number, reason: string, earnedAt: string): void {
   const record: XPRecord = { amount, reason, earnedAt };
   snapshot.app.xp += amount;
   snapshot.app.xpHistory.push(record);
 }
 
-function updateStreakInSnapshot(snapshot: ProgressSnapshotV3, date: Date): void {
+function updateStreakInSnapshot(snapshot: ProgressSnapshotV4, date: Date): void {
   const today = localDateKey(date);
   if (snapshot.app.streak.lastActiveDate === today) return;
   const yesterday = new Date(date);
@@ -398,11 +407,11 @@ function updateStreakInSnapshot(snapshot: ProgressSnapshotV3, date: Date): void 
   };
 }
 
-async function readAfterMutations(): Promise<ProgressSnapshotV3> {
+async function readAfterMutations(): Promise<ProgressSnapshotV4> {
   return enqueueMutation(loadSnapshot);
 }
 
-function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV3) => T): Promise<T> {
+function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV4) => T): Promise<T> {
   return enqueueMutation(async () => {
     const snapshot = await loadSnapshot();
     const result = mutation(snapshot);
@@ -417,22 +426,24 @@ function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   return result;
 }
 
-async function loadSnapshot(): Promise<ProgressSnapshotV3> {
+async function loadSnapshot(): Promise<ProgressSnapshotV4> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT);
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as unknown;
-        if (isProgressSnapshotV3(parsed)) return parsed;
+        if (isProgressSnapshotV4(parsed)) return parsed;
       } catch {
         // Quarantined below.
       }
       const quarantineKey = `${KEYS.CORRUPT_PREFIX}${Date.now()}`;
       await AsyncStorage.setItem(quarantineKey, raw);
       await AsyncStorage.removeItem(KEYS.SNAPSHOT);
-      recoveryWarning = { code: 'corrupt_v3', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
+      recoveryWarning = { code: 'corrupt_v4', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
       return createEmptySnapshot();
     }
+    const migratedV3 = await migrateV3Snapshot();
+    if (migratedV3) return migratedV3;
     const migratedV2 = await migrateV2Snapshot();
     if (migratedV2) return migratedV2;
     return migrateLegacyProgress();
@@ -442,16 +453,16 @@ async function loadSnapshot(): Promise<ProgressSnapshotV3> {
   }
 }
 
-async function migrateV2Snapshot(): Promise<ProgressSnapshotV3 | null> {
+async function migrateV2Snapshot(): Promise<ProgressSnapshotV4 | null> {
   const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V2);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!isProgressSnapshotV2(parsed)) throw new Error('Invalid V2 snapshot');
-    const snapshot: ProgressSnapshotV3 = {
-      schemaVersion: 3,
+    const snapshot: ProgressSnapshotV4 = {
+      schemaVersion: 4,
       app: parsed.app,
-      levels: parsed.levels,
+      levels: localizeLegacyLevels(parsed.levels),
       reviews: {},
       lastCompletionReceipt: parsed.lastCompletionReceipt,
     };
@@ -467,7 +478,34 @@ async function migrateV2Snapshot(): Promise<ProgressSnapshotV3 | null> {
   }
 }
 
-async function migrateLegacyProgress(): Promise<ProgressSnapshotV3> {
+async function migrateV3Snapshot(): Promise<ProgressSnapshotV4 | null> {
+  const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V3);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isProgressSnapshotV3(parsed)) throw new Error('Invalid V3 snapshot');
+    const levels = Object.fromEntries(Object.entries(parsed.levels).map(([levelId, progress]) => [levelId, {
+      ...progress,
+      questionAttempts: progress.questionAttempts.map(attempt => ({ ...attempt, locale: attempt.locale ?? 'en' })),
+      activityAttempts: progress.activityAttempts.map(attempt => ({ ...attempt, locale: attempt.locale ?? 'en' })),
+    }]));
+    const reviews = Object.fromEntries(Object.values(parsed.reviews).map(review => {
+      const migrated = { ...review, locale: review.languageIndependent ? 'shared' : review.locale ?? 'en' };
+      return [reviewStateKey(review.levelId, review.activityId, review.packageRevisionId, migrated.locale, migrated.languageIndependent), migrated];
+    }));
+    const snapshot: ProgressSnapshotV4 = { schemaVersion: 4, app: parsed.app, levels, reviews, lastCompletionReceipt: parsed.lastCompletionReceipt };
+    await writeSnapshot(snapshot);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V3);
+    return snapshot;
+  } catch {
+    await AsyncStorage.setItem(`${KEYS.CORRUPT_PREFIX}${Date.now()}`, raw);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V3);
+    recoveryWarning = { code: 'corrupt_v3', message: 'Saved Progress V3 was corrupt and was reset. A recovery copy was kept.' };
+    return createEmptySnapshot();
+  }
+}
+
+async function migrateLegacyProgress(): Promise<ProgressSnapshotV4> {
   const keys = await AsyncStorage.getAllKeys();
   const oldKeys = keys.filter(key => key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX));
   if (oldKeys.length === 0) return createEmptySnapshot();
@@ -537,12 +575,16 @@ function normalizeLevelProgress(progress: LevelProgress): LevelProgress {
     ...progress,
     pathId: mapLegacyPathId(progress.pathId),
     completedStepIds: progress.completedStepIds ?? [],
-    questionAttempts: progress.questionAttempts ?? [],
-    activityAttempts: progress.activityAttempts ?? [],
+    questionAttempts: (progress.questionAttempts ?? []).map(attempt => ({ ...attempt, locale: attempt.locale ?? 'en' })),
+    activityAttempts: (progress.activityAttempts ?? []).map(attempt => ({ ...attempt, locale: attempt.locale ?? 'en' })),
   };
 }
 
-async function writeSnapshot(snapshot: ProgressSnapshotV3): Promise<void> {
+function localizeLegacyLevels(levels: Record<string, LevelProgress>): Record<string, LevelProgress> {
+  return Object.fromEntries(Object.entries(levels).map(([id, progress]) => [id, normalizeLevelProgress(progress)]));
+}
+
+async function writeSnapshot(snapshot: ProgressSnapshotV4): Promise<void> {
   try {
     await AsyncStorage.setItem(KEYS.SNAPSHOT, JSON.stringify(snapshot));
   } catch (error) {
@@ -550,12 +592,20 @@ async function writeSnapshot(snapshot: ProgressSnapshotV3): Promise<void> {
   }
 }
 
-function createEmptySnapshot(): ProgressSnapshotV3 {
-  return { schemaVersion: 3, app: createDefaultProgress(), levels: {}, reviews: {} };
+function createEmptySnapshot(): ProgressSnapshotV4 {
+  return { schemaVersion: 4, app: createDefaultProgress(), levels: {}, reviews: {} };
+}
+
+function isProgressSnapshotV4(value: unknown): value is ProgressSnapshotV4 {
+  return isProgressSnapshot(value, 4, true);
 }
 
 function isProgressSnapshotV3(value: unknown): value is ProgressSnapshotV3 {
-  if (!isRecord(value) || value.schemaVersion !== 3 || !isAppProgress(value.app) || !isRecord(value.levels) || !isRecord(value.reviews)) return false;
+  return isProgressSnapshot(value, 3, false);
+}
+
+function isProgressSnapshot(value: unknown, schemaVersion: 3 | 4, requireLocale: boolean): boolean {
+  if (!isRecord(value) || value.schemaVersion !== schemaVersion || !isAppProgress(value.app) || !isRecord(value.levels) || !isRecord(value.reviews)) return false;
   const levelsValid = Object.entries(value.levels).every(([key, level]) => isLevelProgress(level) && level.levelId === key);
   const outcomes = ['again', 'hard', 'remembered', 'correct', 'incorrect'];
   const reviewsValid = Object.entries(value.reviews).every(([key, value]) => {
@@ -570,7 +620,8 @@ function isProgressSnapshotV3(value: unknown): value is ProgressSnapshotV3 {
     isIsoDate(review.lastReviewedAt) &&
     typeof review.mastered === 'boolean' &&
     typeof review.lastOutcome === 'string' && outcomes.includes(review.lastOutcome) &&
-    key === reviewStateKey(review.levelId, review.activityId, review.packageRevisionId) &&
+    (!requireLocale || typeof review.locale === 'string') &&
+    (schemaVersion === 3 || key === reviewStateKey(review.levelId, review.activityId, review.packageRevisionId, typeof review.locale === 'string' ? review.locale : 'en', review.languageIndependent === true)) &&
     (!review.mastered || review.dueAt === undefined)
     );
   });
@@ -646,16 +697,16 @@ function isLocalDateOrEmpty(value: unknown): value is string {
 }
 
 function isProgressKey(key: string): boolean {
-  return key === KEYS.SNAPSHOT || key === KEYS.SNAPSHOT_V2 || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
+  return key === KEYS.SNAPSHOT || key === KEYS.SNAPSHOT_V3 || key === KEYS.SNAPSHOT_V2 || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
 }
 
-function registerLevelReviews(snapshot: ProgressSnapshotV3, level: Level, packageRevisionId: string, now: Date): void {
+function registerLevelReviews(snapshot: ProgressSnapshotV4, level: Level, packageRevisionId: string, now: Date, locale = 'en'): void {
   const activities = level.steps.flatMap(step => step.blocks)
     .filter((block): block is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => block.type === 'activity')
     .map(block => block.activity)
     .filter(activity => activity.reviewSchedule);
   activities.forEach(activity => {
-    const key = reviewStateKey(level.id, activity.id, packageRevisionId);
+    const key = reviewStateKey(level.id, activity.id, packageRevisionId, locale, activity.languageIndependent);
     if (snapshot.reviews[key] && activity.reviewSchedule) {
       snapshot.reviews[key] = restorePendingFinalInterval(snapshot.reviews[key], activity.reviewSchedule);
       return;
@@ -671,6 +722,8 @@ function registerLevelReviews(snapshot: ProgressSnapshotV3, level: Level, packag
       packageRevisionId,
       outcome: toReviewOutcome(attempt.answer, attempt.correct),
       schedule: activity.reviewSchedule,
+      locale,
+      languageIndependent: activity.languageIndependent,
     }, attemptedAt);
   });
 }

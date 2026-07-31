@@ -20,6 +20,12 @@ export function resolveAudioAccessPolicy(
   options: { profile?: ReleaseUsageProfile; development?: boolean } = {},
 ): AudioAccessPolicy {
   const profile = options.profile ?? 'public-free';
+  if (track.deliveryMode === 'stream_only') {
+    const streamingGrant = audioGrantForTrack(pkg, track, platform, profile, false);
+    if (streamingGrant) return { mode: 'stream', reason: 'Direct provider stream. Offline storage is disabled.' };
+    if (options.development) return { mode: 'stream', reason: 'Development-only direct stream. Production evidence is incomplete.' };
+    return { mode: 'blocked', reason: 'Audio is unavailable because no evidence-backed streaming grant covers this use.' };
+  }
   const persistentGrant = audioGrantForTrack(pkg, track, platform, profile, true);
   if (persistentGrant) {
     return {

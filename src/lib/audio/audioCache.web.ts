@@ -16,6 +16,7 @@ export async function resolveAndCacheRecitation(
   if (track.asset.kind === 'local') return { status: 'verified_offline', uri: track.asset.uri };
   if (policy.mode === 'blocked') return { status: 'unavailable', reason: policy.reason };
   if (policy.mode === 'stream') return { status: 'streaming', uri: track.asset.uri, reason: policy.reason };
+  if (!track.checksum) return { status: 'unavailable', reason: 'Cacheable audio requires an integrity checksum.' };
   if (!('caches' in globalThis) || !('indexedDB' in globalThis)) {
     return { status: 'unavailable', reason: 'Verified offline audio is not supported by this browser.' };
   }
@@ -67,6 +68,7 @@ function metadataMatches(
   track: RecitationTrack,
   policy: Extract<AudioAccessPolicy, { mode: 'persist' }>,
 ): boolean {
+  if (!track.checksum) return false;
   return metadata.trackId === track.id
     && metadata.sourceId === track.sourceId
     && metadata.checksum === track.checksum.toLowerCase()
@@ -75,6 +77,7 @@ function metadataMatches(
 }
 
 function matchesBytes(bytes: Uint8Array, track: RecitationTrack): boolean {
+  if (!track.checksum) return false;
   return (track.byteSize === undefined || bytes.byteLength === track.byteSize)
     && sha256Hex(bytes) === track.checksum.toLowerCase();
 }

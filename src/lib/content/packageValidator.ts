@@ -26,6 +26,7 @@ import {
 } from './governance';
 import { getLevelStepKind } from './stepKind';
 import { resolveLegacyWordTokenId } from './legacyPackageAdapter';
+import { SUPPORTED_LOCALES } from '../../../packages/api-contracts/src';
 
 export type ValidationMode = 'development' | 'production';
 
@@ -48,7 +49,7 @@ export function validatePackage(
 
   if (!pkg.id) errors.push('Package missing id');
   if (!pkg.version) errors.push('Package missing version');
-  if (pkg.schemaVersion !== 1 && pkg.schemaVersion !== 2) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
+  if (![1, 2, 3].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
   if (!pkg.revisionId) errors.push('Package missing revisionId');
   if (!pkg.title) errors.push('Package missing title');
   if (pkg.sources.length === 0) errors.push('Package has no sources');
@@ -61,6 +62,7 @@ export function validatePackage(
     errors.push(`metadata.totalLevels (${pkg.metadata.totalLevels}) does not match level count (${pkg.levels.length})`);
   }
   validateLocalization(pkg, errors);
+  validateLocalePublications(pkg, mode, errors, warnings);
 
   validateUniqueIds('source', pkg.sources.map(source => source.id), errors);
   validateUniqueIds('edition', pkg.editions.map(edition => edition.id), errors);
@@ -139,6 +141,42 @@ export function validatePackage(
     }
   });
   return { valid: errors.length === 0, errors, warnings, diagnostics };
+}
+
+function validateLocalePublications(
+  pkg: ContentPackage,
+  mode: ValidationMode,
+  errors: string[],
+  warnings: string[],
+): void {
+  if (pkg.schemaVersion < 3) return;
+  const publications = pkg.localePublications ?? [];
+  if (publications.length === 0) {
+    errors.push(`Package "${pkg.id}" schema v3 has no locale publications`);
+    return;
+  }
+  validateUniqueIds('locale publication', publications.map(item => item.locale), errors);
+  publications.forEach(publication => {
+    const label = `Locale publication "${publication.locale}"`;
+    if (!SUPPORTED_LOCALES.includes(publication.locale)) errors.push(`${label} is unsupported`);
+    if (publication.status === 'published') {
+      if (!/^[a-f0-9]{64}$/i.test(publication.contentHash ?? '')) errors.push(`${label} has no exact content hash`);
+      const languageApproval = pkg.governance?.approvals.find(item => item.id === publication.languageApprovalId);
+      const islamicApproval = pkg.governance?.approvals.find(item => item.id === publication.islamicApprovalId);
+      if (!languageApproval || languageApproval.role !== 'editorial' || languageApproval.target.kind !== 'locale_publication' || languageApproval.target.id !== publication.locale || languageApproval.target.hash !== publication.contentHash) {
+        (mode === 'production' ? errors : warnings).push(`${label} lacks an exact named language approval`);
+      }
+      if (!islamicApproval || islamicApproval.role !== 'shaykh' || islamicApproval.target.kind !== 'locale_publication' || islamicApproval.target.id !== publication.locale || islamicApproval.target.hash !== publication.contentHash) {
+        (mode === 'production' ? errors : warnings).push(`${label} lacks an exact named Islamic approval`);
+      }
+    }
+    publication.availableAlternatives.forEach(locale => {
+      if (!SUPPORTED_LOCALES.includes(locale)) errors.push(`${label} has unsupported alternative "${locale}"`);
+    });
+  });
+  if (pkg.creationMethod !== 'human_authored' && pkg.creationMethod !== 'provider_verbatim' && pkg.creationMethod !== 'mixed_human_and_provider') {
+    errors.push(`Package "${pkg.id}" schema v3 lacks approved human/provider provenance`);
+  }
 }
 
 function validateGovernance(
@@ -261,7 +299,7 @@ function validateGovernance(
       rights: requiredRightsForSource(pkg, source.id, releaseProfile),
       ...(tracks.length ? {
         resourceIds: tracks.map(track => track.id),
-        contentHashes: tracks.map(track => track.checksum),
+        contentHashes: tracks.flatMap(track => track.checksum ? [track.checksum] : []),
       } : {}),
     }));
     if (!grant) {
@@ -417,7 +455,19 @@ function validateRecitationTrack(track: RecitationTrack, pkg: ContentPackage, er
   if (reciter && reciter.editionId !== track.editionId) errors.push(`${label} edition does not match reciter`);
   if (!pkg.editions.some(edition => edition.id === track.editionId)) errors.push(`${label} references unknown edition "${track.editionId}"`);
   if (!findAyah(pkg, track.ayahRef)) errors.push(`${label} references missing ayah ${refKey(track.ayahRef)}`);
-  if (!track.license || !/^[a-f0-9]{64}$/i.test(track.checksum)) errors.push(`${label} missing license or has invalid checksum`);
+  if (!track.license) errors.push(`${label} missing license`);
+  if (track.deliveryMode !== 'stream_only' && !/^[a-f0-9]{64}$/i.test(track.checksum ?? '')) errors.push(`${label} cacheable audio has invalid checksum`);
+  if (track.deliveryMode === 'stream_only') {
+    if (track.asset.kind !== 'remote') errors.push(`${label} stream-only audio must be remote`);
+    if (!track.providerReciterId || !track.providerMushafId || !track.providerSurahId) errors.push(`${label} stream-only audio lacks provider identity`);
+    if (!track.approvedHostnames?.length) errors.push(`${label} stream-only audio lacks an approved hostname allowlist`);
+    try {
+      const uri = new URL(track.asset.uri);
+      if (uri.protocol !== 'https:' || !track.approvedHostnames?.includes(uri.hostname)) errors.push(`${label} stream URI is outside its approved HTTPS origins`);
+    } catch {
+      errors.push(`${label} has invalid stream URI`);
+    }
+  }
   if (!track.asset.uri) errors.push(`${label} missing asset URI`);
   if (track.durationMs !== undefined && (!Number.isFinite(track.durationMs) || track.durationMs <= 0)) errors.push(`${label} has invalid durationMs`);
   if (track.byteSize !== undefined && (!Number.isInteger(track.byteSize) || track.byteSize <= 0)) errors.push(`${label} has invalid byteSize`);

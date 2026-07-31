@@ -87,7 +87,7 @@ export function createFullyApprovedPackage(
         : ['public_distribution'],
       ...(tracks.length ? {
         resourceIds: tracks.map(track => track.id),
-        contentHashes: tracks.map(track => track.checksum),
+        contentHashes: tracks.flatMap(track => track.checksum ? [track.checksum] : []),
       } : {}),
       validFrom: '2026-01-01T00:00:00.000Z',
       retention: /quran-foundation/i.test(sourceRecord.id)

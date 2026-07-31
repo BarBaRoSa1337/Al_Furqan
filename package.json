@@ -2,6 +2,10 @@
   "name": "quran-habit-app",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "workspaces": [
+    "apps/server",
+    "packages/api-contracts"
+  ],
   "scripts": {
     "start": "npx expo start",
     "android": "ANDROID_HOME=/usr/lib/android-sdk ANDROID_SDK_ROOT=/usr/lib/android-sdk npx expo start --android",
@@ -16,7 +20,10 @@
     "content:validate": "node --import tsx scripts/validate-content.ts",
     "structure:validate": "node --import tsx scripts/validate-quran-structure.ts",
     "structure:import": "node --import tsx scripts/import-quran-foundation-structure.ts",
-    "audio:import": "node --import tsx scripts/import-quran-foundation-audio.ts"
+    "audio:import": "node --import tsx scripts/import-quran-foundation-audio.ts",
+    "server:dev": "node --import tsx apps/server/src/index.ts",
+    "server:test": "node --import tsx --test apps/server/test/*.test.ts",
+    "server:typecheck": "tsc -p apps/server/tsconfig.json"
   },
   "dependencies": {
     "@expo-google-fonts/noto-naskh-arabic": "^0.4.5",
@@ -67,6 +74,9 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "testPathIgnorePatterns": [
+      "<rootDir>/apps/server/"
+    ],
     "moduleNameMapper": {
       "^expo-audio$": "<rootDir>/src/test/expoAudioMock.ts"
     }

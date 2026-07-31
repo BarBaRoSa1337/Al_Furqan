@@ -2,7 +2,7 @@ export type ReleaseUsageProfile = 'public-free' | 'commercial';
 export type DistributionPlatform = 'android' | 'ios' | 'web';
 export type ApprovalRole = 'editorial' | 'shaykh' | 'technical' | 'legal';
 export type EvidenceKind = 'published_terms' | 'written_permission' | 'review_record';
-export type GovernedTargetKind = 'package_payload' | 'structure_snapshot' | 'source' | 'resource';
+export type GovernedTargetKind = 'package_payload' | 'structure_snapshot' | 'source' | 'resource' | 'locale_publication';
 
 export type UsageRight =
   | 'public_distribution'

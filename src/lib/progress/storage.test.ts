@@ -49,7 +49,7 @@ test('migrates legacy package IDs to learning path IDs', async () => {
   expect(app.completedLearningPathIds).toEqual([surahAlFilLearningPath.id]);
   expect(migratedLevel?.pathId).toBe(surahAlFilLearningPath.id);
   expect(await AsyncStorage.getItem('qlp_app_progress')).toBeNull();
-  expect(await AsyncStorage.getItem('qlp_progress_v3')).not.toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
 });
 
 test('serializes concurrent question attempts without data loss', async () => {
@@ -188,7 +188,29 @@ test('migrates a valid V2 snapshot without losing progress', async () => {
   expect((await getLevelProgress(level.id))?.activityAttempts.length).toBeGreaterThan(0);
   expect(await getReviewStates()).toEqual([]);
   expect(await AsyncStorage.getItem('qlp_progress_v2')).toBeNull();
-  expect(await AsyncStorage.getItem('qlp_progress_v3')).not.toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
+});
+
+test('migrates V3 attempts and reviews to locale-scoped V4 records', async () => {
+  const level = surahAlFilLevels[0];
+  const progress = readyProgress(level);
+  await AsyncStorage.setItem('qlp_progress_v3', JSON.stringify({
+    schemaVersion: 3,
+    app: createDefaultProgress(),
+    levels: { [level.id]: progress },
+    reviews: {
+      legacy: {
+        activityId: 'l1-order-ayah-1', levelId: level.id, packageRevisionId: 'revision-r3',
+        stage: 1, dueAt: '2026-01-02T00:00:00.000Z', lastReviewedAt: '2026-01-01T00:00:00.000Z',
+        lastOutcome: 'correct', mastered: false,
+      },
+    },
+  }));
+
+  expect((await getLevelProgress(level.id))?.activityAttempts.every(attempt => attempt.locale === 'en')).toBe(true);
+  expect(await getReviewStates()).toEqual([expect.objectContaining({ locale: 'en' })]);
+  expect(await AsyncStorage.getItem('qlp_progress_v3')).toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
 });
 
 test('registers successfully practiced review activities once on level completion', async () => {
