@@ -11,7 +11,7 @@ const state: ActivityReviewState = {
 test('resolves only review activities from the active package revision', () => {
   const repo = getContentRepository();
   expect(resolveDueReviewItems(repo, [state])).toHaveLength(1);
-  expect(resolveDueReviewItems(repo, [{ ...state, packageRevisionId: 'stale-revision' }])).toEqual([]);
-  expect(resolveDueReviewItems(repo, [{ ...state, activityId: 'removed-activity' }])).toEqual([]);
+  expect(resolveDueReviewItems(repo, [{ ...state, packageRevisionId: 'surah-al-fil-v1-r13' }])).toEqual([]);
+  expect(resolveDueReviewItems(repo, [{ ...state, activityId: 'l1-order-ayah-1' }])).toEqual([]);
   expect(resolveDueReviewItems(repo, [{ ...state, levelId: 'al-fil-level-2-ayah-2' }])).toEqual([]);
 });

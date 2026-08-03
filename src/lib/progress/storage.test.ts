@@ -260,16 +260,16 @@ test('stores a review attempt and advances its schedule atomically', async () =>
   expect(await getDueReviewStates(new Date('2026-01-05T00:00:00.000Z'))).toContainEqual(review);
 });
 
-test('keeps stale revision schedules while syncing the active package revision', async () => {
+test('keeps r13 schedules while syncing the active r14 package revision', async () => {
   const level = surahAlFilLevels[0];
   await seedSnapshot({ [level.id]: readyProgress(level) });
-  await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'revision-r2', now: new Date('2026-01-01T00:00:00.000Z') });
+  await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r13', now: new Date('2026-01-01T00:00:00.000Z') });
 
-  await syncCompletedLevelReviews([{ level, packageRevisionId: 'revision-r3' }], new Date('2026-01-02T00:00:00.000Z'));
+  await syncCompletedLevelReviews([{ level, packageRevisionId: 'surah-al-fil-v1-r14' }], new Date('2026-01-02T00:00:00.000Z'));
 
   const reviews = await getReviewStates();
-  expect(reviews.filter(review => review.packageRevisionId === 'revision-r2')).toHaveLength(3);
-  expect(reviews.filter(review => review.packageRevisionId === 'revision-r3')).toHaveLength(3);
+  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r13')).toHaveLength(3);
+  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r14')).toHaveLength(3);
 });
 
 test('backfills review state from the latest attempt instead of completion time', async () => {
@@ -367,4 +367,3 @@ test('abandonLevel restores pre-session progress if level was already started/co
   expect(restoredProgress?.questionAttempts).toHaveLength(oldProgress.questionAttempts.length);
   expect(restoredProgress?.completed).toBe(true);
 });
-

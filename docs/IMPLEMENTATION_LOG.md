@@ -136,3 +136,26 @@ tracks under the app cache directory.
   unchanged.
 - `SurahRecord.navigationOnly` and optional reciter/track provider metadata are
   additive fields. Existing content packages remain readable.
+
+## 2026-08-03 - Al-Fil curriculum revision r14
+
+### Delivered
+
+- Expanded draft wisdom summaries for Levels 1-3 and removed the duplicate
+  optional Ayah 1 word-order activity.
+- Advanced the immutable package revision from `r13` to `r14`.
+- Deferred generated historical lesson images. They require stable package
+  asset URIs, real checksums, provenance evidence, and named religious and
+  editorial review before inclusion.
+
+### Release status
+
+Religious summaries remain draft and production-blocked. No generated image is
+included in the active package.
+
+### Compatibility
+
+- Existing level completion, attempts, XP, and review history remain stored.
+- Due-review resolution ignores `r13` schedules under active `r14` content.
+- Removed activity `l1-order-ayah-1` is no longer offered; its history is not
+  deleted.

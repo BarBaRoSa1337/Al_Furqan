@@ -1,4 +1,3 @@
-import './setup-mocks';
 import surahAlFilPackage from '../src/content/packages/surah-al-fil/v1';
 import { validatePackage } from '../src/lib/content/packageValidator';
 
