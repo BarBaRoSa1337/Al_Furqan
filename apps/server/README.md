@@ -20,10 +20,10 @@ Foundation directly or persist its responses.
 
 ## Operations
 
-Copy `.env.example` into deployment secrets. Never use `EXPO_PUBLIC_` for Quran
-Foundation credentials. `MemoryServerCache` is suitable for tests and local
-development only; production must provide an expiry-reliable cache implementing
-`ServerCache`.
+Copy `.env.example` to `.env` before starting the local server. Never use
+`EXPO_PUBLIC_` for Quran Foundation credentials. `MemoryServerCache` is
+suitable for tests and local development only; production must provide an
+expiry-reliable cache implementing `ServerCache`.
 
 The HTTP boundary permits only narrow GET routes, checks CORS origins, limits
 URL size, applies a fixed-window rate limit, returns `nosniff`, and sends mobile
@@ -34,6 +34,17 @@ npm run server:typecheck
 npm run server:test
 npm run server:dev
 ```
+
+To let Expo load the development runtime course, copy the repository-root
+`.env.example` to `.env` and set `EXPO_PUBLIC_FURQAN_API_BASE_URL` to the
+server URL. Use `http://localhost:8787` for Expo web. For a physical phone,
+use the development machine's LAN address, for example
+`http://192.168.1.12:8787`, and include the Expo web origin and/or the app's
+development origin in `FURQAN_ALLOWED_ORIGINS`.
+
+Without an Expo runtime URL, development falls back to the built-in Al-Fil
+package. Production does not include that fallback and must configure a
+published runtime package.
 
 ## Draft short-Surah runtime course
 

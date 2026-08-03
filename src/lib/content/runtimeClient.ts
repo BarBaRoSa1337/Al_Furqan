@@ -2,8 +2,13 @@ import { isRuntimePackageResponse, type SupportedLocale } from '../../../package
 import type { ContentPackage } from '../../types/content';
 import { getContentRepository } from './repository';
 
+export function getRuntimeApiBaseUrl(value = process.env.EXPO_PUBLIC_FURQAN_API_BASE_URL): string | undefined {
+  const normalized = value?.trim().replace(/\/$/, '');
+  return normalized || undefined;
+}
+
 export async function loadRuntimePackage(packageId: string, locale: SupportedLocale): Promise<void> {
-  const baseUrl = process.env.EXPO_PUBLIC_FURQAN_API_BASE_URL?.replace(/\/$/, '');
+  const baseUrl = getRuntimeApiBaseUrl();
   if (!baseUrl) throw new Error('Furqan backend is not configured.');
   const response = await fetch(`${baseUrl}/v1/content/packages/${encodeURIComponent(packageId)}?locale=${locale}`, {
     headers: { accept: 'application/json' },

@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { getContentRepository } from '../lib/content/repository';
-import { loadRuntimePackage } from '../lib/content/runtimeClient';
+import { getRuntimeApiBaseUrl, loadRuntimePackage } from '../lib/content/runtimeClient';
 import { LocalizationProvider, useLocalization } from '../lib/localization/LocalizationProvider';
 import { colors, fonts, radii, spacing } from '../theme/tokens';
 
@@ -40,20 +40,23 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   // The development runtime course contains the generic Surah/ayah node
   // workflow for Al-Fil through An-Nas. Deployments can override this ID.
   const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID ?? 'surah-al-fil-v1';
+  const runtimeApiBaseUrl = getRuntimeApiBaseUrl();
 
   const loadContent = useCallback(async () => {
     setState('loading');
     setError(undefined);
     try {
       const repo = getContentRepository();
-      if (packageId) await loadRuntimePackage(packageId, preferences.lessonLocale);
+      if (runtimeApiBaseUrl && packageId) {
+        await loadRuntimePackage(packageId, preferences.lessonLocale);
+      }
       if (!repo.getActivePackage()) throw new Error('No published runtime package is configured.');
       setState('ready');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('app.contentUnavailable'));
       setState('error');
     }
-  }, [packageId, preferences.lessonLocale, t]);
+  }, [packageId, preferences.lessonLocale, runtimeApiBaseUrl, t]);
 
   useEffect(() => {
     if (preferencesReady) void loadContent();

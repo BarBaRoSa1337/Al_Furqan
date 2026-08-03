@@ -181,6 +181,19 @@ included in the active package.
   assembler for every included Surah: introduction, one ayah level per ayah,
   and a final Surah review with ordered curriculum nodes.
 
+## 2026-08-03 - Runtime backend configuration
+
+### Delivered
+
+- Expo now uses its validated built-in Al-Fil package in development when no
+  backend URL is configured, rather than failing the whole application at
+  startup.
+- When `EXPO_PUBLIC_FURQAN_API_BASE_URL` is configured, Expo loads the
+  source-backed Al-Fil-to-An-Nas runtime course from the Furqan backend.
+- Local backend commands load `apps/server/.env` automatically. Root and
+  server `.env.example` files document the non-secret client endpoint and the
+  required server-only Quran Foundation credentials.
+
 ## 2026-08-03 - Surah curriculum schema v4 and Al-Fil revision r15
 
 ### Delivered
