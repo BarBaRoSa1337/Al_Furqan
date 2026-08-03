@@ -63,7 +63,9 @@ export default function SurahPathScreen() {
             const label = lesson.kind === 'introduction'
               ? 'Surah introduction'
               : lesson.kind === 'final_review'
-                ? 'Ayah 5 and full review'
+                ? 'Surah checkpoint'
+                : lesson.kind === 'segment_review'
+                  ? 'Segment checkpoint'
                 : level.ayahRefs.length > 1
                   ? `Ayahs ${level.ayahRefs[0].ayahNumber}-${level.ayahRefs.at(-1)?.ayahNumber}`
                   : `Ayah ${level.ayahRefs[0]?.ayahNumber}`;

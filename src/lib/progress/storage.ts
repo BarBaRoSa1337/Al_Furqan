@@ -13,6 +13,7 @@ import {
   ProgressSnapshotV2,
   ProgressSnapshotV3,
   ProgressSnapshotV4,
+  ProgressSnapshotV5,
   QuestionAttempt,
   ActivityAttempt,
   ActivityReviewState,
@@ -21,7 +22,8 @@ import {
 } from '../../types/progress';
 
 const KEYS = {
-  SNAPSHOT: 'qlp_progress_v4',
+  SNAPSHOT: 'qlp_progress_v5',
+  SNAPSHOT_V4: 'qlp_progress_v4',
   SNAPSHOT_V3: 'qlp_progress_v3',
   SNAPSHOT_V2: 'qlp_progress_v2',
   APP_PROGRESS: 'qlp_app_progress',
@@ -96,23 +98,18 @@ export async function reconcileCurriculumProgress(paths: LearningPath[]): Promis
   await mutateSnapshot(snapshot => {
     paths.forEach(path => {
       path.surahCurricula?.forEach(curriculum => {
+        curriculum.completionMigrations?.forEach(migration => {
+          if (snapshot.appliedCurriculumMigrationIds.includes(migration.id)) return;
+          const source = snapshot.levels[migration.historicalLevelId];
+          if (source?.completed) {
+            migration.completedLevelIds.forEach(levelId => backfillCompletedLevel(snapshot, path.id, levelId, source));
+          }
+          snapshot.appliedCurriculumMigrationIds.push(migration.id);
+        });
         curriculum.completionEquivalences?.forEach(equivalence => {
           const source = snapshot.levels[equivalence.sourceLevelId];
           if (!source?.completed) return;
-          equivalence.equivalentLevelIds.forEach(levelId => {
-            if (snapshot.levels[levelId]?.completed) return;
-            snapshot.levels[levelId] = {
-              levelId,
-              pathId: path.id,
-              completed: true,
-              startedAt: source.startedAt,
-              completedAt: source.completedAt,
-              completedStepIds: [],
-              questionAttempts: [],
-              activityAttempts: [],
-            };
-            if (!snapshot.app.completedLevelIds.includes(levelId)) snapshot.app.completedLevelIds.push(levelId);
-          });
+          equivalence.equivalentLevelIds.forEach(levelId => backfillCompletedLevel(snapshot, path.id, levelId, source));
         });
       });
       if (path.levelIds.every(levelId => snapshot.levels[levelId]?.completed) && !snapshot.app.completedLearningPathIds.includes(path.id)) {
@@ -120,6 +117,21 @@ export async function reconcileCurriculumProgress(paths: LearningPath[]): Promis
       }
     });
   });
+}
+
+function backfillCompletedLevel(snapshot: ProgressSnapshotV5, pathId: string, levelId: string, source: LevelProgress): void {
+  if (snapshot.levels[levelId]?.completed) return;
+  snapshot.levels[levelId] = {
+    levelId,
+    pathId,
+    completed: true,
+    startedAt: source.startedAt,
+    completedAt: source.completedAt,
+    completedStepIds: [],
+    questionAttempts: [],
+    activityAttempts: [],
+  };
+  if (!snapshot.app.completedLevelIds.includes(levelId)) snapshot.app.completedLevelIds.push(levelId);
 }
 
 export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
@@ -459,13 +471,13 @@ export async function resetProgress(): Promise<void> {
   });
 }
 
-function addXpToSnapshot(snapshot: ProgressSnapshotV4, amount: number, reason: string, earnedAt: string): void {
+function addXpToSnapshot(snapshot: ProgressSnapshotV5, amount: number, reason: string, earnedAt: string): void {
   const record: XPRecord = { amount, reason, earnedAt };
   snapshot.app.xp += amount;
   snapshot.app.xpHistory.push(record);
 }
 
-function updateStreakInSnapshot(snapshot: ProgressSnapshotV4, date: Date): void {
+function updateStreakInSnapshot(snapshot: ProgressSnapshotV5, date: Date): void {
   const today = localDateKey(date);
   if (snapshot.app.streak.lastActiveDate === today) return;
   const yesterday = new Date(date);
@@ -480,11 +492,11 @@ function updateStreakInSnapshot(snapshot: ProgressSnapshotV4, date: Date): void 
   };
 }
 
-async function readAfterMutations(): Promise<ProgressSnapshotV4> {
+async function readAfterMutations(): Promise<ProgressSnapshotV5> {
   return enqueueMutation(loadSnapshot);
 }
 
-function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV4) => T): Promise<T> {
+function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV5) => T): Promise<T> {
   return enqueueMutation(async () => {
     const snapshot = await loadSnapshot();
     const result = mutation(snapshot);
@@ -499,22 +511,24 @@ function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   return result;
 }
 
-async function loadSnapshot(): Promise<ProgressSnapshotV4> {
+async function loadSnapshot(): Promise<ProgressSnapshotV5> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT);
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as unknown;
-        if (isProgressSnapshotV4(parsed)) return parsed;
+        if (isProgressSnapshotV5(parsed)) return parsed;
       } catch {
         // Quarantined below.
       }
       const quarantineKey = `${KEYS.CORRUPT_PREFIX}${Date.now()}`;
       await AsyncStorage.setItem(quarantineKey, raw);
       await AsyncStorage.removeItem(KEYS.SNAPSHOT);
-      recoveryWarning = { code: 'corrupt_v4', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
+      recoveryWarning = { code: 'corrupt_v5', message: 'Saved progress was corrupt and was reset. A recovery copy was kept.' };
       return createEmptySnapshot();
     }
+    const migratedV4 = await migrateV4Snapshot();
+    if (migratedV4) return migratedV4;
     const migratedV3 = await migrateV3Snapshot();
     if (migratedV3) return migratedV3;
     const migratedV2 = await migrateV2Snapshot();
@@ -526,17 +540,18 @@ async function loadSnapshot(): Promise<ProgressSnapshotV4> {
   }
 }
 
-async function migrateV2Snapshot(): Promise<ProgressSnapshotV4 | null> {
+async function migrateV2Snapshot(): Promise<ProgressSnapshotV5 | null> {
   const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V2);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!isProgressSnapshotV2(parsed)) throw new Error('Invalid V2 snapshot');
-    const snapshot: ProgressSnapshotV4 = {
-      schemaVersion: 4,
+    const snapshot: ProgressSnapshotV5 = {
+      schemaVersion: 5,
       app: parsed.app,
       levels: localizeLegacyLevels(parsed.levels),
       reviews: {},
+      appliedCurriculumMigrationIds: [],
       lastCompletionReceipt: parsed.lastCompletionReceipt,
     };
     await writeSnapshot(snapshot);
@@ -551,7 +566,7 @@ async function migrateV2Snapshot(): Promise<ProgressSnapshotV4 | null> {
   }
 }
 
-async function migrateV3Snapshot(): Promise<ProgressSnapshotV4 | null> {
+async function migrateV3Snapshot(): Promise<ProgressSnapshotV5 | null> {
   const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V3);
   if (!raw) return null;
   try {
@@ -566,7 +581,7 @@ async function migrateV3Snapshot(): Promise<ProgressSnapshotV4 | null> {
       const migrated = { ...review, locale: review.languageIndependent ? 'shared' : review.locale ?? 'en' };
       return [reviewStateKey(review.levelId, review.activityId, review.packageRevisionId, migrated.locale, migrated.languageIndependent), migrated];
     }));
-    const snapshot: ProgressSnapshotV4 = { schemaVersion: 4, app: parsed.app, levels, reviews, lastCompletionReceipt: parsed.lastCompletionReceipt };
+    const snapshot: ProgressSnapshotV5 = { schemaVersion: 5, app: parsed.app, levels, reviews, appliedCurriculumMigrationIds: [], lastCompletionReceipt: parsed.lastCompletionReceipt };
     await writeSnapshot(snapshot);
     await AsyncStorage.removeItem(KEYS.SNAPSHOT_V3);
     return snapshot;
@@ -578,7 +593,25 @@ async function migrateV3Snapshot(): Promise<ProgressSnapshotV4 | null> {
   }
 }
 
-async function migrateLegacyProgress(): Promise<ProgressSnapshotV4> {
+async function migrateV4Snapshot(): Promise<ProgressSnapshotV5 | null> {
+  const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT_V4);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isProgressSnapshotV4(parsed)) throw new Error('Invalid V4 snapshot');
+    const snapshot: ProgressSnapshotV5 = { ...parsed, schemaVersion: 5, appliedCurriculumMigrationIds: [] };
+    await writeSnapshot(snapshot);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V4);
+    return snapshot;
+  } catch {
+    await AsyncStorage.setItem(`${KEYS.CORRUPT_PREFIX}${Date.now()}`, raw);
+    await AsyncStorage.removeItem(KEYS.SNAPSHOT_V4);
+    recoveryWarning = { code: 'corrupt_v4', message: 'Saved Progress V4 was corrupt and was reset. A recovery copy was kept.' };
+    return createEmptySnapshot();
+  }
+}
+
+async function migrateLegacyProgress(): Promise<ProgressSnapshotV5> {
   const keys = await AsyncStorage.getAllKeys();
   const oldKeys = keys.filter(key => key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX));
   if (oldKeys.length === 0) return createEmptySnapshot();
@@ -657,7 +690,7 @@ function localizeLegacyLevels(levels: Record<string, LevelProgress>): Record<str
   return Object.fromEntries(Object.entries(levels).map(([id, progress]) => [id, normalizeLevelProgress(progress)]));
 }
 
-async function writeSnapshot(snapshot: ProgressSnapshotV4): Promise<void> {
+async function writeSnapshot(snapshot: ProgressSnapshotV5): Promise<void> {
   try {
     await AsyncStorage.setItem(KEYS.SNAPSHOT, JSON.stringify(snapshot));
   } catch (error) {
@@ -665,8 +698,12 @@ async function writeSnapshot(snapshot: ProgressSnapshotV4): Promise<void> {
   }
 }
 
-function createEmptySnapshot(): ProgressSnapshotV4 {
-  return { schemaVersion: 4, app: createDefaultProgress(), levels: {}, reviews: {} };
+function createEmptySnapshot(): ProgressSnapshotV5 {
+  return { schemaVersion: 5, app: createDefaultProgress(), levels: {}, reviews: {}, appliedCurriculumMigrationIds: [] };
+}
+
+function isProgressSnapshotV5(value: unknown): value is ProgressSnapshotV5 {
+  return isRecord(value) && value.schemaVersion === 5 && isStringArray(value.appliedCurriculumMigrationIds) && isProgressSnapshotCore(value, true);
 }
 
 function isProgressSnapshotV4(value: unknown): value is ProgressSnapshotV4 {
@@ -679,11 +716,17 @@ function isProgressSnapshotV3(value: unknown): value is ProgressSnapshotV3 {
 
 function isProgressSnapshot(value: unknown, schemaVersion: 3 | 4, requireLocale: boolean): boolean {
   if (!isRecord(value) || value.schemaVersion !== schemaVersion || !isAppProgress(value.app) || !isRecord(value.levels) || !isRecord(value.reviews)) return false;
+  return isProgressSnapshotCore(value, requireLocale);
+}
+
+function isProgressSnapshotCore(value: Record<string, unknown>, requireLocale: boolean): boolean {
+  if (!isAppProgress(value.app) || !isRecord(value.levels) || !isRecord(value.reviews)) return false;
+  const snapshotVersion = value.schemaVersion;
   const levelsValid = Object.entries(value.levels).every(([key, level]) => isLevelProgress(level) && level.levelId === key);
   const outcomes = ['again', 'hard', 'remembered', 'correct', 'incorrect'];
-  const reviewsValid = Object.entries(value.reviews).every(([key, value]) => {
-    if (!isRecord(value)) return false;
-    const review = value;
+  const reviewsValid = Object.entries(value.reviews).every(([key, reviewValue]) => {
+    if (!isRecord(reviewValue)) return false;
+    const review = reviewValue;
     return (
     typeof review.activityId === 'string' &&
     typeof review.levelId === 'string' &&
@@ -694,7 +737,7 @@ function isProgressSnapshot(value: unknown, schemaVersion: 3 | 4, requireLocale:
     typeof review.mastered === 'boolean' &&
     typeof review.lastOutcome === 'string' && outcomes.includes(review.lastOutcome) &&
     (!requireLocale || typeof review.locale === 'string') &&
-    (schemaVersion === 3 || key === reviewStateKey(review.levelId, review.activityId, review.packageRevisionId, typeof review.locale === 'string' ? review.locale : 'en', review.languageIndependent === true)) &&
+    (snapshotVersion === 3 || key === reviewStateKey(review.levelId, review.activityId, review.packageRevisionId, typeof review.locale === 'string' ? review.locale : 'en', review.languageIndependent === true)) &&
     (!review.mastered || review.dueAt === undefined)
     );
   });
@@ -770,10 +813,10 @@ function isLocalDateOrEmpty(value: unknown): value is string {
 }
 
 function isProgressKey(key: string): boolean {
-  return key === KEYS.SNAPSHOT || key === KEYS.SNAPSHOT_V3 || key === KEYS.SNAPSHOT_V2 || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
+  return key === KEYS.SNAPSHOT || key === KEYS.SNAPSHOT_V4 || key === KEYS.SNAPSHOT_V3 || key === KEYS.SNAPSHOT_V2 || key === KEYS.APP_PROGRESS || key.startsWith(KEYS.LEVEL_PREFIX) || key.startsWith(KEYS.PATH_PREFIX) || key.startsWith(KEYS.LEGACY_LESSON_PREFIX) || key.startsWith(KEYS.LEGACY_PACKAGE_PREFIX) || key.startsWith(KEYS.CORRUPT_PREFIX);
 }
 
-function registerLevelReviews(snapshot: ProgressSnapshotV4, level: Level, packageRevisionId: string, now: Date, locale = 'en'): void {
+function registerLevelReviews(snapshot: ProgressSnapshotV5, level: Level, packageRevisionId: string, now: Date, locale = 'en'): void {
   const activities = level.steps.flatMap(step => step.blocks)
     .filter((block): block is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => block.type === 'activity')
     .map(block => block.activity)

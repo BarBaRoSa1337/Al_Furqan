@@ -200,3 +200,33 @@ review.
 - Mobile-width browser smoke checks pass for Home and the Al-Fil Surah path.
 - Production content validation fails with the expected 171 governance
   blockers.
+
+## 2026-08-03 - Al-Fil split, Progress V5, and short-Surah runtime course
+
+### Delivered
+
+- Split Al-Fil Ayahs 3, 4, and 5 into individual nodes and moved full-Surah
+  exercises into a standalone final checkpoint.
+- Added generic one-time curriculum completion migrations and Progress V5 so
+  completed historical combined nodes fan out without duplicate XP.
+- Added an opt-in backend assembler for a ten-Surah canonical practice path
+  from Al-Fil through An-Nas: 48 ayat and 68 introduction/ayah/review nodes.
+- Reused Quran Foundation Uthmani text and words, pinned QuranEnc Rowwad
+  English, and MP3Quran Al-Husary stream timings. Provider payloads are not
+  written into the mobile package or local storage.
+
+### Compatibility
+
+- Package and path IDs remain stable; Al-Fil introduction and Ayahs 1-2 keep
+  their existing Level IDs.
+- V2, V3, and V4 progress migrates atomically to V5. Historical Ayahs 3-4 and
+  Ayah 5/review completions backfill their replacement nodes once.
+- The built-in package remains Al-Fil-only. The expanded course replaces it in
+  memory only when the draft runtime endpoint is explicitly configured.
+
+### Release status
+
+The runtime course is English-only and development-only. Arabic and French
+remain explicit unavailable states until complete reviewed locale catalogs are
+published. Existing provider licensing and named review blockers remain in
+force; no source or religious content was promoted.

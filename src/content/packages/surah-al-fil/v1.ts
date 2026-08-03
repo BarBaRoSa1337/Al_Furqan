@@ -436,8 +436,10 @@ export const surahAlFilLearningPath: LearningPath = {
     'al-fil-level-introduction',
     'al-fil-level-1-context-ayah-1',
     'al-fil-level-2-ayah-2',
-    'al-fil-level-3-ayat-3-4',
-    'al-fil-level-4-ayah-5-review',
+    'al-fil-level-3-ayah-3',
+    'al-fil-level-4-ayah-4',
+    'al-fil-level-5-ayah-5',
+    'al-fil-level-final-review',
   ],
   surahCurricula: [{
     id: 'surah-al-fil-curriculum-v1',
@@ -446,18 +448,24 @@ export const surahAlFilLearningPath: LearningPath = {
       { levelId: 'al-fil-level-introduction', kind: 'introduction' },
       { levelId: 'al-fil-level-1-context-ayah-1', kind: 'ayah', ayahRange: { start: { surahNumber: 105, ayahNumber: 1 }, end: { surahNumber: 105, ayahNumber: 1 } } },
       { levelId: 'al-fil-level-2-ayah-2', kind: 'ayah', ayahRange: { start: { surahNumber: 105, ayahNumber: 2 }, end: { surahNumber: 105, ayahNumber: 2 } } },
-      { levelId: 'al-fil-level-3-ayat-3-4', kind: 'ayah_range', ayahRange: { start: { surahNumber: 105, ayahNumber: 3 }, end: { surahNumber: 105, ayahNumber: 4 } } },
-      { levelId: 'al-fil-level-4-ayah-5-review', kind: 'final_review', ayahRange: { start: { surahNumber: 105, ayahNumber: 1 }, end: { surahNumber: 105, ayahNumber: 5 } }, reviewSegmentId: 'al-fil-final-review' },
+      { levelId: 'al-fil-level-3-ayah-3', kind: 'ayah', ayahRange: { start: { surahNumber: 105, ayahNumber: 3 }, end: { surahNumber: 105, ayahNumber: 3 } } },
+      { levelId: 'al-fil-level-4-ayah-4', kind: 'ayah', ayahRange: { start: { surahNumber: 105, ayahNumber: 4 }, end: { surahNumber: 105, ayahNumber: 4 } } },
+      { levelId: 'al-fil-level-5-ayah-5', kind: 'ayah', ayahRange: { start: { surahNumber: 105, ayahNumber: 5 }, end: { surahNumber: 105, ayahNumber: 5 } } },
+      { levelId: 'al-fil-level-final-review', kind: 'final_review', ayahRange: { start: { surahNumber: 105, ayahNumber: 1 }, end: { surahNumber: 105, ayahNumber: 5 } }, reviewSegmentId: 'al-fil-final-review' },
     ],
     reviewSegments: [{
       id: 'al-fil-final-review',
-      coveredLessonIds: ['al-fil-level-1-context-ayah-1', 'al-fil-level-2-ayah-2', 'al-fil-level-3-ayat-3-4'],
-      reviewLevelId: 'al-fil-level-4-ayah-5-review',
+      coveredLessonIds: ['al-fil-level-1-context-ayah-1', 'al-fil-level-2-ayah-2', 'al-fil-level-3-ayah-3', 'al-fil-level-4-ayah-4', 'al-fil-level-5-ayah-5'],
+      reviewLevelId: 'al-fil-level-final-review',
     }],
     completionEquivalences: [{
       sourceLevelId: 'al-fil-level-1-context-ayah-1',
       equivalentLevelIds: ['al-fil-level-introduction'],
     }],
+    completionMigrations: [
+      { id: 'al-fil-split-ayat-3-4-v1', historicalLevelId: 'al-fil-level-3-ayat-3-4', completedLevelIds: ['al-fil-level-3-ayah-3', 'al-fil-level-4-ayah-4'] },
+      { id: 'al-fil-split-ayah-5-review-v1', historicalLevelId: 'al-fil-level-4-ayah-5-review', completedLevelIds: ['al-fil-level-5-ayah-5', 'al-fil-level-final-review'] },
+    ],
   }],
   discovery: alFilDiscovery,
   sourceMetadata: {
@@ -467,7 +475,7 @@ export const surahAlFilLearningPath: LearningPath = {
   },
 };
 
-export const surahAlFilLevels: Level[] = [
+const legacyAlFilLevels: Level[] = [
   {
     id: 'al-fil-level-introduction',
     pathId: surahAlFilLearningPath.id,
@@ -1003,14 +1011,133 @@ export const surahAlFilLevels: Level[] = [
   },
 ];
 
+const AL_FIL_TRANSLATION_IDS: Record<number, string> = { 3: '6191-rowwad-en', 4: '6192-rowwad-en', 5: '6193-rowwad-en' };
+
+function buildFocusedAyahLevel(ayahNumber: 3 | 4 | 5, previousLevelId: string): Level {
+  const prefix = `al-fil-${ayahNumber}`;
+  const levelId = `al-fil-level-${ayahNumber}-ayah-${ayahNumber}`;
+  const ref = { surahNumber: 105, ayahNumber };
+  const tokens = wordTokenIds(ayahNumber);
+  const passageId = `${prefix}-passage`;
+  return {
+    id: levelId,
+    pathId: surahAlFilLearningPath.id,
+    surahId: surahAlFilRecord.id,
+    title: `Ayah ${ayahNumber}`,
+    description: `Listen, read, and rebuild Ayah ${ayahNumber}.`,
+    durationMinutes: 6,
+    ayahRefs: [ref],
+    difficulty: ayahNumber === 3 ? 'easy' : 'medium',
+    goals: ['memorize', 'understand'],
+    discovery: alFilDiscovery,
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
+    unlockRules: { requiresLevelIds: [previousLevelId] },
+    steps: [
+      {
+        id: `${prefix}-read`, kind: 'read', title: 'Read / Listen', blocks: [
+          { id: passageId, type: 'quran_passage', ayahRefs: [ref], showTransliteration: true },
+          { id: `${prefix}-audio`, type: 'audio', ayahRefs: [ref], reciterId: HUSARY_RECITER_ID },
+        ],
+      },
+      {
+        id: `${prefix}-translation`, kind: 'translation', title: 'Translation',
+        blocks: [{ id: `${prefix}-translation-block`, type: 'translation', ayahRefs: [ref], locale: 'en', translationEntryIds: [AL_FIL_TRANSLATION_IDS[ayahNumber]] }],
+      },
+      {
+        id: `${prefix}-build`, kind: 'memorize', title: 'Build the Ayah', blocks: [{
+          id: `${prefix}-order`, type: 'activity', activity: {
+            id: `${prefix}-order`, kind: 'order_tokens', placement: 'lesson', ayahRefs: [ref],
+            instruction: `Build Ayah ${ayahNumber} from the word bank.`, required: true, difficulty: 2,
+            knowledgeRefs: [passageId], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved', languageIndependent: true,
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: { itemIds: [...tokens].reverse(), correctOrderIds: tokens },
+          },
+        }],
+      },
+      {
+        id: `${prefix}-gap`, kind: 'understanding_practice', title: 'Complete the Ayah', blocks: [{
+          id: `${prefix}-fill-gap`, type: 'activity', activity: {
+            id: `${prefix}-fill-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ref],
+            instruction: `Choose the missing ending token from Ayah ${ayahNumber}.`, required: true, difficulty: 2,
+            knowledgeRefs: [passageId], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved', languageIndependent: true,
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: { tokenBankIds: [...tokens].reverse(), correctTokenIds: [tokens.at(-1)!] },
+          },
+        }],
+      },
+    ],
+  };
+}
+
+function buildAlFilFinalReview(): Level {
+  const refs = [1, 2, 3, 4, 5].map(ayahNumber => ({ surahNumber: 105, ayahNumber }));
+  const finalTokens = wordTokenIds(5);
+  return {
+    id: 'al-fil-level-final-review',
+    pathId: surahAlFilLearningPath.id,
+    surahId: surahAlFilRecord.id,
+    title: 'Surah Review',
+    description: 'Validate your recall of the complete Surah.',
+    durationMinutes: 8,
+    ayahRefs: refs,
+    difficulty: 'hard',
+    goals: ['memorize', 'quiz'],
+    discovery: alFilDiscovery,
+    completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
+    unlockRules: { requiresLevelIds: ['al-fil-level-5-ayah-5'] },
+    metadata: { isFinalReview: true },
+    steps: [
+      {
+        id: 'al-fil-review-read', kind: 'read', title: 'Review the Surah',
+        blocks: [{ id: 'al-fil-review-passage', type: 'quran_passage', ayahRefs: refs, showTransliteration: false }],
+      },
+      {
+        id: 'al-fil-review-order', kind: 'memory_practice', title: 'Order the Ayat', blocks: [{
+          id: 'al-fil-review-order-ayat', type: 'activity', activity: {
+            id: 'al-fil-review-order-ayat', kind: 'order_ayat', placement: 'surah_review', ayahRefs: refs,
+            instruction: 'Put all five ayat in Quran order.', required: true, difficulty: 3,
+            knowledgeRefs: ['al-fil-review-passage'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved', languageIndependent: true,
+            reviewSchedule: { intervalDays: [1, 3, 7] }, config: { correctOrderRefs: refs },
+          },
+        }],
+      },
+      {
+        id: 'al-fil-review-continuation', kind: 'understanding_practice', title: 'Final Checkpoint', blocks: [{
+          id: 'al-fil-review-continue-5', type: 'activity', activity: {
+            id: 'al-fil-review-continue-5', kind: 'choose_continuation', placement: 'surah_review', ayahRefs: refs,
+            instruction: 'Choose the correct continuation of the final ayah.', required: true, difficulty: 3,
+            knowledgeRefs: ['al-fil-review-passage'], sourceIds: [QURAN_ARABIC_SOURCE_ID], reviewerStatus: 'approved', languageIndependent: true,
+            reviewSchedule: { intervalDays: [1, 3, 7] },
+            config: {
+              promptTokenIds: [finalTokens[0]], optionIds: ['al-fil-review-correct', 'al-fil-review-reversed'], correctOptionId: 'al-fil-review-correct',
+              segments: [
+                { id: 'al-fil-review-correct', tokenIds: finalTokens.slice(1) },
+                { id: 'al-fil-review-reversed', tokenIds: finalTokens.slice(1).reverse() },
+              ],
+            },
+          },
+        }],
+      },
+    ],
+  };
+}
+
+export const surahAlFilLevels: Level[] = [
+  ...legacyAlFilLevels.slice(0, 3),
+  buildFocusedAyahLevel(3, 'al-fil-level-2-ayah-2'),
+  buildFocusedAyahLevel(4, 'al-fil-level-3-ayah-3'),
+  buildFocusedAyahLevel(5, 'al-fil-level-4-ayah-4'),
+  buildAlFilFinalReview(),
+];
+
 const surahAlFilPackage: ContentPackage = {
   id: 'surah-al-fil-v1',
-  version: '4.0',
+  version: '4.1',
   schemaVersion: 4,
-  revisionId: 'surah-al-fil-v1-r15',
+  revisionId: 'surah-al-fil-v1-r16',
   title: surahAlFilLearningPath.title,
   description: surahAlFilLearningPath.description,
-  type: 'surah',
+  type: 'course',
   editions: [hafsAnAsimEdition],
   surahs: structureSurahs.map(surah => surah.surahNumber === 105 ? surahAlFilRecord : surah),
   ayat: surahAlFilAyat,

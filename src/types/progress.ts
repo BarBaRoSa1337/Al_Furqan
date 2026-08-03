@@ -111,8 +111,17 @@ export interface ProgressSnapshotV4 {
   lastCompletionReceipt?: CompletionReceipt;
 }
 
+export interface ProgressSnapshotV5 {
+  schemaVersion: 5;
+  app: AppProgress;
+  levels: Record<string, LevelProgress>;
+  reviews: Record<string, ActivityReviewState>;
+  appliedCurriculumMigrationIds: string[];
+  lastCompletionReceipt?: CompletionReceipt;
+}
+
 export interface ProgressRecoveryWarning {
-  code: 'corrupt_v2' | 'corrupt_v3' | 'corrupt_v4' | 'partial_legacy_migration';
+  code: 'corrupt_v2' | 'corrupt_v3' | 'corrupt_v4' | 'corrupt_v5' | 'partial_legacy_migration';
   message: string;
 }
 

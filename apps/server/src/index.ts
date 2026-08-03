@@ -4,16 +4,25 @@ import { MemoryServerCache } from './cache';
 import { Mp3QuranClient } from './mp3Quran';
 import { QuranEncClient } from './quranEnc';
 import { QuranFoundationClient } from './quranFoundation';
+import { buildShortSurahRuntimeCourse } from './runtimeCourse';
 
 const clientId = process.env.QF_CLIENT_ID;
 const clientSecret = process.env.QF_CLIENT_SECRET;
 if (!clientId || !clientSecret) throw new Error('QF_CLIENT_ID and QF_CLIENT_SECRET are required');
+const quranFoundation = new QuranFoundationClient({ environment: process.env.QF_ENV === 'production' ? 'production' : 'prelive', clientId, clientSecret }, new MemoryServerCache());
+const quranEnc = new QuranEncClient();
+const mp3Quran = new Mp3QuranClient();
 const app = createApp({
-  quranFoundation: new QuranFoundationClient({ environment: process.env.QF_ENV === 'production' ? 'production' : 'prelive', clientId, clientSecret }, new MemoryServerCache()),
-  quranEnc: new QuranEncClient(),
-  mp3Quran: new Mp3QuranClient(),
+  quranFoundation,
+  quranEnc,
+  mp3Quran,
   allowedOrigins: (process.env.FURQAN_ALLOWED_ORIGINS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
   approvedQuranFoundationTafsirIds: (process.env.FURQAN_QF_TAFSIR_IDS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
+  runtimePackage: process.env.FURQAN_ENABLE_DRAFT_RUNTIME === 'true'
+    ? (packageId, locale) => packageId === 'surah-al-fil-v1'
+      ? buildShortSurahRuntimeCourse(locale, { quranFoundation, quranEnc, mp3Quran })
+      : Promise.resolve(undefined)
+    : undefined,
 });
 
 const server = createServer(async (request, response) => {

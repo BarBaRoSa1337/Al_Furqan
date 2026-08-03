@@ -675,6 +675,14 @@ function validateSurahCurricula(path: ContentPackage['learningPaths'][number], p
         if (!curriculum.lessons.some(lesson => lesson.levelId === levelId)) errors.push(`${label} completion target "${levelId}" is outside the curriculum`);
       });
     });
+    validateUniqueIds(`completion migration in ${label}`, curriculum.completionMigrations?.map(item => item.id) ?? [], errors);
+    curriculum.completionMigrations?.forEach(migration => {
+      if (!migration.historicalLevelId.trim()) errors.push(`${label} completion migration "${migration.id}" has no historical level ID`);
+      if (migration.completedLevelIds.length === 0) errors.push(`${label} completion migration "${migration.id}" has no targets`);
+      migration.completedLevelIds.forEach(levelId => {
+        if (!curriculum.lessons.some(lesson => lesson.levelId === levelId)) errors.push(`${label} completion migration "${migration.id}" target "${levelId}" is outside the curriculum`);
+      });
+    });
   });
 }
 

@@ -306,7 +306,7 @@ Published package
 Due review follows the same rendering boundary:
 
 ```text
-Progress V3 due state
+Progress V5 due state
 -> active package/revision lookup
 -> LearningActivity
 -> canonical evaluation context
@@ -339,15 +339,16 @@ segment-review, and final-review Levels through stable IDs.
 Schema v1-v3 packages are adapted into inferred Surah curricula. Schema v4
 requires explicit curricula, ordered membership, review boundaries, activity
 placement, and summary variants. Completion equivalences permit idempotent
-structural backfills without XP, streak, or receipt changes.
+structural backfills. One-time completion migrations fan historical combined
+Levels out to their replacements without XP, streak, or receipt changes;
+applied migration IDs are persisted by Progress V5.
 
-## Backend decision
+## Provider runtime boundary
 
-No production backend is required for this milestone.
-
-Use:
-
-- local built-in Al-Fil package;
-- local/mock downloadable package fixture;
-- deterministic package compiler/export;
-- interfaces that a future Studio/API can call.
+The built-in package keeps the development Al-Fil slice available without a
+network. An optional backend assembler builds the English Al-Fil-to-An-Nas
+canonical-practice course from Quran Foundation, pinned QuranEnc, and MP3Quran
+provider responses. Mobile responses are `no-store` and register only in
+memory. Draft runtime assembly is disabled unless explicitly enabled; the
+production package gate still requires source, legal, technical, editorial,
+and Islamic approvals.

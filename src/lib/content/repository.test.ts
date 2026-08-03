@@ -55,7 +55,7 @@ test('aggregates authored roadmap content into one ordered Surah node', () => {
   expect(authored).toHaveLength(1);
   expect(authored[0].surah.id).toBe('surah-al-fil');
   expect(authored[0].levels.map(level => level.title)).toEqual([
-    'Discover Al-Fil', 'Ayah 1', 'Ayah 2', 'Ayahs 3-4', 'Ayah 5 + Surah Review',
+    'Discover Al-Fil', 'Ayah 1', 'Ayah 2', 'Ayah 3', 'Ayah 4', 'Ayah 5', 'Surah Review',
   ]);
 });
 

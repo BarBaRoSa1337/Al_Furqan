@@ -179,19 +179,17 @@ test('authors Al-Fil Level 1 as a focused core loop plus optional practice', () 
 });
 
 test('authors Levels 2-4 as complete memorization-first development slices', () => {
-  expect(surahAlFilPackage.version).toBe('4.0');
-  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r15');
+  expect(surahAlFilPackage.version).toBe('4.1');
+  expect(surahAlFilPackage.revisionId).toBe('surah-al-fil-v1-r16');
   expect(getCoreLevelSteps(levelById(surahAlFilPackage, 'al-fil-level-2-ayah-2')).map(step => step.kind)).toEqual([
     'read', 'translation', 'memory_practice', 'word_meaning',
     'understanding_practice', 'tafsir', 'memory_practice', 'summary',
   ]);
-  expect(getCoreLevelSteps(levelById(surahAlFilPackage, 'al-fil-level-3-ayat-3-4')).map(step => step.kind)).toEqual([
-    'read', 'translation', 'memory_practice', 'word_meaning',
-    'understanding_practice', 'tafsir', 'memory_practice', 'summary',
+  expect(getCoreLevelSteps(levelById(surahAlFilPackage, 'al-fil-level-3-ayah-3')).map(step => step.kind)).toEqual([
+    'read', 'translation', 'memorize', 'understanding_practice',
   ]);
-  expect(getCoreLevelSteps(levelById(surahAlFilPackage, 'al-fil-level-4-ayah-5-review')).map(step => step.kind)).toEqual([
-    'read', 'translation', 'word_meaning', 'understanding_practice', 'tafsir',
-    'memory_practice', 'memory_practice', 'summary',
+  expect(getCoreLevelSteps(levelById(surahAlFilPackage, 'al-fil-level-final-review')).map(step => step.kind)).toEqual([
+    'read', 'memory_practice', 'understanding_practice',
   ]);
   expect(surahAlFilPackage.levels.slice(1).flatMap(level => level.steps)
     .flatMap(step => step.blocks)
@@ -258,8 +256,10 @@ test('authors one ordered Al-Fil Surah curriculum with introduction and final re
     ['introduction', 'al-fil-level-introduction'],
     ['ayah', 'al-fil-level-1-context-ayah-1'],
     ['ayah', 'al-fil-level-2-ayah-2'],
-    ['ayah_range', 'al-fil-level-3-ayat-3-4'],
-    ['final_review', 'al-fil-level-4-ayah-5-review'],
+    ['ayah', 'al-fil-level-3-ayah-3'],
+    ['ayah', 'al-fil-level-4-ayah-4'],
+    ['ayah', 'al-fil-level-5-ayah-5'],
+    ['final_review', 'al-fil-level-final-review'],
   ]);
   expect(surahAlFilPackage.levels.slice(1).some(level => level.steps.some(step => step.kind === 'context'))).toBe(false);
 });

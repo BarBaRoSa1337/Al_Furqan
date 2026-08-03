@@ -4,7 +4,7 @@ import {
   surahAlFilLevels,
 } from '../../content/packages/surah-al-fil/v1';
 import { Level } from '../../types/content';
-import { createDefaultProgress, LevelProgress, ProgressSnapshotV2 } from '../../types/progress';
+import { createDefaultProgress, LevelProgress, ProgressSnapshotV2, ProgressSnapshotV4 } from '../../types/progress';
 import {
   completeLevel,
   getAppProgress,
@@ -26,7 +26,7 @@ import {
 } from './storage';
 
 const ayah1Level = surahAlFilLevels.find(level => level.id === 'al-fil-level-1-context-ayah-1')!;
-const finalReviewLevel = surahAlFilLevels.find(level => level.id === 'al-fil-level-4-ayah-5-review')!;
+const finalReviewLevel = surahAlFilLevels.find(level => level.id === 'al-fil-level-final-review')!;
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
@@ -56,7 +56,7 @@ test('migrates legacy package IDs to learning path IDs', async () => {
   expect(app.completedLearningPathIds).toEqual([surahAlFilLearningPath.id]);
   expect(migratedLevel?.pathId).toBe(surahAlFilLearningPath.id);
   expect(await AsyncStorage.getItem('qlp_app_progress')).toBeNull();
-  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v5')).not.toBeNull();
 });
 
 test('serializes concurrent question attempts without data loss', async () => {
@@ -133,12 +133,12 @@ test('registers the Level 4 memory and meaning ladder for deterministic review',
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r5', now: new Date('2026-01-01T00:00:00.000Z') });
 
   expect((await getReviewStates()).map(review => review.activityId)).toEqual(expect.arrayContaining([
-    'l4-continuation-5', 'l4-match-meaning', 'l4-recall-5', 'l4-order-ayat-1-5',
+    'al-fil-review-continue-5', 'al-fil-review-order-ayat',
   ]));
 });
 
 test('ignores stale levels when determining path completion', async () => {
-  const target = surahAlFilLevels.find(level => level.id === 'al-fil-level-3-ayat-3-4')!;
+  const target = surahAlFilLevels.find(level => level.id === 'al-fil-level-3-ayah-3')!;
   const preceding = surahAlFilLevels.slice(0, surahAlFilLevels.indexOf(target));
   await seedSnapshot({
     ...Object.fromEntries(preceding.map(level => [level.id, completedProgress(level)])),
@@ -183,6 +183,27 @@ test('reconciles the new introduction from legacy Ayah 1 completion without XP',
   expect(await getLastCompletionReceipt()).toBeNull();
 });
 
+test('migrates V4 and fans out historical combined Al-Fil completions once', async () => {
+  const historical = { ...completedProgress(ayah1Level), levelId: 'al-fil-level-3-ayat-3-4' };
+  const snapshot: ProgressSnapshotV4 = {
+    schemaVersion: 4,
+    app: { ...createDefaultProgress(), xp: 42, completedLevelIds: [historical.levelId] },
+    levels: { [historical.levelId]: historical },
+    reviews: {},
+  };
+  await AsyncStorage.setItem('qlp_progress_v4', JSON.stringify(snapshot));
+
+  await reconcileCurriculumProgress([surahAlFilLearningPath]);
+  await reconcileCurriculumProgress([surahAlFilLearningPath]);
+
+  expect((await getLevelProgress('al-fil-level-3-ayah-3'))?.completed).toBe(true);
+  expect((await getLevelProgress('al-fil-level-4-ayah-4'))?.completed).toBe(true);
+  expect((await getAppProgress()).xp).toBe(42);
+  expect(await AsyncStorage.getItem('qlp_progress_v4')).toBeNull();
+  const migrated = JSON.parse((await AsyncStorage.getItem('qlp_progress_v5'))!);
+  expect(migrated.appliedCurriculumMigrationIds).toContain('al-fil-split-ayat-3-4-v1');
+});
+
 test('quarantines corrupt V2 progress and reports recovery', async () => {
   await AsyncStorage.setItem('qlp_progress_v2', '{bad json');
 
@@ -222,10 +243,10 @@ test('migrates a valid V2 snapshot without losing progress', async () => {
   expect((await getLevelProgress(level.id))?.activityAttempts.length).toBeGreaterThan(0);
   expect(await getReviewStates()).toEqual([]);
   expect(await AsyncStorage.getItem('qlp_progress_v2')).toBeNull();
-  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v5')).not.toBeNull();
 });
 
-test('migrates V3 attempts and reviews to locale-scoped V4 records', async () => {
+test('migrates V3 attempts and reviews to locale-scoped V5 records', async () => {
   const level = ayah1Level;
   const progress = readyProgress(level);
   await AsyncStorage.setItem('qlp_progress_v3', JSON.stringify({
@@ -244,7 +265,7 @@ test('migrates V3 attempts and reviews to locale-scoped V4 records', async () =>
   expect((await getLevelProgress(level.id))?.activityAttempts.every(attempt => attempt.locale === 'en')).toBe(true);
   expect(await getReviewStates()).toEqual([expect.objectContaining({ locale: 'en' })]);
   expect(await AsyncStorage.getItem('qlp_progress_v3')).toBeNull();
-  expect(await AsyncStorage.getItem('qlp_progress_v4')).not.toBeNull();
+  expect(await AsyncStorage.getItem('qlp_progress_v5')).not.toBeNull();
 });
 
 test('registers successfully practiced review activities once on level completion', async () => {
@@ -278,16 +299,16 @@ test('stores a review attempt and advances its schedule atomically', async () =>
   expect(await getDueReviewStates(new Date('2026-01-05T00:00:00.000Z'))).toContainEqual(review);
 });
 
-test('keeps old schedules while syncing the active r15 package revision', async () => {
+test('keeps old schedules while syncing the active r16 package revision', async () => {
   const level = ayah1Level;
   await seedSnapshot({ [level.id]: readyProgress(level) });
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r13', now: new Date('2026-01-01T00:00:00.000Z') });
 
-  await syncCompletedLevelReviews([{ level, packageRevisionId: 'surah-al-fil-v1-r15' }], new Date('2026-01-02T00:00:00.000Z'));
+  await syncCompletedLevelReviews([{ level, packageRevisionId: 'surah-al-fil-v1-r16' }], new Date('2026-01-02T00:00:00.000Z'));
 
   const reviews = await getReviewStates();
   expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r13')).toHaveLength(3);
-  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r15')).toHaveLength(3);
+  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r16')).toHaveLength(3);
 });
 
 test('backfills review state from the latest attempt instead of completion time', async () => {
@@ -332,7 +353,7 @@ function readyProgress(level: Level): LevelProgress {
       .map(block => ({ questionId: block.id, levelId: level.id, selectedAnswer: 0, correct: true, attemptedAt: now }))),
     activityAttempts: level.steps.flatMap(step => step.blocks
       .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
-      .map(block => ({ activityId: block.activity.id, levelId: level.id, answer: 'fixture', correct: true, attemptedAt: now, evaluationVersion: '1' }))),
+      .map(block => ({ activityId: block.activity.id, levelId: level.id, answer: 'fixture', correct: true, attemptedAt: now, evaluationVersion: '1', languageIndependent: block.activity.languageIndependent }))),
   };
 }
 

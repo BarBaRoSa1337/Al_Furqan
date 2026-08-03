@@ -34,3 +34,14 @@ npm run server:typecheck
 npm run server:test
 npm run server:dev
 ```
+
+## Draft short-Surah runtime course
+
+Development can assemble the English Al-Fil-to-An-Nas practice course in
+memory from Quran Foundation, pinned QuranEnc Rowwad `1.0.19`, and MP3Quran
+Al-Husary streams. Set `FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server and
+`EXPO_PUBLIC_INITIAL_PACKAGE_ID=surah-al-fil-v1` in Expo.
+
+The endpoint returns `no-store`; Expo registers the package in memory and does
+not persist Quran Foundation payloads. Arabic and French course publications
+remain explicitly unavailable until complete reviewed package catalogs exist.

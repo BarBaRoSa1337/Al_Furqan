@@ -347,6 +347,12 @@ export interface CurriculumCompletionEquivalence {
   equivalentLevelIds: string[];
 }
 
+export interface CurriculumCompletionMigration {
+  id: string;
+  historicalLevelId: string;
+  completedLevelIds: string[];
+}
+
 /** Structural curriculum metadata. Canonical Surah records never own lessons. */
 export interface SurahCurriculum {
   id: string;
@@ -355,6 +361,8 @@ export interface SurahCurriculum {
   lessons: SurahLesson[];
   reviewSegments: ReviewSegment[];
   completionEquivalences?: CurriculumCompletionEquivalence[];
+  /** One-time progress fan-out for historical lesson IDs removed by a curriculum revision. */
+  completionMigrations?: CurriculumCompletionMigration[];
 }
 
 export interface LearningPath {

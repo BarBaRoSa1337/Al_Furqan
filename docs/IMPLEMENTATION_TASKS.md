@@ -208,3 +208,14 @@ Status: implemented on `feature/surah-learning-hierarchy`.
   session retry round.
 - `react-native-svg` is the only added runtime dependency, used for segmented
   Surah progress rings.
+
+## Short-Surah course expansion
+
+Status: implemented as an English development runtime candidate.
+
+- Al-Fil now has separate Ayah 3, Ayah 4, Ayah 5, and final checkpoint nodes.
+- Progress V5 migrates historical combined-node completion exactly once.
+- The backend can assemble canonical practice for Surahs 105-114 without
+  persisting Quran Foundation payloads on mobile.
+- Arabic/French complete lesson publications, source approvals, and production
+  runtime activation remain deferred release work.

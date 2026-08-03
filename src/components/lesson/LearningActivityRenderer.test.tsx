@@ -120,7 +120,7 @@ test('renders canonical continuation segments and submits the stable option ID',
 
 test('orders canonical ayat while submitting stable reference keys', async () => {
   const repo = getContentRepository();
-  const activity = repo.getActivityById('l3-order-ayat-3-4');
+  const activity = repo.getActivityById('al-fil-review-order-ayat');
   expect(activity?.kind).toBe('order_ayat');
   if (!activity || activity.kind !== 'order_ayat') throw new Error('Ayah order fixture unavailable');
   const labels = activity.config.correctOrderRefs.map(ref => repo.getAyahByRef(ref)?.arabicText.text ?? '');
@@ -129,5 +129,5 @@ test('orders canonical ayat while submitting stable reference keys', async () =>
   const optionButtons = labels.map(label => screen.getByRole('button', { name: label }));
 
   optionButtons.forEach(button => fireEvent.press(button));
-  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(['105:3', '105:4'], false));
+  await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(['105:1', '105:2', '105:3', '105:4', '105:5'], false));
 });
