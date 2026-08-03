@@ -80,6 +80,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
         <Stack.Screen name="roadmap" />
         <Stack.Screen name="discover" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="surah/[id]" />
         <Stack.Screen name="level/[id]" options={{ animation: 'fade_from_bottom' }} />
         <Stack.Screen name="practice/[id]" />
         <Stack.Screen name="review" />

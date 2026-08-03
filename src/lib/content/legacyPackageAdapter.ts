@@ -1,4 +1,4 @@
-import type { AyahRecord, ContentPackage, WordToken } from '../../types/content';
+import type { AyahRecord, ContentPackage, SurahCurriculum, SurahLessonKind, WordToken } from '../../types/content';
 
 /**
  * Resolves schema-v1 embedded Arabic to exactly one canonical token in its ayah.
@@ -40,5 +40,33 @@ export function adaptLegacyPackage(pkg: ContentPackage): ContentPackage {
     return ayahChanged ? { ...ayah, wordMeanings } : ayah;
   }) : pkg.ayat;
 
-  return changed ? { ...pkg, ayat, divisions } : pkg;
+  const learningPaths = pkg.schemaVersion < 4 ? pkg.learningPaths.map(path => {
+    if (path.surahCurricula?.length) return path;
+    changed = true;
+    const curricula: SurahCurriculum[] = path.surahIds.map(surahId => {
+      const levels = path.levelIds
+        .map(levelId => pkg.levels.find(level => level.id === levelId))
+        .filter(level => level?.surahId === surahId);
+      return {
+        id: `${path.id}:${surahId}`,
+        surahId,
+        lessons: levels.map(level => {
+          const kind: SurahLessonKind = level!.metadata?.isFinalReview
+            ? 'final_review'
+            : level!.ayahRefs.length > 1 ? 'ayah_range' : 'ayah';
+          const first = level!.ayahRefs[0];
+          const last = level!.ayahRefs.at(-1);
+          return {
+            levelId: level!.id,
+            kind,
+            ayahRange: first && last ? { start: first, end: last } : undefined,
+          };
+        }),
+        reviewSegments: [],
+      };
+    });
+    return { ...path, surahCurricula: curricula };
+  }) : pkg.learningPaths;
+
+  return changed ? { ...pkg, ayat, divisions, learningPaths } : pkg;
 }

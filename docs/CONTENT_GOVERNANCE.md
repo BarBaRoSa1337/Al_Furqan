@@ -119,3 +119,17 @@ A package cannot publish or activate when it contains:
 - unsupported schema version.
 
 Run the repository's content validation and release checks before shipping.
+
+## Production runtime visibility
+
+The renderer applies a second fail-closed eligibility check in production.
+Context, tafsir, translations, vocabulary, activities, media, and recap blocks
+must have approved records and approved source records. Ineligible governed
+blocks render only in development, where their pending-review badge remains
+visible. Package validation remains the primary activation gate and rejects a
+package whose required content is not release-ready.
+
+Schema v4 uses `verified_recap` for source-backed factual session recaps.
+Original Furqan `reflection` content remains a separate variant and must not
+replace the recap until genuine named editorial and Islamic approval exists.
+No approval state is inferred from wording.

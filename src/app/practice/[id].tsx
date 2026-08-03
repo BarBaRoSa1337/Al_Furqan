@@ -23,6 +23,10 @@ export default function PracticeScreen() {
     if (session.status === 'locked') router.replace('/roadmap');
   }, [router, session.status]);
 
+  useEffect(() => {
+    if (session.finished && session.level) router.replace(`/complete/${session.level.id}`);
+  }, [router, session.finished, session.level]);
+
   if (session.status === 'loading' || session.status === 'locked') {
     return <Screen style={styles.center}><ActivityIndicator color={colors.primary} /><Text style={styles.loading}>{text('practice.title')}</Text></Screen>;
   }
@@ -49,13 +53,12 @@ export default function PracticeScreen() {
     currentStepIndex={session.displayStepIndex}
     totalSteps={session.totalSteps}
     canProceed={session.canProceed}
-    needsCheck={session.needsCheck}
+    hasInteraction={session.hasInteraction}
     feedback={session.feedback}
     reviewRoundLabel={session.retryCount > 0 ? text('lesson.reviewRound', { count: session.retryCount }) : undefined}
     isLastStep={session.isLastStep}
     busy={session.busy}
     continueLabel={text('lesson.continue')}
-    checkLabel={text('question.checkAnswer')}
     completeLabel={text('practice.complete')}
     correctFeedbackLabel={text('lesson.correctFeedback')}
     retryFeedbackLabel={text('lesson.retryFeedback')}

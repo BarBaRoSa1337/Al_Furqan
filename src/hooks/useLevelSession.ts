@@ -22,6 +22,7 @@ import { getCoreLevelSteps } from '../lib/content/lessonSteps';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
 import { advanceSessionCursor, createSessionCursor } from '../lib/progress/sessionSequence';
+import type { ExerciseSubmissionResult } from '../types/activities';
 
 export type LevelSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type SessionFeedback = { correct: boolean };
@@ -36,15 +37,14 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
   const coreSteps = level ? getCoreLevelSteps(level) : [];
   const [status, setStatus] = useState<LevelSessionStatus>('loading');
   const [cursor, setCursor] = useState(() => createSessionCursor(0));
-  const [correctQuestionIds, setCorrectQuestionIds] = useState<string[]>([]);
-  const [activityResults, setActivityResults] = useState<Record<string, boolean>>({});
-  const [draftAnswer, setDraftAnswer] = useState<{ id: string; answer: unknown; kind: 'activity' | 'question' } | null>(null);
   const [feedback, setFeedback] = useState<SessionFeedback | null>(null);
+  const [completionReceipt, setCompletionReceipt] = useState<CompletionReceipt | null>(null);
   const [stepRevision, setStepRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<ProgressRecoveryWarning | null>(null);
   const operationLocked = useRef(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const preSessionRef = useRef<LevelProgress | undefined>(undefined);
 
   const currentStepIndex = cursor.currentStepIndex;
@@ -53,13 +53,8 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
   const requiredActivityIds = step?.required === false ? [] : step?.blocks
     .filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.required)
     .map(block => block.activity.id) ?? [];
-  const canProceed = questionIds.every(questionId => correctQuestionIds.includes(questionId))
-    && requiredActivityIds.every(activityId => activityResults[activityId] === true);
   const hasRequiredInteraction = questionIds.length > 0 || requiredActivityIds.length > 0;
-  const interactionComplete = canProceed;
-  const hasDraftAnswer = Boolean(draftAnswer && (questionIds.includes(draftAnswer.id) || requiredActivityIds.includes(draftAnswer.id)));
-  const canAdvance = feedback !== null || (hasRequiredInteraction ? interactionComplete || hasDraftAnswer : true);
-  const needsCheck = feedback === null && hasRequiredInteraction && !interactionComplete && hasDraftAnswer;
+  const canAdvance = !hasRequiredInteraction;
   const isLastStep = cursor.phase === 'retry'
     ? cursor.retryStepIndexes.length === 1
     : Boolean(level && currentStepIndex === coreSteps.length - 1 && cursor.retryStepIndexes.length === 0);
@@ -108,10 +103,8 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
           && pendingRetryIndexes.length > 0;
         if (!cancelled) {
           setCursor(createSessionCursor(nextIndex, pendingRetryIndexes, retryPhase));
-          setCorrectQuestionIds([]);
-          setActivityResults({});
-          setDraftAnswer(null);
           setFeedback(null);
+          setCompletionReceipt(null);
           setStepRevision(0);
           setWarning(getProgressRecoveryWarning());
           setStatus('ready');
@@ -125,62 +118,62 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     }
 
     void loadSession();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (advanceTimer.current) clearTimeout(advanceTimer.current); };
   }, [lessonLocale, levelId, startMode]);
 
-  async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
-    if (!questionIds.includes(blockId) || operationLocked.current || feedback) return;
-    setDraftAnswer({ id: blockId, answer: selectedAnswer, kind: 'question' });
+  async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<ExerciseSubmissionResult> {
+    if (!level || !path || !step || !questionIds.includes(blockId) || operationLocked.current || feedback) return { correct: false };
+    const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === blockId);
+    if (!block) return { correct: false };
+    const correct = evaluateQuestion(block, selectedAnswer);
+    const saved = await runExclusive(async () => {
+      await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer, correct, locale: lessonLocale });
+      setFeedback({ correct });
+    });
+    if (saved) scheduleAutomaticAdvance(correct);
+    return { correct };
   }
 
-  async function answerActivity(activityId: string, answer: unknown): Promise<void> {
-    if (!requiredActivityIds.includes(activityId) || operationLocked.current || feedback) return;
-    setDraftAnswer({ id: activityId, answer, kind: 'activity' });
+  async function answerActivity(activityId: string, answer: unknown): Promise<ExerciseSubmissionResult> {
+    if (!level || !path || !step || !requiredActivityIds.includes(activityId) || operationLocked.current || feedback) return { correct: false };
+    const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === activityId)?.activity;
+    if (!activity) return { correct: false };
+    const correct = evaluateActivity(activity, answer, createActivityEvaluationContext(repo)).correct;
+    const saved = await runExclusive(async () => {
+      await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
+      setFeedback({ correct });
+    });
+    if (saved) scheduleAutomaticAdvance(correct);
+    return { correct };
   }
 
   async function advance(): Promise<CompletionReceipt | null> {
-    if (!level || !path || !step || !canAdvance || operationLocked.current) return null;
+    if (!level || !path || !step || hasRequiredInteraction || !canAdvance || operationLocked.current) return null;
     let receipt: CompletionReceipt | null = null;
     await runExclusive(async () => {
-      if (feedback) {
-        receipt = await moveToNextStep(feedback.correct);
-        return;
-      }
-      if (!needsCheck) {
-        receipt = await moveToNextStep(true);
-        return;
-      }
-      let correct = true;
-      if (needsCheck && draftAnswer?.kind === 'question') {
-        const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === draftAnswer.id);
-        if (!block) throw new Error('Question is unavailable for this step.');
-        correct = evaluateQuestion(block, draftAnswer.answer);
-        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct, locale: lessonLocale });
-        if (correct) setCorrectQuestionIds(current => current.includes(block.id) ? current : [...current, block.id]);
-      }
-      if (needsCheck && draftAnswer?.kind === 'activity') {
-        const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === draftAnswer.id)?.activity;
-        if (!activity) throw new Error('Activity is unavailable for this step.');
-        correct = evaluateActivity(activity, draftAnswer.answer, createActivityEvaluationContext(repo)).correct;
-        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
-        setActivityResults(current => ({ ...current, [activity.id]: correct }));
-      }
-      setFeedback({ correct });
+      receipt = await moveToNextStep(true);
     });
     return receipt;
+  }
+
+  function scheduleAutomaticAdvance(correct: boolean): void {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => {
+      void runExclusive(async () => {
+        const receipt = await moveToNextStep(correct);
+        if (receipt) setCompletionReceipt(receipt);
+      });
+    }, correct ? 700 : 400);
   }
 
   async function moveToNextStep(correct: boolean): Promise<CompletionReceipt | null> {
       const next = advanceSessionCursor(coreSteps.length, cursor, correct);
       const targetStep = next.complete ? undefined : coreSteps[next.cursor.currentStepIndex];
       await completeLevelStep(level!.id, path!.id, step!.id, targetStep?.id);
-      setDraftAnswer(null);
       setFeedback(null);
       if (!next.complete) {
         setCursor(next.cursor);
         setStepRevision(current => current + 1);
-        setCorrectQuestionIds([]);
-        setActivityResults({});
         return null;
       }
       return completeLevel(level!, path!, { packageRevisionId: repo.getPackageForLevel(level!.id)?.revisionId, locale: lessonLocale });
@@ -212,8 +205,9 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     stepRenderKey: `${step?.id ?? 'missing'}:${stepRevision}`,
     totalCoreSteps: coreSteps.length,
     canProceed: canAdvance,
-    needsCheck,
+    hasInteraction: hasRequiredInteraction,
     feedback,
+    completionReceipt,
     retryCount: cursor.phase === 'retry' ? cursor.retryStepIndexes.length : 0,
     isLastStep,
     busy,

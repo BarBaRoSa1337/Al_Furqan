@@ -20,6 +20,7 @@ export default function CompleteScreen() {
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const nextLevel = level ? repo.getNextLevel(level.id) : undefined;
+  const surahHref = level ? `/surah/${level.surahId}` as const : '/roadmap' as const;
   const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values);
   const [receipt, setReceipt] = useState<CompletionReceipt | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +129,7 @@ export default function CompleteScreen() {
         {hasPracticeSteps(level) ? (
           <Button title={text('completion.extraPractice')} onPress={() => router.replace(`/practice/${level.id}`)} size="md" variant="secondary" />
         ) : null}
-        <Button title={text('completion.backToRoadmap')} onPress={() => router.replace('/roadmap')} size="md" variant="ghost" textStyle={styles.roadmapButtonText} />
+        <Button title={text('completion.backToRoadmap')} onPress={() => router.replace(surahHref)} size="md" variant="ghost" textStyle={styles.roadmapButtonText} />
       </View>
     </Screen>
   );

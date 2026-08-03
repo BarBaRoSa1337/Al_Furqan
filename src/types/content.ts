@@ -308,6 +308,7 @@ export interface DiscoverySearchResult {
 
 export type ContextKind = 'historical_context' | 'occasion_of_revelation' | 'tafsir_summary';
 export type LevelStepKind =
+  | 'surah_introduction'
   | 'context'
   | 'read'
   | 'translation'
@@ -321,12 +322,49 @@ export type LevelStepKind =
 export type LevelDifficulty = 'easy' | 'medium' | 'hard';
 export type RoadmapSort = 'mushaf' | 'revelation' | 'difficulty' | 'path';
 
+export type SurahLessonKind =
+  | 'introduction'
+  | 'ayah'
+  | 'ayah_range'
+  | 'segment_review'
+  | 'final_review';
+
+export interface SurahLesson {
+  levelId: string;
+  kind: SurahLessonKind;
+  ayahRange?: QuranRange;
+  reviewSegmentId?: string;
+}
+
+export interface ReviewSegment {
+  id: string;
+  coveredLessonIds: string[];
+  reviewLevelId: string;
+}
+
+export interface CurriculumCompletionEquivalence {
+  sourceLevelId: string;
+  equivalentLevelIds: string[];
+}
+
+/** Structural curriculum metadata. Canonical Surah records never own lessons. */
+export interface SurahCurriculum {
+  id: string;
+  surahId: string;
+  representativeAssetId?: string;
+  lessons: SurahLesson[];
+  reviewSegments: ReviewSegment[];
+  completionEquivalences?: CurriculumCompletionEquivalence[];
+}
+
 export interface LearningPath {
   id: string;
   title: string;
   description: string;
   surahIds: string[];
   levelIds: string[];
+  /** Required by schema v4. Older packages are adapted at registration time. */
+  surahCurricula?: SurahCurriculum[];
   discovery?: DiscoveryMetadata;
   sourceMetadata: {
     reviewerStatus: ReviewerStatus;
@@ -370,6 +408,7 @@ export interface LevelStep {
 }
 
 export type ContentBlock =
+  | SurahOverviewBlock
   | QuranPassageBlock
   | TranslationBlock
   | WordMeaningBlock
@@ -384,6 +423,12 @@ export type ContentBlock =
 
 export type PracticeActivityBlock = ActivityLevelBlock;
 export type LevelBlock = ContentBlock | PracticeActivityBlock;
+
+export interface SurahOverviewBlock {
+  id: string;
+  type: 'surah_overview';
+  surahId: string;
+}
 
 export interface AyahRefBlock {
   id: string;
@@ -505,6 +550,16 @@ export interface SummaryLevelBlock {
   points: string[];
   sourceIds: string[];
   reviewerStatus: ReviewerStatus;
+  /** Schema v4 distinguishes source-backed recap from original reflection. */
+  variant?: 'verified_recap' | 'reflection';
+}
+
+export interface AuthoredSurahSummary {
+  packageId: string;
+  path: LearningPath;
+  curriculum: SurahCurriculum;
+  surah: SurahRecord;
+  levels: Level[];
 }
 
 // ─── Package ───────────────────────────────────────────────────────────────
@@ -596,5 +651,8 @@ export interface ContentRepository {
   getLearningPathById(id: string): LearningPath | undefined;
   getCurrentLearningPath(): LearningPath | undefined;
   getLevelsForLearningPath(pathId: string, sort?: RoadmapSort): Level[];
+  listAuthoredSurahs(pathId?: string): AuthoredSurahSummary[];
+  getSurahCurriculum(pathId: string, surahId: string): SurahCurriculum | undefined;
+  getLevelsForSurah(pathId: string, surahId: string): Level[];
   getSurahs(sort?: RoadmapSort): SurahRecord[];
 }

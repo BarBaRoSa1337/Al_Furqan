@@ -9,6 +9,7 @@ import {
   completeLevel,
   getAppProgress,
   getLevelProgress,
+  getLastCompletionReceipt,
   getProgressRecoveryWarning,
   getReviewStates,
   getDueReviewStates,
@@ -21,7 +22,11 @@ import {
   startLevel,
   syncCompletedLevelReviews,
   abandonLevel,
+  reconcileCurriculumProgress,
 } from './storage';
+
+const ayah1Level = surahAlFilLevels.find(level => level.id === 'al-fil-level-1-context-ayah-1')!;
+const finalReviewLevel = surahAlFilLevels.find(level => level.id === 'al-fil-level-4-ayah-5-review')!;
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
@@ -33,7 +38,7 @@ beforeEach(async () => {
 });
 
 test('migrates legacy package IDs to learning path IDs', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   await AsyncStorage.setItem('qlp_app_progress', JSON.stringify({
     xp: 10,
     completedLessonIds: [level.id],
@@ -55,7 +60,7 @@ test('migrates legacy package IDs to learning path IDs', async () => {
 });
 
 test('serializes concurrent question attempts without data loss', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   await startLevel(level.id, level.pathId, level.steps[0].id);
 
   await Promise.all([
@@ -67,7 +72,7 @@ test('serializes concurrent question attempts without data loss', async () => {
 });
 
 test('restarts a level pointer without erasing learning history', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const existing = completedProgress(level);
   await seedSnapshot({ [level.id]: existing });
 
@@ -81,7 +86,7 @@ test('restarts a level pointer without erasing learning history', async () => {
 });
 
 test('requires a correct word-bank answer for memorization completion', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const seeded = readyProgress(level);
   seeded.activityAttempts = seeded.activityAttempts.filter(attempt => attempt.activityId !== 'l1-recall-ayah-1');
   await seedSnapshot({ [level.id]: seeded });
@@ -97,7 +102,7 @@ test('requires a correct word-bank answer for memorization completion', async ()
 });
 
 test('requires memory and understanding activity completion but not optional context', () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const ready = readyProgress(level);
   ready.completedStepIds = ready.completedStepIds.filter(id => id !== 'l1-context');
   expect(isLevelReadyForCompletion(level, ready)).toBe(true);
@@ -110,7 +115,7 @@ test('requires memory and understanding activity completion but not optional con
 });
 
 test('keeps completed progress valid when a package revision adds required activities', () => {
-  const level = surahAlFilLevels[3];
+  const level = finalReviewLevel;
   const oldProgress: LevelProgress = {
     levelId: level.id, pathId: level.pathId, completed: true, startedAt: '2026-01-01T00:00:00.000Z',
     completedAt: '2026-01-01T00:08:00.000Z', currentStepId: 'l4-review',
@@ -122,7 +127,7 @@ test('keeps completed progress valid when a package revision adds required activ
 });
 
 test('registers the Level 4 memory and meaning ladder for deterministic review', async () => {
-  const level = surahAlFilLevels[3];
+  const level = finalReviewLevel;
   await seedSnapshot({ [level.id]: readyProgress(level) });
 
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r5', now: new Date('2026-01-01T00:00:00.000Z') });
@@ -133,11 +138,11 @@ test('registers the Level 4 memory and meaning ladder for deterministic review',
 });
 
 test('ignores stale levels when determining path completion', async () => {
-  const target = surahAlFilLevels[2];
+  const target = surahAlFilLevels.find(level => level.id === 'al-fil-level-3-ayat-3-4')!;
+  const preceding = surahAlFilLevels.slice(0, surahAlFilLevels.indexOf(target));
   await seedSnapshot({
-    [surahAlFilLevels[0].id]: completedProgress(surahAlFilLevels[0]),
-    [surahAlFilLevels[1].id]: completedProgress(surahAlFilLevels[1]),
-    stale: { ...completedProgress(surahAlFilLevels[0]), levelId: 'stale' },
+    ...Object.fromEntries(preceding.map(level => [level.id, completedProgress(level)])),
+    stale: { ...completedProgress(ayah1Level), levelId: 'stale' },
     [target.id]: readyProgress(target),
   });
 
@@ -148,11 +153,9 @@ test('ignores stale levels when determining path completion', async () => {
 });
 
 test('awards concurrent completion XP once', async () => {
-  const target = surahAlFilLevels[3];
+  const target = finalReviewLevel;
   await seedSnapshot({
-    [surahAlFilLevels[0].id]: completedProgress(surahAlFilLevels[0]),
-    [surahAlFilLevels[1].id]: completedProgress(surahAlFilLevels[1]),
-    [surahAlFilLevels[2].id]: completedProgress(surahAlFilLevels[2]),
+    ...Object.fromEntries(surahAlFilLevels.slice(0, -1).map(level => [level.id, completedProgress(level)])),
     [target.id]: readyProgress(target),
   });
 
@@ -165,6 +168,21 @@ test('awards concurrent completion XP once', async () => {
   expect((await getAppProgress()).xp).toBe(120);
 });
 
+test('reconciles the new introduction from legacy Ayah 1 completion without XP', async () => {
+  const legacy = completedProgress(ayah1Level);
+  await seedSnapshot({ [ayah1Level.id]: legacy });
+  const raw = JSON.parse((await AsyncStorage.getItem('qlp_progress_v2'))!);
+  raw.app.xp = 42;
+  await AsyncStorage.setItem('qlp_progress_v2', JSON.stringify(raw));
+
+  await reconcileCurriculumProgress([surahAlFilLearningPath]);
+  await reconcileCurriculumProgress([surahAlFilLearningPath]);
+
+  expect((await getLevelProgress('al-fil-level-introduction'))?.completed).toBe(true);
+  expect((await getAppProgress()).xp).toBe(42);
+  expect(await getLastCompletionReceipt()).toBeNull();
+});
+
 test('quarantines corrupt V2 progress and reports recovery', async () => {
   await AsyncStorage.setItem('qlp_progress_v2', '{bad json');
 
@@ -174,7 +192,7 @@ test('quarantines corrupt V2 progress and reports recovery', async () => {
 });
 
 test('quarantines structurally invalid V3 attempts and review dates', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const progress = readyProgress(level);
   progress.activityAttempts[0].attemptedAt = 'not-a-date';
   await AsyncStorage.setItem('qlp_progress_v3', JSON.stringify({
@@ -195,7 +213,7 @@ test('quarantines structurally invalid V3 attempts and review dates', async () =
 });
 
 test('migrates a valid V2 snapshot without losing progress', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const snapshot: ProgressSnapshotV2 = { schemaVersion: 2, app: createDefaultProgress(), levels: { [level.id]: readyProgress(level) } };
   snapshot.app.xp = 35;
   await AsyncStorage.setItem('qlp_progress_v2', JSON.stringify(snapshot));
@@ -208,7 +226,7 @@ test('migrates a valid V2 snapshot without losing progress', async () => {
 });
 
 test('migrates V3 attempts and reviews to locale-scoped V4 records', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const progress = readyProgress(level);
   await AsyncStorage.setItem('qlp_progress_v3', JSON.stringify({
     schemaVersion: 3,
@@ -230,7 +248,7 @@ test('migrates V3 attempts and reviews to locale-scoped V4 records', async () =>
 });
 
 test('registers successfully practiced review activities once on level completion', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   await seedSnapshot({ [level.id]: readyProgress(level) });
 
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'revision-r3', now: new Date('2026-01-01T00:00:00.000Z') });
@@ -243,7 +261,7 @@ test('registers successfully practiced review activities once on level completio
 });
 
 test('stores a review attempt and advances its schedule atomically', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   await seedSnapshot({ [level.id]: readyProgress(level) });
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'revision-r3', now: new Date('2026-01-01T00:00:00.000Z') });
 
@@ -260,20 +278,20 @@ test('stores a review attempt and advances its schedule atomically', async () =>
   expect(await getDueReviewStates(new Date('2026-01-05T00:00:00.000Z'))).toContainEqual(review);
 });
 
-test('keeps r13 schedules while syncing the active r14 package revision', async () => {
-  const level = surahAlFilLevels[0];
+test('keeps old schedules while syncing the active r15 package revision', async () => {
+  const level = ayah1Level;
   await seedSnapshot({ [level.id]: readyProgress(level) });
   await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'surah-al-fil-v1-r13', now: new Date('2026-01-01T00:00:00.000Z') });
 
-  await syncCompletedLevelReviews([{ level, packageRevisionId: 'surah-al-fil-v1-r14' }], new Date('2026-01-02T00:00:00.000Z'));
+  await syncCompletedLevelReviews([{ level, packageRevisionId: 'surah-al-fil-v1-r15' }], new Date('2026-01-02T00:00:00.000Z'));
 
   const reviews = await getReviewStates();
   expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r13')).toHaveLength(3);
-  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r14')).toHaveLength(3);
+  expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r15')).toHaveLength(3);
 });
 
 test('backfills review state from the latest attempt instead of completion time', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const progress = readyProgress(level);
   const activityId = 'l1-recall-ayah-1';
   progress.completed = true;
@@ -333,7 +351,7 @@ async function seedSnapshot(levels: Record<string, LevelProgress>): Promise<void
 }
 
 test('abandonLevel deletes level progress if there was no pre-session progress', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   
   // Start level creates the in-session progress
   await startLevel(level.id, level.pathId, level.steps[0].id);
@@ -348,7 +366,7 @@ test('abandonLevel deletes level progress if there was no pre-session progress',
 });
 
 test('abandonLevel restores pre-session progress if level was already started/completed', async () => {
-  const level = surahAlFilLevels[0];
+  const level = ayah1Level;
   const oldProgress = completedProgress(level);
   await seedSnapshot({ [level.id]: oldProgress });
   

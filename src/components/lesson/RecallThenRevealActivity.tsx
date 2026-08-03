@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet, Text, LayoutAnimation } from 'react-native';
 import { RecallRating } from '../../types/activities';
-import type { RecallThenRevealActivity as RecallActivity } from '../../types/activities';
+import type { ExerciseSubmissionResult, RecallThenRevealActivity as RecallActivity } from '../../types/activities';
 import Card from '../ui/Card';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors } from '../../theme/tokens';
 
-export default function RecallThenRevealActivity({ activity, onAnswer }: { activity: RecallActivity; onAnswer: (answer: RecallRating, correct: boolean) => void | Promise<void> }) {
+export default function RecallThenRevealActivity({ activity, onAnswer }: { activity: RecallActivity; onAnswer: (answer: RecallRating, correct: boolean) => Promise<ExerciseSubmissionResult> }) {
   const [revealed, setRevealed] = useState(false);
   const [rating, setRating] = useState<RecallRating>();
   const [submitting, setSubmitting] = useState(false);

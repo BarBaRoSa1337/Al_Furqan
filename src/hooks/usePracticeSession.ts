@@ -8,6 +8,7 @@ import type { QuestionBlock } from '../types/content';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
 import { advanceSessionCursor, createSessionCursor } from '../lib/progress/sessionSequence';
+import type { ExerciseSubmissionResult } from '../types/activities';
 
 export type PracticeSessionStatus = 'loading' | 'ready' | 'locked' | 'locale_unavailable' | 'not_found' | 'error';
 export type PracticeFeedback = { correct: boolean };
@@ -21,23 +22,19 @@ export function usePracticeSession(levelId: string | undefined) {
   const steps = level ? getPracticeLevelSteps(level) : [];
   const [status, setStatus] = useState<PracticeSessionStatus>('loading');
   const [cursor, setCursor] = useState(() => createSessionCursor(0));
-  const [correctQuestionIds, setCorrectQuestionIds] = useState<string[]>([]);
-  const [activityResults, setActivityResults] = useState<Record<string, boolean>>({});
-  const [draftAnswer, setDraftAnswer] = useState<{ id: string; answer: unknown; kind: 'activity' | 'question' } | null>(null);
   const [feedback, setFeedback] = useState<PracticeFeedback | null>(null);
+  const [finished, setFinished] = useState(false);
   const [stepRevision, setStepRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const operationLocked = useRef(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const currentStepIndex = cursor.currentStepIndex;
   const step = steps[currentStepIndex];
   const questionIds = step?.blocks.filter(block => block.type === 'question').map(block => block.id) ?? [];
   const activityIds = step?.blocks.filter((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity').map(block => block.activity.id) ?? [];
-  const interactionComplete = questionIds.every(id => correctQuestionIds.includes(id)) && activityIds.every(id => activityResults[id] === true);
   const hasInteraction = questionIds.length > 0 || activityIds.length > 0;
-  const hasDraftAnswer = Boolean(draftAnswer && (questionIds.includes(draftAnswer.id) || activityIds.includes(draftAnswer.id)));
-  const canProceed = feedback !== null || (hasInteraction ? interactionComplete || hasDraftAnswer : true);
-  const needsCheck = feedback === null && hasInteraction && !interactionComplete && hasDraftAnswer;
+  const canProceed = !hasInteraction;
   const isLastStep = cursor.phase === 'retry'
     ? cursor.retryStepIndexes.length === 1
     : currentStepIndex === steps.length - 1 && cursor.retryStepIndexes.length === 0;
@@ -64,10 +61,8 @@ export function usePracticeSession(levelId: string | undefined) {
         }
         if (!cancelled) {
           setCursor(createSessionCursor(0));
-          setCorrectQuestionIds([]);
-          setActivityResults({});
-          setDraftAnswer(null);
           setFeedback(null);
+          setFinished(false);
           setStepRevision(0);
           setStatus('ready');
         }
@@ -79,60 +74,60 @@ export function usePracticeSession(levelId: string | undefined) {
       }
     }
     void load();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (advanceTimer.current) clearTimeout(advanceTimer.current); };
   }, [lessonLocale, levelId]);
 
-  async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<void> {
-    if (!questionIds.includes(blockId) || operationLocked.current || feedback) return;
-    setDraftAnswer({ id: blockId, answer: selectedAnswer, kind: 'question' });
+  async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<ExerciseSubmissionResult> {
+    if (!level || !path || !step || !questionIds.includes(blockId) || operationLocked.current || feedback) return { correct: false };
+    const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === blockId);
+    if (!block) return { correct: false };
+    const correct = evaluateQuestion(block, selectedAnswer);
+    const saved = await runExclusive(async () => {
+      await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer, correct, locale: lessonLocale });
+      setFeedback({ correct });
+    });
+    if (saved) scheduleAutomaticAdvance(correct);
+    return { correct };
   }
 
-  async function answerActivity(activityId: string, answer: unknown): Promise<void> {
-    if (!activityIds.includes(activityId) || operationLocked.current || feedback) return;
-    setDraftAnswer({ id: activityId, answer, kind: 'activity' });
+  async function answerActivity(activityId: string, answer: unknown): Promise<ExerciseSubmissionResult> {
+    if (!level || !path || !step || !activityIds.includes(activityId) || operationLocked.current || feedback) return { correct: false };
+    const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === activityId)?.activity;
+    if (!activity) return { correct: false };
+    const correct = evaluateActivity(activity, answer, createActivityEvaluationContext(repo)).correct;
+    const saved = await runExclusive(async () => {
+      await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
+      setFeedback({ correct });
+    });
+    if (saved) scheduleAutomaticAdvance(correct);
+    return { correct };
   }
 
   async function advance(): Promise<boolean> {
-    if (!level || !path || !step || !canProceed || operationLocked.current) return false;
+    if (!level || !path || !step || hasInteraction || !canProceed || operationLocked.current) return false;
     let sessionFinished = false;
     const saved = await runExclusive(async () => {
-      if (feedback) {
-        sessionFinished = await moveToNextStep(feedback.correct);
-        return;
-      }
-      if (!needsCheck) {
-        sessionFinished = await moveToNextStep(true);
-        return;
-      }
-      let correct = true;
-      if (needsCheck && draftAnswer?.kind === 'question') {
-        const block = step.blocks.find((candidate): candidate is QuestionBlock => candidate.type === 'question' && candidate.id === draftAnswer.id);
-        if (!block) throw new Error('Practice question is unavailable.');
-        correct = evaluateQuestion(block, draftAnswer.answer);
-        await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer: draftAnswer.answer, correct, locale: lessonLocale });
-        if (correct) setCorrectQuestionIds(current => current.includes(block.id) ? current : [...current, block.id]);
-      }
-      if (needsCheck && draftAnswer?.kind === 'activity') {
-        const activity = step.blocks.find((block): block is Extract<typeof block, { type: 'activity' }> => block.type === 'activity' && block.activity.id === draftAnswer.id)?.activity;
-        if (!activity) throw new Error('Practice activity is unavailable.');
-        correct = evaluateActivity(activity, draftAnswer.answer, createActivityEvaluationContext(repo)).correct;
-        await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer: draftAnswer.answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
-        setActivityResults(current => ({ ...current, [activity.id]: correct }));
-      }
-      setFeedback({ correct });
+      sessionFinished = await moveToNextStep(true);
     });
     return saved && sessionFinished;
   }
 
+  function scheduleAutomaticAdvance(correct: boolean): void {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => {
+      void runExclusive(async () => {
+        const sessionFinished = await moveToNextStep(correct);
+        if (sessionFinished) setFinished(true);
+      });
+    }, correct ? 700 : 400);
+  }
+
   async function moveToNextStep(correct: boolean): Promise<boolean> {
       const next = advanceSessionCursor(steps.length, cursor, correct);
-      setDraftAnswer(null);
       setFeedback(null);
       if (next.complete) return true;
       setCursor(next.cursor);
       setStepRevision(current => current + 1);
-      setCorrectQuestionIds([]);
-      setActivityResults({});
       return false;
   }
 
@@ -161,8 +156,9 @@ export function usePracticeSession(levelId: string | undefined) {
     stepRenderKey: `${step?.id ?? 'missing'}:${stepRevision}`,
     totalSteps: steps.length,
     canProceed,
-    needsCheck,
+    hasInteraction,
     feedback,
+    finished,
     retryCount: cursor.phase === 'retry' ? cursor.retryStepIndexes.length : 0,
     isLastStep,
     busy,

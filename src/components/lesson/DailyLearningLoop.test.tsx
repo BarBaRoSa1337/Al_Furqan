@@ -38,3 +38,28 @@ test('resets the lesson scroll position for a new step', () => {
   scrollToStepTop({ scrollTo } as never);
   expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: false });
 });
+
+test('does not render a footer action for an interactive exercise step', () => {
+  const level = surahAlFilPackage.levels.find(candidate => candidate.id === 'al-fil-level-1-context-ayah-1')!;
+  const step = level.steps.find(candidate => candidate.id === 'l1-recall')!;
+  const screen = render(
+    <DailyLearningLoop
+      level={level}
+      step={step}
+      currentStepIndex={4}
+      canProceed={false}
+      hasInteraction
+      isLastStep={false}
+      busy={false}
+      continueLabel="Continue"
+      completeLabel="Complete"
+      exitLabel="Leave"
+      onExit={jest.fn()}
+      onAdvance={jest.fn()}
+      onActivityAnswer={jest.fn().mockResolvedValue({ correct: true })}
+    />
+  );
+
+  expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Check Answer' })).toBeNull();
+});

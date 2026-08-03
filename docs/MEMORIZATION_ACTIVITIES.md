@@ -188,6 +188,24 @@ type ActivityAttempt = {
 
 Completion XP must remain idempotent. Retrying must not create duplicate completion rewards.
 
+## Automatic submission and retry
+
+Interactive steps have no footer action. A complete answer is evaluated and
+persisted immediately. Correct answers show green/icon/text feedback and move
+after about 700 ms. Incorrect complete answers show red/icon/text feedback,
+shake when reduced motion is disabled, and enter the session retry FIFO after
+about 400 ms. Correct matching pairs and correct sequence positions remain
+visible where the activity permits it.
+
+Typed activities submit through the native keyboard Done action or the
+in-app Arabic keyboard Done key. Informational steps retain one Continue or
+Complete action. Reduced-motion mode removes shake and layout animation but
+does not remove timing, color, icon, or accessible live feedback.
+
+Schema v4 activities declare `placement` as `lesson`, `segment_review`, or
+`surah_review`. Full-Surah ayah banks belong only at a configured review
+boundary; multi-ayah banks are allowed at authored ayah-range boundaries.
+
 ## Deterministic spaced review
 
 An activity may author `reviewSchedule.intervalDays`. Al-Fil Level 1 uses `[1, 3, 7]`.

@@ -59,6 +59,10 @@ export default function LessonPlayerScreen() {
     if (session.status === 'locked') router.replace('/roadmap');
   }, [router, session.status]);
 
+  useEffect(() => {
+    if (session.completionReceipt && session.level) router.replace(`/complete/${session.level.id}`);
+  }, [router, session.completionReceipt, session.level]);
+
   if (session.status === 'loading' || session.status === 'locked') {
     return <LoadingState label={text('lesson.loadingLevel')} />;
   }
@@ -124,13 +128,12 @@ export default function LessonPlayerScreen() {
       currentStepIndex={session.displayStepIndex}
       totalSteps={session.totalCoreSteps}
       canProceed={session.canProceed}
-      needsCheck={session.needsCheck}
+      hasInteraction={session.hasInteraction}
       feedback={session.feedback}
       reviewRoundLabel={session.retryCount > 0 ? text('lesson.reviewRound', { count: session.retryCount }) : undefined}
       isLastStep={session.isLastStep}
       busy={session.busy}
       continueLabel={text('lesson.continue')}
-      checkLabel={text('question.checkAnswer')}
       completeLabel={text('lesson.completeLevel')}
       correctFeedbackLabel={text('lesson.correctFeedback')}
       retryFeedbackLabel={text('lesson.retryFeedback')}

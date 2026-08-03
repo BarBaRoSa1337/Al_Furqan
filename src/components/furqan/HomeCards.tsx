@@ -102,7 +102,7 @@ export function SupportCard({
 }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.supportCard, wide && styles.supportWide, pressed && styles.pressed]}>
-      <CourseArtwork variant={variant} size={wide ? 68 : 58} />
+      <CourseArtwork variant={variant} size={wide ? 68 : 44} />
       <View style={styles.supportCopy}>
         <Text style={styles.supportTitle}>{title}</Text>
         <Text style={styles.supportText} numberOfLines={wide ? 2 : 3}>{description}</Text>
@@ -138,13 +138,13 @@ const styles = StyleSheet.create({
   locationEyebrow: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase' },
   locationTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 15, marginTop: 1 },
   locationMeta: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
-  supportCard: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg, borderWidth: 1, boxShadow: shadows.card, flex: 1, flexDirection: 'row', gap: spacing.sm, minWidth: 155, padding: spacing.md },
+  supportCard: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg, borderWidth: 1, boxShadow: shadows.card, flex: 1, flexDirection: 'row', gap: 6, minWidth: 155, padding: 10 },
   supportWide: { flexBasis: '100%' },
   supportCopy: { flex: 1, minWidth: 0 },
   supportTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 14 },
   supportText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 10, lineHeight: 14, marginTop: 1 },
   supportBadge: { color: colors.success, fontFamily: fonts.bold, fontSize: 9, marginTop: 4 },
-  supportArrow: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radii.pill, height: 28, justifyContent: 'center', width: 28 },
+  supportArrow: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radii.pill, height: 26, justifyContent: 'center', width: 26 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
   disabled: { opacity: 0.4 },
 });

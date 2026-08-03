@@ -5,12 +5,11 @@ import BottomNavigation from '../components/furqan/BottomNavigation';
 import FurqanHeader from '../components/furqan/FurqanHeader';
 import { DailyGoalCard, LocationSelector, SupportCard } from '../components/furqan/HomeCards';
 import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
-import RoadmapNode, { type NodeStatus } from '../components/roadmap/RoadmapNode';
+import SurahRoadmapCard from '../components/roadmap/SurahRoadmapCard';
 import Screen from '../components/ui/Screen';
 import { useFurqanDashboard } from '../hooks/useFurqanDashboard';
 import { getContentRepository } from '../lib/content/repository';
 import { hasPracticeSteps } from '../lib/content/lessonSteps';
-import { getLevelAccessState } from '../lib/progress/lessonAccess';
 import { colors, fonts, spacing } from '../theme/tokens';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { availableLessonLocales, isLessonLocaleAvailable } from '../lib/content/publication';
@@ -34,7 +33,7 @@ export default function RoadmapScreen() {
     router.push(dashboard.primaryAction.href);
   };
 
-  const openLevel = (levelId: string) => router.push(`/level/${levelId}`);
+  const openSurah = (surahId: string) => router.push(`/surah/${surahId}`);
 
   const openLocation = (mode: 'surah' | 'juz' | 'hizb', number: number) => {
     router.push({ pathname: '/discover', params: { mode, number: String(number) } });
@@ -84,32 +83,21 @@ export default function RoadmapScreen() {
             <Text style={styles.pathEyebrow}>{t('home.learningPath')}</Text>
             <Text style={styles.pathTitle}>{dashboard.path?.title ?? t('home.quranPath')}</Text>
           </View>
-          <Text style={styles.pathProgress}>{dashboard.progress.completedLevelIds.filter(id => dashboard.levels.some(level => level.id === id)).length}/{dashboard.levels.length}</Text>
+          <Text style={styles.pathProgress}>{dashboard.authoredSurahs.filter(item => item.levels.every(level => dashboard.progress.completedLevelIds.includes(level.id))).length}/{dashboard.authoredSurahs.length}</Text>
         </View>
 
         <View style={styles.roadmap}>
-          {dashboard.levels.map((level, index) => {
-            const status = getLevelAccessState(dashboard.levels, dashboard.progress.completedLevelIds, level.id) as NodeStatus;
-            const firstRef = level.ayahRefs[0];
-            const lastRef = level.ayahRefs.at(-1) ?? firstRef;
-            const ayahLabel = firstRef && lastRef
-              ? firstRef.ayahNumber === lastRef.ayahNumber
-                ? `Ayah ${firstRef.ayahNumber}`
-                : `Ayat ${firstRef.ayahNumber}-${lastRef.ayahNumber}`
-              : 'Quran passage';
+          {dashboard.authoredSurahs.map(item => {
+            const completed = item.levels.filter(level => dashboard.progress.completedLevelIds.includes(level.id)).length;
+            const next = item.levels.find(level => !dashboard.progress.completedLevelIds.includes(level.id));
             return (
-              <RoadmapNode
-                ayahLabel={ayahLabel}
-                completedActionLabel={t('home.options')}
-                description={level.description}
-                durationMinutes={level.durationMinutes}
-                id={level.id}
-                index={index}
-                isLast={index === dashboard.levels.length - 1}
-                key={level.id}
-                onPress={openLevel}
-                status={status}
-                title={level.title}
+              <SurahRoadmapCard
+                completed={completed}
+                key={item.curriculum.id}
+                nextTitle={next?.title}
+                onPress={() => openSurah(item.surah.id)}
+                surah={item.surah}
+                total={item.levels.length}
               />
             );
           })}

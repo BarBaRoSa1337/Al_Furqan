@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Animated } f
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 export interface MatchPair {
   id: string;
@@ -13,7 +14,7 @@ export interface MatchPair {
 interface Props {
   question: string;
   pairs: MatchPair[];
-  onResult: (correct: boolean, selections: Record<string, string>) => void | Promise<void>;
+  onResult: (correct: boolean, selections: Record<string, string>) => unknown | Promise<unknown>;
 }
 
 const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
@@ -24,6 +25,7 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
   const [incorrectPair, setIncorrectPair] = useState<{ promptId: string; choiceId: string }>();
   const [saving, setSaving] = useState(false);
   const [shakeAnim] = useState(new Animated.Value(0));
+  const reducedMotion = useReducedMotion();
 
   const handleArabicPress = (id: string) => {
     if (selections[id] || saving) return;
@@ -35,17 +37,19 @@ const MatchQuestion: React.FC<Props> = ({ question, pairs, onResult }) => {
     if (!selectedArabic || saving) return;
     if (choiceId !== selectedArabic) {
       setIncorrectPair({ promptId: selectedArabic, choiceId });
-      shakeAnim.setValue(0);
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true })
-      ]).start();
+      if (!reducedMotion) {
+        shakeAnim.setValue(0);
+        Animated.sequence([
+          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true })
+        ]).start();
+      }
       return;
     }
     const nextSelections = { ...selections, [selectedArabic]: choiceId };
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reducedMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSelections(nextSelections);
     setSelectedArabic(null);
     setIncorrectPair(undefined);

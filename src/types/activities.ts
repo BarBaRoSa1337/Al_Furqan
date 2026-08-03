@@ -21,6 +21,8 @@ export interface ActivityReviewSchedule {
   intervalDays: number[];
 }
 
+export type ActivityPlacement = 'lesson' | 'segment_review' | 'surah_review';
+
 interface ActivityBase {
   id: string;
   kind: ActivityKind;
@@ -34,6 +36,8 @@ interface ActivityBase {
   reviewSchedule?: ActivityReviewSchedule;
   /** True only when prompts, accepted answers, and evaluation are identical in every locale. */
   languageIndependent?: boolean;
+  /** Required by schema v4 to keep large banks at authored boundaries. */
+  placement?: ActivityPlacement;
 }
 
 export interface RecallThenRevealActivity extends ActivityBase { kind: 'recall_then_reveal'; config: Record<string, never>; }
@@ -72,6 +76,7 @@ export interface MultipleChoiceActivity extends ActivityBase { kind: 'multiple_c
 export type LearningActivity = RecallThenRevealActivity | FillGapActivity | OrderActivity | ChooseContinuationActivity | MatchWordMeaningActivity | MatchAyahTranslationActivity | TypeMissingTextActivity | OrderAyatActivity | MultipleChoiceActivity;
 
 export interface ActivityEvaluation { correct: boolean; normalizedAnswer?: unknown; expectedAnswerRef?: unknown; feedbackKey: string; }
+export interface ExerciseSubmissionResult { correct: boolean; }
 export interface ActivityValidationContext { availableAyahRefs: AyahRef[]; availableTokenIds: string[]; availableMeaningIds: string[]; availableTranslationEntryIds: string[]; taughtKnowledgeRefs: string[]; }
 export interface ActivityValidationResult { valid: boolean; errors: string[]; }
 export interface ActivityEvaluationContext { resolveTypedTarget: (target: TypedAnswerTarget) => string | undefined; }

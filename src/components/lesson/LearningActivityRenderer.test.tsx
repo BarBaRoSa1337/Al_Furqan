@@ -14,10 +14,11 @@ test('exposes an RTL typed-recall input and evaluates canonical text through the
   const activity = getContentRepository().getActivityById('l1-type-ayah-1');
   expect(activity?.kind).toBe('type_missing_text');
   if (!activity || activity.kind !== 'type_missing_text') throw new Error('Typed fixture unavailable');
-  const onAnswer = jest.fn();
+  const onAnswer = jest.fn().mockResolvedValue({ correct: true });
   const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
   const input = screen.getByLabelText('Arabic answer from memory');
   fireEvent.changeText(input, 'ألم تر كيف فعل ربك بأصحاب ٱلفيل');
+  fireEvent(input, 'submitEditing');
   await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('ألم تر كيف فعل ربك بأصحاب ٱلفيل', false));
   expect(input).toHaveStyle({ writingDirection: 'rtl' });
 });
@@ -41,7 +42,7 @@ test('renders word matching as accessible two-column selections and submits stab
   const activity = repo.getActivityById('l1-match-meaning');
   expect(activity?.kind).toBe('match_word_meaning');
   if (!activity || activity.kind !== 'match_word_meaning') throw new Error('Match fixture unavailable');
-  const onAnswer = jest.fn();
+  const onAnswer = jest.fn().mockResolvedValue({ correct: true });
   const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
 
   activity.config.pairs.forEach(pair => {
@@ -109,7 +110,7 @@ test('renders canonical continuation segments and submits the stable option ID',
   const correct = activity.config.segments.find(segment => segment.id === activity.config.correctOptionId);
   if (!correct) throw new Error('Continuation answer unavailable');
   const label = correct.tokenIds.map(id => repo.getWordToken(id)?.arabicText).join(' ');
-  const onAnswer = jest.fn();
+  const onAnswer = jest.fn().mockResolvedValue({ correct: true });
   const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
 
   fireEvent.press(screen.getByRole('button', { name: label }));
@@ -123,7 +124,7 @@ test('orders canonical ayat while submitting stable reference keys', async () =>
   expect(activity?.kind).toBe('order_ayat');
   if (!activity || activity.kind !== 'order_ayat') throw new Error('Ayah order fixture unavailable');
   const labels = activity.config.correctOrderRefs.map(ref => repo.getAyahByRef(ref)?.arabicText.text ?? '');
-  const onAnswer = jest.fn();
+  const onAnswer = jest.fn().mockResolvedValue({ correct: true });
   const screen = render(<LearningActivityRenderer activity={activity} onAnswer={onAnswer} />);
   const optionButtons = labels.map(label => screen.getByRole('button', { name: label }));
 

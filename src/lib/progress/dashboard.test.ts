@@ -34,7 +34,7 @@ test('prioritizes due review, then active learning, then practice', () => {
 });
 
 test('derives source-backed Quran location without exposing thumun', () => {
-  const location = resolveQuranLocation(getContentRepository(), surahAlFilLevels[0]);
+  const location = resolveQuranLocation(getContentRepository(), surahAlFilLevels.find(level => level.id === 'al-fil-level-1-context-ayah-1'));
   expect(location).toMatchObject({
     surahName: 'Al-Fil',
     surahNumber: 105,

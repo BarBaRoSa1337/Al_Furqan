@@ -8,6 +8,7 @@ import {
   getDueReviewStates,
   getLastCompletionReceipt,
   getProgressRecoveryWarning,
+  reconcileCurriculumProgress,
   getReviewStates,
   syncCompletedLevelReviews,
 } from '../lib/progress/storage';
@@ -19,7 +20,7 @@ import {
   type HomePrimaryAction,
   type QuranLocationSummary,
 } from '../lib/progress/dashboard';
-import type { LearningPath, Level } from '../types/content';
+import type { AuthoredSurahSummary, LearningPath, Level } from '../types/content';
 import { DEFAULT_PROGRESS, type AppProgress } from '../types/progress';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 
@@ -27,6 +28,7 @@ export interface FurqanDashboardState {
   progress: AppProgress;
   path?: LearningPath;
   levels: Level[];
+  authoredSurahs: AuthoredSurahSummary[];
   activeLevel?: Level;
   latestCompletedLevel?: Level;
   location?: QuranLocationSummary;
@@ -42,6 +44,7 @@ export interface FurqanDashboardState {
 const INITIAL_STATE: FurqanDashboardState = {
   progress: DEFAULT_PROGRESS,
   levels: [],
+  authoredSurahs: [],
   primaryAction: { kind: 'explore', href: '/discover' },
   dueReviewCount: 0,
   reviewItemCount: 0,
@@ -58,7 +61,9 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
     const repo = getContentRepository();
     const path = repo.getCurrentLearningPath();
     const levels = path ? repo.getLevelsForLearningPath(path.id) : [];
+    const authoredSurahs = path ? repo.listAuthoredSurahs(path.id) : [];
     try {
+      if (path) await reconcileCurriculumProgress([path]);
       await syncCompletedLevelReviews(levels.flatMap(level => {
         const pkg = repo.getPackageForLevel(level.id);
         return pkg ? [{ level, packageRevisionId: pkg.revisionId, locale: lessonLocale }] : [];
@@ -80,6 +85,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
         progress,
         path,
         levels,
+        authoredSurahs,
         activeLevel,
         latestCompletedLevel,
         location: resolveQuranLocation(repo, locationLevel),
@@ -100,6 +106,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
         ...current,
         path,
         levels,
+        authoredSurahs,
         loading: false,
         error: cause instanceof Error ? cause.message : 'Progress could not be loaded.',
       }));

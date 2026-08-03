@@ -195,3 +195,16 @@ Report:
 5. tests and commands run;
 6. unresolved source/data limitations;
 7. deferred Studio/backend/audio work.
+
+## Surah roadmap migration
+
+Status: implemented on `feature/surah-learning-hierarchy`.
+
+- Home displays authored Surah aggregates, not one card per Level.
+- Surah detail displays ordered generic curriculum nodes.
+- Progress V4 storage shape is unchanged; curriculum reconciliation is
+  additive and idempotent.
+- Exercise completion auto-submits and wrong answers reappear in the same
+  session retry round.
+- `react-native-svg` is the only added runtime dependency, used for segmented
+  Surah progress rings.

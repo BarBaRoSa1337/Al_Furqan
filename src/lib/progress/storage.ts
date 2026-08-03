@@ -88,6 +88,40 @@ export async function getAppProgress(): Promise<AppProgress> {
   return snapshot.app;
 }
 
+/**
+ * Backfills structural curriculum equivalents without awarding XP or creating a
+ * completion receipt. Safe to call at every bootstrap.
+ */
+export async function reconcileCurriculumProgress(paths: LearningPath[]): Promise<void> {
+  await mutateSnapshot(snapshot => {
+    paths.forEach(path => {
+      path.surahCurricula?.forEach(curriculum => {
+        curriculum.completionEquivalences?.forEach(equivalence => {
+          const source = snapshot.levels[equivalence.sourceLevelId];
+          if (!source?.completed) return;
+          equivalence.equivalentLevelIds.forEach(levelId => {
+            if (snapshot.levels[levelId]?.completed) return;
+            snapshot.levels[levelId] = {
+              levelId,
+              pathId: path.id,
+              completed: true,
+              startedAt: source.startedAt,
+              completedAt: source.completedAt,
+              completedStepIds: [],
+              questionAttempts: [],
+              activityAttempts: [],
+            };
+            if (!snapshot.app.completedLevelIds.includes(levelId)) snapshot.app.completedLevelIds.push(levelId);
+          });
+        });
+      });
+      if (path.levelIds.every(levelId => snapshot.levels[levelId]?.completed) && !snapshot.app.completedLearningPathIds.includes(path.id)) {
+        snapshot.app.completedLearningPathIds.push(path.id);
+      }
+    });
+  });
+}
+
 export async function getLevelProgress(levelId: string): Promise<LevelProgress | null> {
   const snapshot = await readAfterMutations();
   return snapshot.levels[levelId] ?? null;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomNavigation from '../components/furqan/BottomNavigation';
@@ -27,9 +27,9 @@ export default function ReviewScreen() {
   const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key, {}, preferences.interfaceLocale);
   const [items, setItems] = useState<DueReviewItem[]>([]);
   const [index, setIndex] = useState(0);
-  const [passed, setPassed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +46,7 @@ export default function ReviewScreen() {
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (advanceTimer.current) clearTimeout(advanceTimer.current); };
   }, [lessonLocale, repo]);
 
   if (loading) {
@@ -80,9 +80,12 @@ export default function ReviewScreen() {
         locale: lessonLocale,
         languageIndependent: item.activity.languageIndependent,
       });
-      setPassed(evaluation.correct);
+      if (!evaluation.correct) setItems(current => [...current, item]);
+      advanceTimer.current = setTimeout(() => setIndex(current => current + 1), evaluation.correct ? 700 : 400);
+      return { correct: evaluation.correct };
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : text('roadmap.progressUnavailable'));
+      return { correct: false };
     }
   };
 
@@ -100,14 +103,6 @@ export default function ReviewScreen() {
         <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
           <PracticeActivityRenderer activity={item.activity} onAnswer={answerActivity} />
         </ScrollView>
-        <View style={styles.footer}>
-          <Button
-            title={text('review.next')}
-            disabled={!passed}
-            onPress={() => { setIndex(current => current + 1); setPassed(false); }}
-            size="lg"
-          />
-        </View>
       </View>
       <BottomNavigation active="reviews" reviewCount={Math.max(items.length - index, 0)} />
     </Screen>
@@ -145,7 +140,6 @@ const styles = StyleSheet.create({
   count: { color: colors.gold, fontFamily: fonts.bold, fontSize: 14 },
   progress: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   content: { alignSelf: 'center', flexGrow: 1, maxWidth: 640, padding: spacing.lg, width: '100%' },
-  footer: { backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 1, padding: spacing.lg },
   center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: spacing.xl },
   stateText: { color: colors.text, fontFamily: fonts.medium, fontSize: 18, lineHeight: 27, marginTop: spacing.lg, textAlign: 'center' },
   stateButton: { marginTop: spacing.lg },

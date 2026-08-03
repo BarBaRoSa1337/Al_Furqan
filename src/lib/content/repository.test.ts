@@ -48,6 +48,17 @@ test('exposes complete Hafs navigation indexes without inventing canonical ayah 
   expect(repository.getAyahByRef({ surahNumber: 1, ayahNumber: 1 }, HAFS_AN_ASIM_ID)).toBeUndefined();
 });
 
+test('aggregates authored roadmap content into one ordered Surah node', () => {
+  const repository = getContentRepository();
+  const authored = repository.listAuthoredSurahs('surah-al-fil-path-v1');
+
+  expect(authored).toHaveLength(1);
+  expect(authored[0].surah.id).toBe('surah-al-fil');
+  expect(authored[0].levels.map(level => level.title)).toEqual([
+    'Discover Al-Fil', 'Ayah 1', 'Ayah 2', 'Ayahs 3-4', 'Ayah 5 + Surah Review',
+  ]);
+});
+
 test('searches Quran references separately from matching learning paths', () => {
   const repository = getContentRepository();
 

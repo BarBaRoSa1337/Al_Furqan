@@ -7,10 +7,11 @@ import MatchQuestion from '../quiz/MatchQuestion';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
+import type { ExerciseSubmissionResult } from '../../types/activities';
 
 interface LevelQuestionBlockProps {
   block: QuestionBlock;
-  onAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
+  onAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
 }
 
 export default function LevelQuestionBlock({ block, onAnswer }: LevelQuestionBlockProps) {

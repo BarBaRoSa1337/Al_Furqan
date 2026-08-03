@@ -4,6 +4,7 @@ import {
   AyahRecord,
   AyahRef,
   AyahStructureIndex,
+  AuthoredSurahSummary,
   ContentScope,
   ContentRepository,
   ContentPackage,
@@ -24,6 +25,7 @@ import {
   PackageTextKey,
   RoadmapSort,
   SurahRecord,
+  SurahCurriculum,
   WordToken,
 } from '../../types/content';
 import { Reciter, RecitationTrack } from '../../types/media';
@@ -427,6 +429,39 @@ class ContentRepositoryImpl implements ContentRepository {
     }
 
     return levels;
+  }
+
+  listAuthoredSurahs(pathId?: string): AuthoredSurahSummary[] {
+    const path = pathId ? this.getLearningPathById(pathId) : this.getCurrentLearningPath();
+    if (!path) return [];
+    const pkg = this._packages.find(candidate => candidate.learningPaths.some(item => item.id === path.id));
+    if (!pkg) return [];
+
+    return (path.surahCurricula ?? []).flatMap(curriculum => {
+      const surah = pkg.surahs.find(candidate => candidate.id === curriculum.surahId);
+      if (!surah) return [];
+      return [{
+        packageId: pkg.id,
+        path,
+        curriculum,
+        surah,
+        levels: curriculum.lessons
+          .map(lesson => pkg.levels.find(level => level.id === lesson.levelId))
+          .filter((level): level is Level => Boolean(level)),
+      }];
+    });
+  }
+
+  getSurahCurriculum(pathId: string, surahId: string): SurahCurriculum | undefined {
+    return this.getLearningPathById(pathId)?.surahCurricula?.find(item => item.surahId === surahId);
+  }
+
+  getLevelsForSurah(pathId: string, surahId: string): Level[] {
+    const curriculum = this.getSurahCurriculum(pathId, surahId);
+    if (!curriculum) return [];
+    return curriculum.lessons
+      .map(lesson => this.getLevelById(lesson.levelId))
+      .filter((level): level is Level => Boolean(level));
   }
 
   getSurahs(sort: RoadmapSort = 'mushaf'): SurahRecord[] {

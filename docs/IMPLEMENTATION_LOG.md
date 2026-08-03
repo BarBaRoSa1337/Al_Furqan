@@ -159,3 +159,44 @@ included in the active package.
 - Due-review resolution ignores `r13` schedules under active `r14` content.
 - Removed activity `l1-order-ayah-1` is no longer offered; its history is not
   deleted.
+
+## 2026-08-03 - Surah curriculum schema v4 and Al-Fil revision r15
+
+### Delivered
+
+- Added the generic Surah curriculum layer above existing Levels without
+  changing canonical Quran ownership or the Step/Block renderer architecture.
+- Replaced the Home level list with aggregate authored-Surah cards and a
+  segmented `react-native-svg` ring; added the generic `/surah/[id]` path.
+- Reshaped Al-Fil into five nodes and consolidated historical context in the
+  introduction.
+- Replaced draft Reflection cards with source-backed draft Verified Recaps.
+- Removed Check/Continue double actions from exercises. Complete answers now
+  validate, persist, show accessible result feedback, and advance or enter the
+  retry FIFO automatically.
+- Added production runtime eligibility checks for governed blocks.
+
+### Compatibility
+
+- Package schema v1-v3 remains readable through inferred curricula.
+- The existing combined Level 1 ID remains the Ayah 1 level.
+- Existing completion of that ID backfills `al-fil-level-introduction`
+  idempotently with no XP, streak, receipt, attempt, or review award.
+- Progress remains schema V4; no storage-key migration was introduced.
+
+### Release status
+
+Production validation remains intentionally blocked by 171 approval,
+provenance, citation, and rights errors. No religious or provider record was
+promoted. The neutral numbered seal remains the artwork fallback until a
+representative Surah SVG has a real checksum, license evidence, and named
+review.
+
+### Verification
+
+- TypeScript strict check, lint (warnings only), diff check, Hafs structure
+  validation, and Expo web production export pass.
+- Jest: 27 suites and 141 tests pass.
+- Mobile-width browser smoke checks pass for Home and the Al-Fil Surah path.
+- Production content validation fails with the expected 171 governance
+  blockers.

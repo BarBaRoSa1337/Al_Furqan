@@ -1,10 +1,10 @@
-import type { LearningActivity } from '../../types/activities';
+import type { ExerciseSubmissionResult, LearningActivity } from '../../types/activities';
 import LearningActivityRenderer from './LearningActivityRenderer';
 import RecallThenRevealActivity from './RecallThenRevealActivity';
 
 interface Props {
   activity: LearningActivity;
-  onAnswer: (answer: unknown, correct: boolean) => void | Promise<void>;
+  onAnswer: (answer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
 }
 
 export default function PracticeActivityRenderer({ activity, onAnswer }: Props) {

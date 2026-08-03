@@ -256,7 +256,9 @@ getDivisionsForAyah(ref, editionId)
 getCurrentLearningPath()
 getLevelById(id)
 getNextLevel(id)
-getLevelsForSurah(surahId)
+listAuthoredSurahs(pathId?)
+getSurahCurriculum(pathId, surahId)
+getLevelsForSurah(pathId, surahId)
 ```
 
 ### Package manager
@@ -320,6 +322,24 @@ Progress V3 due state
 - Do not mass-rename working routes/components.
 - Keep old installed/built-in package identifiers readable until migration tests prove safe.
 - Package updates must not reset learner progress.
+
+## Surah curriculum layer (schema v4)
+
+The learner hierarchy is now:
+
+```text
+Roadmap -> SurahCurriculum -> SurahLesson -> Level -> Step -> Block
+```
+
+`SurahCurriculum` is structural metadata owned by a `LearningPath`; canonical
+`SurahRecord` still owns no levels. Home aggregates one node per authored
+Surah. Opening that node resolves the ordered introduction, ayah/range,
+segment-review, and final-review Levels through stable IDs.
+
+Schema v1-v3 packages are adapted into inferred Surah curricula. Schema v4
+requires explicit curricula, ordered membership, review boundaries, activity
+placement, and summary variants. Completion equivalences permit idempotent
+structural backfills without XP, streak, or receipt changes.
 
 ## Backend decision
 

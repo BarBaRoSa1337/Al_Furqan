@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { Level, LevelStep } from '../../types/content';
+import type { ExerciseSubmissionResult } from '../../types/activities';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
 import Button from '../ui/Button';
 import ProgressBar from '../ui/ProgressBar';
@@ -15,13 +16,14 @@ interface DailyLearningLoopProps {
   currentStepIndex: number;
   totalSteps?: number;
   canProceed: boolean;
-  needsCheck?: boolean;
+  hasInteraction?: boolean;
   feedback?: { correct: boolean } | null;
   reviewRoundLabel?: string;
   isLastStep: boolean;
   busy: boolean;
   continueLabel: string;
-  checkLabel: string;
+  /** Legacy prop retained while schema-v1 lesson callers migrate. */
+  checkLabel?: string;
   completeLabel: string;
   correctFeedbackLabel?: string;
   retryFeedbackLabel?: string;
@@ -30,8 +32,8 @@ interface DailyLearningLoopProps {
   error?: string;
   onExit: () => void;
   onAdvance: () => void | Promise<void>;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
-  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
+  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
 }
 
 export default function DailyLearningLoop({
@@ -41,13 +43,12 @@ export default function DailyLearningLoop({
   currentStepIndex,
   totalSteps,
   canProceed,
-  needsCheck = false,
+  hasInteraction = false,
   feedback,
   reviewRoundLabel,
   isLastStep,
   busy,
   continueLabel,
-  checkLabel,
   completeLabel,
   correctFeedbackLabel = 'Correct. Keep this in mind.',
   retryFeedbackLabel = 'We will revisit this shortly.',
@@ -105,16 +106,16 @@ export default function DailyLearningLoop({
         <StepRenderer key={stepRenderKey ?? step.id} step={step} onQuestionAnswer={onQuestionAnswer} onActivityAnswer={onActivityAnswer} />
       </ScrollView>
 
-      <View style={styles.footer}>
+      {!hasInteraction ? <View style={styles.footer}>
         <Button
-          title={needsCheck ? checkLabel : isLastStep && !feedback ? completeLabel : continueLabel}
+          title={isLastStep ? completeLabel : continueLabel}
           onPress={() => { void onAdvance(); }}
           disabled={!canProceed || busy}
           loading={busy}
           size="lg"
           style={styles.continueButton}
         />
-      </View>
+      </View> : null}
     </SafeAreaView>
   );
 }

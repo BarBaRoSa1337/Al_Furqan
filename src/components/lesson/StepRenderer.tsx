@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LevelStep } from '../../types/content';
+import type { ExerciseSubmissionResult } from '../../types/activities';
 import { colors, fonts } from '../../theme/tokens';
 import LevelBlockRenderer from './LevelBlockRenderer';
 
 interface StepRendererProps {
   step: LevelStep;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
-  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
+  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
 }
 
 export default function StepRenderer({ step, onQuestionAnswer, onActivityAnswer }: StepRendererProps) {

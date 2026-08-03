@@ -9,6 +9,7 @@ import {
   LevelBlock,
   MediaBlock,
   QuranPassageBlock,
+  SurahOverviewBlock,
   TafsirEntry,
   TranslationBlock,
   WordMeaning,
@@ -23,18 +24,24 @@ import WisdomCard from './WisdomCard';
 import AyahAudioPlayer from './AyahAudioPlayer';
 import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
 import { getCurrentLearnerPreferences } from '../../lib/localization/preferencesState';
+import type { ExerciseSubmissionResult } from '../../types/activities';
+import { isBlockEligibleForProduction } from '../../lib/content/contentEligibility';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
-  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => void | Promise<void>;
-  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => void | Promise<void>;
+  onQuestionAnswer?: (blockId: string, selectedAnswer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
+  onActivityAnswer?: (activityId: string, answer: unknown, correct: boolean) => Promise<ExerciseSubmissionResult>;
 }
 
 export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivityAnswer }: LevelBlockRendererProps) {
   const repo = getContentRepository();
   const preferences = getCurrentLearnerPreferences();
+  const contentPackage = repo.getPackageForBlock(block.id);
+  if (!__DEV__ && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
 
   switch (block.type) {
+    case 'surah_overview':
+      return <CanonicalSurahOverviewBlock block={block} repo={repo} />;
     case 'quran_passage':
       return <CanonicalPassageBlock block={block} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} />;
     case 'translation':
@@ -63,12 +70,28 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     case 'question':
       return <LevelQuestionBlock block={block} onAnswer={onQuestionAnswer} />;
     case 'activity':
-      return <PracticeActivityRenderer activity={block.activity} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve()} />;
+      return <PracticeActivityRenderer activity={block.activity} onAnswer={(answer, correct) => onActivityAnswer?.(block.activity.id, answer, correct) ?? Promise.resolve({ correct: false })} />;
     case 'summary':
       return <WisdomCard block={block} repo={repo} />;
     default:
       return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
   }
+}
+
+function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBlock; repo: ContentRepository }) {
+  const surah = repo.getSurahById(block.surahId);
+  if (!surah) return null;
+  const source = repo.getSourceById(surah.sourceMetadata.quranTextSourceId);
+  return (
+    <Card variant="ayah" style={styles.overviewCard}>
+      <Text style={styles.overviewEyebrow}>Surah {surah.surahNumber}</Text>
+      <Text style={styles.overviewArabic}>{surah.arabicName}</Text>
+      <Text accessibilityRole="header" style={styles.overviewTitle}>{surah.transliteratedName}</Text>
+      <Text style={styles.overviewMeta}>{surah.englishName} · {surah.ayahCount} ayat · {surah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
+      {surah.sourceMetadata.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
+      <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+    </Card>
+  );
 }
 
 function CanonicalPassageBlock({ block, repo, showTransliteration }: { block: QuranPassageBlock; repo: ContentRepository; showTransliteration: boolean }) {
@@ -213,6 +236,11 @@ function ReviewBadge({ repo }: { repo: ContentRepository }) {
 }
 
 const styles = StyleSheet.create({
+  overviewCard: { alignItems: 'center', paddingVertical: spacing.xl },
+  overviewEyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
+  overviewArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 42, lineHeight: 64, marginTop: spacing.sm, writingDirection: 'rtl' },
+  overviewTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 26 },
+  overviewMeta: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, marginBottom: spacing.md, marginTop: spacing.xs },
   unsupported: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   ayahCard: { alignItems: 'center' },
   passageAyah: { paddingVertical: spacing.sm, width: '100%' },

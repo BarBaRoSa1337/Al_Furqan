@@ -278,3 +278,24 @@ Status: implemented. Al-Fil package `2.3`/revision `r5` authors immutable Hafs t
 ## T38 — Legacy question consolidation
 
 Status: implemented. Authoritative legacy-question evaluation lives beside the shared activity evaluator, match attempts persist stable pair mappings, optional steps do not gate navigation, and unsupported runtime content has a generic fallback.
+
+## T39 — Surah curriculum hierarchy and automatic exercise flow
+
+Status: implemented (schema v4 development slice).
+
+Delivered: generic `SurahCurriculum`, `SurahLesson`, and `ReviewSegment`
+records; one aggregate Home node per authored Surah; segmented SVG progress; a
+generic internal Surah route; Surah-introduction blocks; activity boundary
+metadata; Verified Recap variants; automatic evaluation and retry-FIFO
+advancement; reduced-motion-aware incorrect feedback; and a production
+governed-block visibility defense.
+
+Al-Fil revision `r15` has five nodes: Discover Al-Fil, Ayah 1, Ayah 2, Ayahs
+3-4, and Ayah 5 + Surah Review. Historical context exists only in the
+introduction. The old combined Level 1 ID remains Ayah 1; prior completion
+idempotently backfills the introduction without XP, streak, review, or receipt
+changes.
+
+Gate: source, provider-rights, exact tafsir citation, locale publication, and
+named reviewer blockers remain active. Production validation reports 171
+blockers; no status was promoted.

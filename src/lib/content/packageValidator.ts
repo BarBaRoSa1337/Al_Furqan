@@ -50,7 +50,7 @@ export function validatePackage(
 
   if (!pkg.id) errors.push('Package missing id');
   if (!pkg.version) errors.push('Package missing version');
-  if (![1, 2, 3].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
+  if (![1, 2, 3, 4].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
   if (!pkg.revisionId) errors.push('Package missing revisionId');
   if (!pkg.title) errors.push('Package missing title');
   if (pkg.sources.length === 0) errors.push('Package has no sources');
@@ -124,6 +124,7 @@ export function validatePackage(
     validateSourceIds(`LearningPath "${path.id}"`, path.sourceMetadata.sourceIds, pkg, errors);
     validateReviewStatus(`LearningPath "${path.id}"`, path.sourceMetadata.reviewerStatus, mode, errors, warnings);
     validateDiscoveryMetadata(`LearningPath "${path.id}"`, path.discovery, pkg, errors, warnings);
+    validateSurahCurricula(path, pkg, errors);
   });
   if (pkg.metadata.defaultLearningPathId && !pkg.learningPaths.some(path => path.id === pkg.metadata.defaultLearningPathId)) {
     errors.push(`metadata.defaultLearningPathId references missing path "${pkg.metadata.defaultLearningPathId}"`);
@@ -513,7 +514,9 @@ function validateLevel(
   if (path && !path.surahIds.includes(level.surahId)) errors.push(`${label} surah is absent from path "${path.id}"`);
   if (level.durationMinutes < 5 || level.durationMinutes > 8) errors.push(`${label} duration must be 5-8 minutes`);
   if (level.steps.length === 0) errors.push(`${label} has no steps`);
-  if (pkg.schemaVersion >= 2 && (!level.completionRules?.requireMemoryActivity || !level.completionRules.requireUnderstandingActivity)) errors.push(`${label} schema v2 requires memory and understanding completion rules`);
+  const curriculumLesson = path?.surahCurricula?.flatMap(item => item.lessons).find(item => item.levelId === level.id);
+  const isIntroduction = curriculumLesson?.kind === 'introduction';
+  if (pkg.schemaVersion >= 2 && !isIntroduction && (!level.completionRules?.requireMemoryActivity || !level.completionRules.requireUnderstandingActivity)) errors.push(`${label} schema v2 requires memory and understanding completion rules`);
   validateUniqueIds(`step in ${label}`, level.steps.map(step => step.id), errors);
   validateUniqueIds(`block in ${label}`, level.steps.flatMap(step => step.blocks.map(block => block.id)), errors);
   validateUniqueIds(`ayah ref in ${label}`, level.ayahRefs.map(refKey), errors);
@@ -576,15 +579,30 @@ function validateLevel(
         if (block.required && block.ayahRefs.some(ref => !pkg.recitationTracks.some(track => sameRef(track.ayahRef, ref) && (!block.reciterId || track.reciterId === block.reciterId)))) errors.push(`${blockLabel} requires unavailable recitation tracks`);
       }
       if (block.type === 'media' && !pkg.mediaAssets.some(asset => asset.id === block.assetId)) errors.push(`${blockLabel} references missing media asset "${block.assetId}"`);
+      if (block.type === 'surah_overview' && block.surahId !== level.surahId) errors.push(`${blockLabel} references a different surah`);
       if (block.type === 'context' || block.type === 'question' || block.type === 'summary') {
         validateSourceIds(blockLabel, block.sourceIds, pkg, errors);
         validateReviewStatus(blockLabel, block.reviewerStatus, mode, errors, warnings);
+      }
+      if (block.type === 'summary' && pkg.schemaVersion >= 4 && !block.variant) errors.push(`${blockLabel} schema v4 requires a summary variant`);
+      if (block.type === 'summary' && block.variant === 'reflection' && mode === 'production') {
+        const namedRoles = new Set((pkg.governance?.approvals ?? [])
+          .filter(approval => approval.decision === 'approved'
+            && approval.target.kind === 'package_payload'
+            && approval.target.id === pkg.id
+            && approval.reviewer.displayName.trim().length > 0)
+          .map(approval => approval.role));
+        if (!namedRoles.has('editorial') || !namedRoles.has('shaykh')) errors.push(`${blockLabel} reflection lacks named editorial and Islamic approval`);
       }
       if (block.type === 'question') validateQuestion(blockLabel, block, errors);
       if (block.type === 'activity') {
         if (block.id !== block.activity.id) errors.push(`${blockLabel} activity ID must match block ID`);
         validateSourceIds(blockLabel, block.activity.sourceIds, pkg, errors);
         validateReviewStatus(blockLabel, block.activity.reviewerStatus, mode, errors, warnings);
+        if (pkg.schemaVersion >= 4 && !block.activity.placement) errors.push(`${blockLabel} schema v4 requires activity placement`);
+        if (block.activity.placement === 'surah_review' && curriculumLesson?.kind !== 'final_review') errors.push(`${blockLabel} surah-review activity is outside a final review`);
+        if (block.activity.placement === 'segment_review' && curriculumLesson?.kind !== 'segment_review') errors.push(`${blockLabel} segment-review activity is outside a segment review`);
+        if (block.activity.placement === 'lesson' && block.activity.ayahRefs.length > 1 && curriculumLesson?.kind !== 'ayah_range') errors.push(`${blockLabel} multi-ayah lesson activity is outside an ayah-range boundary`);
         const result = validateActivity(block.activity, {
           availableAyahRefs: level.ayahRefs,
           availableTokenIds: pkg.wordTokens
@@ -607,6 +625,57 @@ function validateLevel(
     .flatMap(step => step.blocks.filter(block => block.type === 'activity' || block.type === 'question'));
   if (level.completionRules?.requireMemoryActivity && memoryActivities.length === 0) errors.push(`${label} requires at least one memory activity`);
   if (level.completionRules?.requireUnderstandingActivity && understandingActivities.length === 0) errors.push(`${label} requires at least one understanding activity`);
+}
+
+function validateSurahCurricula(path: ContentPackage['learningPaths'][number], pkg: ContentPackage, errors: string[]): void {
+  const curricula = path.surahCurricula ?? [];
+  if (pkg.schemaVersion >= 4 && curricula.length === 0) {
+    errors.push(`LearningPath "${path.id}" schema v4 has no Surah curricula`);
+    return;
+  }
+  validateUniqueIds(`Surah curriculum in path "${path.id}"`, curricula.map(item => item.id), errors);
+  validateUniqueIds(`Surah curriculum target in path "${path.id}"`, curricula.map(item => item.surahId), errors);
+
+  const flattenedLevelIds = curricula.flatMap(item => item.lessons.map(lesson => lesson.levelId));
+  if (pkg.schemaVersion >= 4 && flattenedLevelIds.join('|') !== path.levelIds.join('|')) {
+    errors.push(`LearningPath "${path.id}" levelIds must match ordered Surah curriculum lessons`);
+  }
+
+  curricula.forEach(curriculum => {
+    const label = `SurahCurriculum "${curriculum.id}"`;
+    if (!path.surahIds.includes(curriculum.surahId)) errors.push(`${label} references a surah outside its path`);
+    if (curriculum.lessons.length === 0) errors.push(`${label} has no lessons`);
+    validateUniqueIds(`lesson in ${label}`, curriculum.lessons.map(lesson => lesson.levelId), errors);
+    if (pkg.schemaVersion >= 4 && curriculum.lessons[0]?.kind !== 'introduction') errors.push(`${label} must begin with an introduction`);
+    if (pkg.schemaVersion >= 4 && curriculum.lessons.at(-1)?.kind !== 'final_review') errors.push(`${label} must end with a final review`);
+
+    curriculum.lessons.forEach(lesson => {
+      const level = pkg.levels.find(candidate => candidate.id === lesson.levelId);
+      if (!level) errors.push(`${label} references missing level "${lesson.levelId}"`);
+      if (level && (level.pathId !== path.id || level.surahId !== curriculum.surahId)) errors.push(`${label} lesson "${lesson.levelId}" belongs to another path or surah`);
+      if (lesson.kind === 'introduction' && level?.ayahRefs.length) errors.push(`${label} introduction must not own ayah references`);
+      if ((lesson.kind === 'ayah' || lesson.kind === 'ayah_range') && !lesson.ayahRange) errors.push(`${label} lesson "${lesson.levelId}" has no ayah range`);
+      if (lesson.ayahRange && level) {
+        const first = level.ayahRefs[0];
+        const last = level.ayahRefs.at(-1);
+        if (!first || !last || !sameRef(first, lesson.ayahRange.start) || !sameRef(last, lesson.ayahRange.end)) errors.push(`${label} lesson "${lesson.levelId}" range does not match its level`);
+      }
+    });
+
+    validateUniqueIds(`review segment in ${label}`, curriculum.reviewSegments.map(segment => segment.id), errors);
+    curriculum.reviewSegments.forEach(segment => {
+      if (!curriculum.lessons.some(lesson => lesson.levelId === segment.reviewLevelId && (lesson.kind === 'segment_review' || lesson.kind === 'final_review'))) errors.push(`${label} segment "${segment.id}" has an invalid review level`);
+      segment.coveredLessonIds.forEach(levelId => {
+        if (!curriculum.lessons.some(lesson => lesson.levelId === levelId)) errors.push(`${label} segment "${segment.id}" covers an unknown lesson "${levelId}"`);
+      });
+    });
+    curriculum.completionEquivalences?.forEach(equivalence => {
+      if (!pkg.levels.some(level => level.id === equivalence.sourceLevelId)) errors.push(`${label} completion source "${equivalence.sourceLevelId}" is unknown`);
+      equivalence.equivalentLevelIds.forEach(levelId => {
+        if (!curriculum.lessons.some(lesson => lesson.levelId === levelId)) errors.push(`${label} completion target "${levelId}" is outside the curriculum`);
+      });
+    });
+  });
 }
 
 function validateTheme(
@@ -700,6 +769,7 @@ function validateBoundedNumber(label: string, value: number, maximum: number, er
 }
 
 function isBlockAllowedInStep(kind: ReturnType<typeof getLevelStepKind>, blockType: Level['steps'][number]['blocks'][number]['type']): boolean {
+  if (kind === 'surah_introduction') return blockType === 'surah_overview' || blockType === 'context' || blockType === 'media';
   if (kind === 'context') return blockType === 'context' || blockType === 'media';
   if (kind === 'read') return blockType === 'quran_passage' || blockType === 'ayah_ref' || blockType === 'audio' || blockType === 'media';
   if (kind === 'translation') return blockType === 'translation';
