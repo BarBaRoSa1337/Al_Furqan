@@ -8,6 +8,7 @@ import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
 import type { ContentPackage } from '../../types/content';
 import type { RecitationTrack, Reciter } from '../../types/media';
 import Card from '../ui/Card';
+import { isPreviewContentMode } from '../../lib/content/contentMode';
 
 type RepeatCount = 1 | 3 | 5;
 
@@ -58,7 +59,7 @@ export default function AyahAudioPlayer({
       contentPackage,
       currentTrack,
       platformForAudio(Platform.OS),
-      { development: __DEV__ },
+      { development: isPreviewContentMode() },
     );
     void resolveAndCacheRecitation(currentTrack, policy).then(result => {
       if (cancelled) {

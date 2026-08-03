@@ -143,6 +143,13 @@ immutable runtime package from the Furqan backend and does not persist it.
 Downloaded package hydration is disabled while source-specific offline rights
 and update controls remain unresolved.
 
+Runtime visibility is controlled by an explicit content mode rather than the
+JavaScript development build flag. `preview` accepts development-valid draft
+packages from the separately enabled preview provider and displays one global
+preview marker. Missing or invalid mode configuration defaults to `production`,
+which accepts only packages passing the complete production validator. Preview
+and production package providers cannot substitute for one another.
+
 ### 6. Studio publishing contract
 
 Owns:

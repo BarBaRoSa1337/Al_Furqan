@@ -1,5 +1,6 @@
 export const SUPPORTED_LOCALES = ['ar', 'en', 'fr'] as const;
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+export type ContentMode = 'preview' | 'production';
 export type TextDirection = 'ltr' | 'rtl';
 
 export interface LearnerPreferences {
@@ -50,6 +51,7 @@ export interface LessonAvailabilityResponse {
 export interface RuntimePackageResponse {
   packageId: string;
   locale: SupportedLocale;
+  contentMode: ContentMode;
   package: unknown;
   attributions: SourceAttribution[];
 }
@@ -74,6 +76,7 @@ export function isRuntimePackageResponse(value: unknown): value is RuntimePackag
   if (!isRecord(value)) return false;
   return typeof value.packageId === 'string'
     && isSupportedLocale(value.locale)
+    && (value.contentMode === 'preview' || value.contentMode === 'production')
     && isRecord(value.package)
     && Array.isArray(value.attributions);
 }

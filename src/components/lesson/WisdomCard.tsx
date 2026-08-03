@@ -38,11 +38,6 @@ export default function WisdomCard({ block, repo }: WisdomCardProps) {
           </Pressable>
         ) : null}
       </View>
-      {block.reviewerStatus !== 'approved' ? (
-        <View style={styles.reviewBadge}>
-          <Text style={styles.reviewBadgeText}>{packageText(repo, 'content.draftPendingReview')}</Text>
-        </View>
-      ) : null}
       <Text style={styles.title}>{block.title}</Text>
       {block.points.map((point, index) => (
         <View key={`${block.id}-${index}`} style={styles.point}>
@@ -83,15 +78,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   pressed: { opacity: 0.65 },
-  reviewBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.warningSoft,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  reviewBadgeText: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12 },
   title: { color: colors.primary, fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, marginBottom: spacing.lg },
   point: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
   bullet: {

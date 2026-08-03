@@ -18,7 +18,7 @@ const app = createApp({
   mp3Quran,
   allowedOrigins: (process.env.FURQAN_ALLOWED_ORIGINS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
   approvedQuranFoundationTafsirIds: (process.env.FURQAN_QF_TAFSIR_IDS ?? '').split(',').map((value: string) => value.trim()).filter(Boolean),
-  runtimePackage: process.env.FURQAN_ENABLE_DRAFT_RUNTIME === 'true'
+  previewPackage: process.env.FURQAN_ENABLE_DRAFT_RUNTIME === 'true'
     ? (packageId, locale) => packageId === 'surah-al-fil-v1'
       ? buildShortSurahRuntimeCourse(locale, { quranFoundation, quranEnc, mp3Quran })
       : Promise.resolve(undefined)

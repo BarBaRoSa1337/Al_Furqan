@@ -17,7 +17,7 @@ export function getLevelAccessState(
     return 'completed';
   }
 
-  // Learners may enter any published lesson directly. Unlock rules remain in
+  // Learners may enter any available authored lesson directly. Unlock rules remain in
   // the content contract for future guided modes, but never block navigation.
   return 'active';
 }

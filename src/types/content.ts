@@ -291,7 +291,7 @@ export interface QuranReferenceResult {
   lookup: QuranLookup;
   label: string;
   ayahRefs: AyahRef[];
-  lessonAvailability: 'published' | 'no_published_lesson';
+  lessonAvailability: 'preview' | 'published' | 'no_published_lesson';
 }
 
 export interface LearningPathDiscoveryResult {

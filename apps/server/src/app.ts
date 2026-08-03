@@ -1,5 +1,7 @@
-import type { ApiErrorResponse, SourceAttribution, SupportedLocale } from '../../../packages/api-contracts/src';
+import type { ApiErrorResponse, ContentMode, SourceAttribution, SupportedLocale } from '../../../packages/api-contracts/src';
 import { isSupportedLocale } from '../../../packages/api-contracts/src';
+import type { ContentPackage } from '../../../src/types/content';
+import { validatePackage } from '../../../src/lib/content/packageValidator';
 import type { QuranFoundationClient } from './quranFoundation';
 import type { QuranEncClient } from './quranEnc';
 import type { Mp3QuranClient } from './mp3Quran';
@@ -10,7 +12,8 @@ export interface ServerDependencies {
   mp3Quran: Mp3QuranClient;
   allowedOrigins: string[];
   approvedQuranFoundationTafsirIds?: string[];
-  runtimePackage?: (packageId: string, locale: SupportedLocale) => Promise<{ package: unknown; attributions: SourceAttribution[] } | undefined>;
+  previewPackage?: (packageId: string, locale: SupportedLocale) => Promise<{ package: unknown; attributions: SourceAttribution[] } | undefined>;
+  publishedPackage?: (packageId: string, locale: SupportedLocale) => Promise<{ package: unknown; attributions: SourceAttribution[] } | undefined>;
   security?: {
     maxRequestsPerMinute?: number;
     now?: () => number;
@@ -67,9 +70,20 @@ export function createApp(dependencies: ServerDependencies): (request: Request) 
       const runtime = url.pathname.match(/^\/v1\/content\/packages\/([a-z0-9-]+)$/);
       if (runtime) {
         const selectedLocale = locale(url.searchParams.get('locale'));
-        const contentPackage = await dependencies.runtimePackage?.(runtime[1], selectedLocale);
-        if (!contentPackage) return error(404, 'not_available', 'Lesson package is not published in this locale', false, origin);
-        return json({ packageId: runtime[1], locale: selectedLocale, package: contentPackage.package, attributions: contentPackage.attributions }, 200, origin, 'no-store');
+        const selectedMode = contentMode(url.searchParams.get('contentMode'));
+        const resolver = selectedMode === 'preview' ? dependencies.previewPackage : dependencies.publishedPackage;
+        const contentPackage = await resolver?.(runtime[1], selectedLocale);
+        if (!contentPackage) {
+          const message = selectedMode === 'preview'
+            ? 'Preview lesson package is unavailable'
+            : 'No approved lesson package is available';
+          return error(404, 'not_available', message, false, origin);
+        }
+        const validation = validatePackage(contentPackage.package as ContentPackage, {
+          mode: selectedMode === 'preview' ? 'development' : 'production',
+        });
+        if (!validation.valid) return error(503, 'upstream_unavailable', `${selectedMode} package validation failed`, false, origin);
+        return json({ packageId: runtime[1], locale: selectedLocale, contentMode: selectedMode, package: contentPackage.package, attributions: contentPackage.attributions }, 200, origin, 'no-store');
       }
       return error(404, 'not_found', 'Route not found', false, origin);
     } catch (caught) {
@@ -106,6 +120,11 @@ function locale(raw: string | null): SupportedLocale {
   const value = raw ?? 'en';
   if (!isSupportedLocale(value)) throw new Error('Invalid locale');
   return value;
+}
+
+function contentMode(raw: string | null): ContentMode {
+  if (raw === 'preview' || raw === 'production') return raw;
+  return 'production';
 }
 
 function json(value: unknown, status: number, origin?: string | null, cacheControl = 'no-store'): Response {

@@ -1,4 +1,4 @@
-import { isRuntimePackageResponse, type SupportedLocale } from '../../../packages/api-contracts/src';
+import { isRuntimePackageResponse, type ContentMode, type SupportedLocale } from '../../../packages/api-contracts/src';
 import type { ContentPackage } from '../../types/content';
 import { getContentRepository } from './repository';
 
@@ -7,15 +7,25 @@ export function getRuntimeApiBaseUrl(value = process.env.EXPO_PUBLIC_FURQAN_API_
   return normalized || undefined;
 }
 
-export async function loadRuntimePackage(packageId: string, locale: SupportedLocale): Promise<void> {
+export function buildRuntimePackageUrl(
+  baseUrl: string,
+  packageId: string,
+  locale: SupportedLocale,
+  contentMode: ContentMode,
+): string {
+  const query = new URLSearchParams({ locale, contentMode });
+  return `${baseUrl}/v1/content/packages/${encodeURIComponent(packageId)}?${query}`;
+}
+
+export async function loadRuntimePackage(packageId: string, locale: SupportedLocale, contentMode: ContentMode): Promise<void> {
   const baseUrl = getRuntimeApiBaseUrl();
   if (!baseUrl) throw new Error('Furqan backend is not configured.');
-  const response = await fetch(`${baseUrl}/v1/content/packages/${encodeURIComponent(packageId)}?locale=${locale}`, {
+  const response = await fetch(buildRuntimePackageUrl(baseUrl, packageId, locale, contentMode), {
     headers: { accept: 'application/json' },
   });
   const body = await response.json() as unknown;
   if (!response.ok) throw new Error(readApiMessage(body) ?? `Content request failed (${response.status}).`);
-  if (!isRuntimePackageResponse(body) || body.packageId !== packageId || body.locale !== locale) {
+  if (!isRuntimePackageResponse(body) || body.packageId !== packageId || body.locale !== locale || body.contentMode !== contentMode) {
     throw new Error('Furqan backend returned an invalid package response.');
   }
   getContentRepository().registerPackage(body.package as ContentPackage, true, 'runtime');

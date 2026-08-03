@@ -74,6 +74,9 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/src/test/setup.ts"
+    ],
     "testPathIgnorePatterns": [
       "<rootDir>/apps/server/"
     ],

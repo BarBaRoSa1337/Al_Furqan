@@ -42,17 +42,26 @@ use the development machine's LAN address, for example
 `http://192.168.1.12:8787`, and include the Expo web origin and/or the app's
 development origin in `FURQAN_ALLOWED_ORIGINS`.
 
-Without an Expo runtime URL, development falls back to the built-in Al-Fil
-package. Production does not include that fallback and must configure a
-published runtime package.
+Preview mode is explicit and requires both
+`FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server and
+`EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview` in Expo. A missing or invalid Expo
+mode defaults to production. Preview fails visibly when the backend is absent;
+it never substitutes the Al-Fil-only fixture for the ten-Surah course.
+
+Production requests use a separate published-package provider. They cannot
+consume the preview provider and every response is revalidated using the full
+production source, license, approval, hash, and locale-publication gates.
 
 ## Draft short-Surah runtime course
 
 Development can assemble the English Al-Fil-to-An-Nas practice course in
 memory from Quran Foundation, pinned QuranEnc Rowwad `1.0.19`, and MP3Quran
-Al-Husary streams. Set `FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server and
+Al-Husary streams. Set `FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server,
+`EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview`, and
 `EXPO_PUBLIC_INITIAL_PACKAGE_ID=surah-al-fil-v1` in Expo.
 
 The endpoint returns `no-store`; Expo registers the package in memory and does
 not persist Quran Foundation payloads. Arabic and French course publications
 remain explicitly unavailable until complete reviewed package catalogs exist.
+The response is labeled `contentMode: preview`; its locale publication remains
+`draft` and is never rewritten as published.

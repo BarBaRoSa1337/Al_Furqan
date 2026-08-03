@@ -26,6 +26,7 @@ import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
 import { getCurrentLearnerPreferences } from '../../lib/localization/preferencesState';
 import type { ExerciseSubmissionResult } from '../../types/activities';
 import { isBlockEligibleForProduction } from '../../lib/content/contentEligibility';
+import { isPreviewContentMode } from '../../lib/content/contentMode';
 
 interface LevelBlockRendererProps {
   block: LevelBlock;
@@ -37,7 +38,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
   const repo = getContentRepository();
   const preferences = getCurrentLearnerPreferences();
   const contentPackage = repo.getPackageForBlock(block.id);
-  if (!__DEV__ && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
+  if (!isPreviewContentMode() && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
 
   switch (block.type) {
     case 'surah_overview':
@@ -88,7 +89,6 @@ function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBloc
       <Text style={styles.overviewArabic}>{surah.arabicName}</Text>
       <Text accessibilityRole="header" style={styles.overviewTitle}>{surah.transliteratedName}</Text>
       <Text style={styles.overviewMeta}>{surah.englishName} · {surah.ayahCount} ayat · {surah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
-      {surah.sourceMetadata.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
       <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
     </Card>
   );
@@ -176,7 +176,6 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
       </Pressable>
       {expanded ? (
         <View>
-          {entry.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
           <Text style={styles.tafsirText}>{entry.text}</Text>
           {entry.explanation ? (
             <View style={styles.explanationSection}>
@@ -184,7 +183,7 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
               <Text style={styles.explanationText}>{entry.explanation}</Text>
             </View>
           ) : null}
-          <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({entry.reviewerStatus})</Text>
+          <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
         </View>
       ) : null}
     </Card>
@@ -198,10 +197,9 @@ function CanonicalContextBlock({ block, repo }: { block: ContextBlock; repo: Con
   return (
     <Card variant="story">
       <Text style={styles.contextLabel}>{label}</Text>
-      {block.reviewerStatus !== 'approved' ? <ReviewBadge repo={repo} /> : null}
       <Text style={styles.contextTitle}>{block.title}</Text>
       <Text style={styles.contextText}>{block.text}</Text>
-      <Text style={styles.source}>{packageText(repo, 'content.source')}: {sources} ({block.reviewerStatus})</Text>
+      <Text style={styles.source}>{packageText(repo, 'content.source')}: {sources}</Text>
     </Card>
   );
 }
@@ -225,14 +223,6 @@ function WordExplorerBlock({ words, repo }: { words: WordMeaning[]; repo: Conten
 
 export function resolveWordMeaningArabic(word: WordMeaning, repo: Pick<ContentRepository, 'getWordToken'>): string {
   return word.wordTokenId ? repo.getWordToken(word.wordTokenId)?.arabicText ?? '' : '';
-}
-
-function ReviewBadge({ repo }: { repo: ContentRepository }) {
-  return (
-    <View style={styles.reviewBadge}>
-      <Text style={styles.reviewBadgeText}>{packageText(repo, 'content.draftPendingReview')}</Text>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
@@ -263,8 +253,6 @@ const styles = StyleSheet.create({
   explanationSection: { backgroundColor: colors.goldSoft, borderRadius: radii.md, marginTop: spacing.md, padding: spacing.md },
   explanationLabel: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12, marginBottom: spacing.xs, textTransform: 'uppercase' },
   explanationText: { color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 22 },
-  reviewBadge: { backgroundColor: colors.warningSoft, borderRadius: radii.md, marginBottom: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  reviewBadgeText: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12, textAlign: 'center' },
   source: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: spacing.md },
   contextLabel: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.6, marginBottom: spacing.sm, textTransform: 'uppercase' },
   contextTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 18, marginBottom: 10 },

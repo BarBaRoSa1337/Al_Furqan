@@ -13,6 +13,7 @@ import { isLevelAccessible } from '../lib/progress/lessonAccess';
 import { colors, fonts, radii, shadows, spacing } from '../theme/tokens';
 import { AppProgress, DEFAULT_PROGRESS } from '../types/progress';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
+import { isPreviewContentMode } from '../lib/content/contentMode';
 
 type BrowseMode = 'search' | 'surah' | 'juz' | 'hizb';
 interface BrowseItem {
@@ -35,6 +36,7 @@ export default function DiscoverScreen() {
   const dashboard = useFurqanDashboard();
   const { preferences } = useLocalization();
   const repo = getContentRepository();
+  const previewContent = isPreviewContentMode();
   const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key, {}, preferences.interfaceLocale);
   const [query, setQuery] = useState(initialQuery);
   const [browseMode, setBrowseMode] = useState<BrowseMode>(initialMode);
@@ -66,12 +68,12 @@ export default function DiscoverScreen() {
   const result = repo.searchDiscovery(effectiveQuery, {
     downloadedOnly: false,
     themeIds: selectedThemeId ? [selectedThemeId] : undefined,
-    approvedOnly: !__DEV__,
+    approvedOnly: !previewContent,
   }, scope);
   const themes = repo.getAllPackages()
     .flatMap(pkg => pkg.themes ?? [])
     .filter((theme, index, all) => all.findIndex(candidate => candidate.id === theme.id) === index)
-    .filter(theme => __DEV__ || theme.reviewerStatus === 'approved');
+    .filter(theme => previewContent || theme.reviewerStatus === 'approved');
   const hasResults = result.quranReferences.length > 0 || result.learningPaths.length > 0;
   const browseItems: BrowseItem[] = browseMode === 'surah'
     ? repo.getSurahs('mushaf').map(surah => ({

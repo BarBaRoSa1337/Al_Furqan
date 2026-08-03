@@ -1,6 +1,7 @@
 import surahAlFilPackage, { HAFS_AN_ASIM_ID, surahAlFilAyat, surahAlFilWordTokens } from '../../content/packages/surah-al-fil/v1';
 import { ContentPackage } from '../../types/content';
 import ContentRepositoryImpl, { getContentRepository } from './repository';
+import { createFullyApprovedPackage } from '../../test/approvedGovernanceFixture';
 
 test('resolves Al-Fil through the explicit Hafs edition and legacy default', () => {
   const repository = getContentRepository();
@@ -65,7 +66,7 @@ test('searches Quran references separately from matching learning paths', () => 
   const referenceSearch = repository.searchDiscovery('105:1');
   expect(referenceSearch.quranReferences[0]).toMatchObject({
     label: '105:1',
-    lessonAvailability: 'published',
+    lessonAvailability: 'preview',
   });
   expect(referenceSearch.learningPaths[0]?.packageId).toBe(surahAlFilPackage.id);
 
@@ -77,7 +78,7 @@ test('searches Quran references separately from matching learning paths', () => 
 });
 
 test('rejects level identities owned by another installed package', () => {
-  const repository = new ContentRepositoryImpl();
+  const repository = new ContentRepositoryImpl('preview');
   const duplicate = structuredClone(surahAlFilPackage) as ContentPackage;
   duplicate.id = 'another-package';
 
@@ -85,7 +86,7 @@ test('rejects level identities owned by another installed package', () => {
 });
 
 test('migrates valid schema-v1 word meanings to canonical token references', () => {
-  const repository = new ContentRepositoryImpl();
+  const repository = new ContentRepositoryImpl('preview');
   const legacy = structuredClone(surahAlFilPackage) as ContentPackage;
   const meaning = legacy.ayat[0].wordMeanings?.[0];
   if (!meaning) throw new Error('Word meaning fixture unavailable');
@@ -102,7 +103,7 @@ test('migrates valid schema-v1 word meanings to canonical token references', () 
 });
 
 test('keeps media and discovery ownership inside the package that declares the block', () => {
-  const repository = new ContentRepositoryImpl();
+  const repository = new ContentRepositoryImpl('preview');
   const downloaded = cloneWithOwnedLearningIds(surahAlFilPackage, '-downloaded');
   downloaded.id = 'downloaded-al-fil';
   downloaded.revisionId = 'downloaded-al-fil-r1';
@@ -124,6 +125,20 @@ test('keeps media and discovery ownership inside the package that declares the b
   expect(repository.getPackageForBlock(mediaBlock.id)?.id).toBe(downloaded.id);
   expect(repository.getPackageForBlock(mediaBlock.id)?.mediaAssets.find(a => a.id === 'downloaded-context-art')?.uri).toBe('images/downloaded-context.png');
   expect(repository.listLearningPaths({ downloadedOnly: true }).map(result => result.packageId)).toEqual([downloaded.id]);
+});
+
+test('rejects draft packages when the repository runs in production mode', () => {
+  const repository = new ContentRepositoryImpl('production');
+
+  expect(repository.getActivePackage()).toBeUndefined();
+  expect(() => repository.registerPackage(surahAlFilPackage, true, 'runtime')).toThrow('reviewerStatus is "draft"');
+});
+
+test('classifies only production-valid learning content as published', () => {
+  const repository = new ContentRepositoryImpl('production');
+  repository.registerPackage(createFullyApprovedPackage(surahAlFilPackage), true, 'runtime');
+
+  expect(repository.searchDiscovery('105:1').quranReferences[0]?.lessonAvailability).toBe('published');
 });
 
 function cloneWithOwnedLearningIds(pkg: ContentPackage, suffix: string): ContentPackage {

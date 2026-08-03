@@ -160,6 +160,28 @@ included in the active package.
 - Removed activity `l1-order-ayah-1` is no longer offered; its history is not
   deleted.
 
+## 2026-08-04 - Explicit preview and production content modes
+
+### Delivered
+
+- Added a fail-closed content mode shared by Expo and the Furqan backend.
+  Missing or invalid client configuration resolves to production.
+- Preview mode loads only the explicitly enabled draft runtime provider and
+  labels the response as preview without changing any review or publication
+  status. Production uses a separate provider and full production validation.
+- Replaced repeated lesson draft badges with one accessible app-wide preview
+  indicator. The learning roadmap now lists authored Surah curricula only, so
+  metadata-only Surahs no longer open an unavailable lesson placeholder.
+
+### Compatibility
+
+- Quran records, curriculum/package schemas, content IDs, learner progress,
+  attempts, reviews, and completion migrations are unchanged.
+- The Al-Fil-to-An-Nas preview remains English-only, runtime-only, and
+  non-persistent. Arabic and French remain explicitly unavailable.
+- Production source, license, hash, editorial, Islamic, technical, and locale
+  publication gates are unchanged and remain blocking.
+
 ## 2026-08-03 - Open Surah and lesson navigation
 
 ### Delivered

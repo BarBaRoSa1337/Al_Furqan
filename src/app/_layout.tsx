@@ -13,6 +13,8 @@ import { getContentRepository } from '../lib/content/repository';
 import { getRuntimeApiBaseUrl, loadRuntimePackage } from '../lib/content/runtimeClient';
 import { LocalizationProvider, useLocalization } from '../lib/localization/LocalizationProvider';
 import { colors, fonts, radii, spacing } from '../theme/tokens';
+import { resolveContentMode } from '../lib/content/contentMode';
+import PreviewContentIndicator, { PREVIEW_INDICATOR_HEIGHT } from '../components/furqan/PreviewContentIndicator';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -41,22 +43,27 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   // workflow for Al-Fil through An-Nas. Deployments can override this ID.
   const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID ?? 'surah-al-fil-v1';
   const runtimeApiBaseUrl = getRuntimeApiBaseUrl();
+  const contentMode = resolveContentMode();
+  const previewContent = contentMode === 'preview';
 
   const loadContent = useCallback(async () => {
     setState('loading');
     setError(undefined);
     try {
       const repo = getContentRepository();
-      if (runtimeApiBaseUrl && packageId) {
-        await loadRuntimePackage(packageId, preferences.lessonLocale);
+      if (!runtimeApiBaseUrl) {
+        throw new Error(previewContent
+          ? 'Preview mode requires EXPO_PUBLIC_FURQAN_API_BASE_URL.'
+          : 'No production content backend is configured.');
       }
-      if (!repo.getActivePackage()) throw new Error('No published runtime package is configured.');
+      await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
+      if (!repo.getActivePackage()) throw new Error(`${contentMode} content package could not be activated.`);
       setState('ready');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('app.contentUnavailable'));
       setState('error');
     }
-  }, [packageId, preferences.lessonLocale, runtimeApiBaseUrl, t]);
+  }, [contentMode, packageId, preferences.lessonLocale, previewContent, runtimeApiBaseUrl, t]);
 
   useEffect(() => {
     if (preferencesReady) void loadContent();
@@ -80,24 +87,29 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   return (
     <View style={[styles.root, { direction }]}>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, animation: direction === 'rtl' ? 'slide_from_left' : 'slide_from_right', contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="roadmap" />
-        <Stack.Screen name="discover" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="surah/[id]" />
-        <Stack.Screen name="level/[id]" options={{ animation: 'fade_from_bottom' }} />
-        <Stack.Screen name="practice/[id]" />
-        <Stack.Screen name="review" />
-        <Stack.Screen name="lesson/[id]" />
-        <Stack.Screen name="complete/[id]" options={{ animation: 'fade' }} />
-      </Stack>
+      <View style={[styles.stack, previewContent && styles.previewInset]}>
+        <Stack screenOptions={{ headerShown: false, animation: direction === 'rtl' ? 'slide_from_left' : 'slide_from_right', contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="roadmap" />
+          <Stack.Screen name="discover" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="surah/[id]" />
+          <Stack.Screen name="level/[id]" options={{ animation: 'fade_from_bottom' }} />
+          <Stack.Screen name="practice/[id]" />
+          <Stack.Screen name="review" />
+          <Stack.Screen name="lesson/[id]" />
+          <Stack.Screen name="complete/[id]" options={{ animation: 'fade' }} />
+        </Stack>
+      </View>
+      {previewContent ? <PreviewContentIndicator /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
+  stack: { flex: 1 },
+  previewInset: { paddingTop: PREVIEW_INDICATOR_HEIGHT },
   center: { alignItems: 'center', backgroundColor: colors.background, flex: 1, justifyContent: 'center', padding: spacing.xl },
   errorTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 22, textAlign: 'center' },
   message: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, marginTop: spacing.sm, textAlign: 'center' },

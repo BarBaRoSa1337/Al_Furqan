@@ -32,5 +32,5 @@ test('does not expose sharing for draft religious content', () => {
   const screen = render(<WisdomCard block={{ ...block, reviewerStatus: 'draft' }} repo={getContentRepository()} />);
 
   expect(screen.queryByRole('button', { name: 'Share Remember' })).toBeNull();
-  expect(screen.getByText('Draft religious explanation pending review')).toBeTruthy();
+  expect(screen.queryByText('Draft religious explanation pending review')).toBeNull();
 });

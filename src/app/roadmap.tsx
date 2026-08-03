@@ -88,18 +88,17 @@ export default function RoadmapScreen() {
 
         <View style={styles.roadmap}>
           {dashboard.roadmapSurahs.map(surah => {
-            const item = dashboard.authoredSurahs.find(candidate => candidate.surah.id === surah.id);
-            const completed = item?.levels.filter(level => dashboard.progress.completedLevelIds.includes(level.id)).length ?? 0;
-            const next = item?.levels.find(level => !dashboard.progress.completedLevelIds.includes(level.id));
+            const item = dashboard.authoredSurahs.find(candidate => candidate.surah.id === surah.id)!;
+            const completed = item.levels.filter(level => dashboard.progress.completedLevelIds.includes(level.id)).length;
+            const next = item.levels.find(level => !dashboard.progress.completedLevelIds.includes(level.id));
             return (
               <SurahRoadmapCard
                 completed={completed}
                 key={surah.id}
                 nextTitle={next?.title}
                 onPress={() => openSurah(surah.id)}
-                pending={!item}
                 surah={surah}
-                total={item?.levels.length ?? 0}
+                total={item.levels.length}
               />
             );
           })}

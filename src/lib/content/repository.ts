@@ -33,6 +33,8 @@ import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { validatePackage } from './packageValidator';
 import { adaptLegacyPackage } from './legacyPackageAdapter';
 import { normalizeSearchText, parseDiscoveryQueryValue, refKey } from './discovery';
+import type { ContentMode } from '../../../packages/api-contracts/src';
+import { resolveContentMode, validationModeForContentMode } from './contentMode';
 
 class ContentRepositoryImpl implements ContentRepository {
   private _packages: ContentPackage[] = [];
@@ -50,19 +52,19 @@ class ContentRepositoryImpl implements ContentRepository {
   private _packageOrigins = new Map<string, 'built_in' | 'downloaded' | 'runtime'>();
   private _initialized = false;
 
-  constructor() {
+  constructor(private readonly contentMode: ContentMode) {
     this._init();
   }
 
   private _init(): void {
     // Register all content packages here
-    if (__DEV__) this._registerPackage(surahAlFilPackage, 'built_in');
+    if (this.contentMode === 'preview') this._registerPackage(surahAlFilPackage, 'built_in');
     this._initialized = true;
   }
 
   private _registerPackage(pkg: ContentPackage, origin: 'built_in' | 'downloaded'): void {
     const adaptedPackage = adaptLegacyPackage(pkg);
-    const validation = validatePackage(adaptedPackage, { mode: __DEV__ ? 'development' : 'production' });
+    const validation = validatePackage(adaptedPackage, { mode: validationModeForContentMode(this.contentMode) });
     if (!validation.valid) {
       throw new Error(`Invalid content package "${adaptedPackage.id}": ${validation.errors.join('; ')}`);
     }
@@ -79,7 +81,7 @@ class ContentRepositoryImpl implements ContentRepository {
 
   registerPackage(pkg: ContentPackage, activate = true, origin: 'built_in' | 'downloaded' | 'runtime' = 'downloaded'): void {
     const adaptedPackage = adaptLegacyPackage(pkg);
-    const validation = validatePackage(adaptedPackage, { mode: __DEV__ ? 'development' : 'production' });
+    const validation = validatePackage(adaptedPackage, { mode: validationModeForContentMode(this.contentMode) });
     if (!validation.valid) throw new Error(`Invalid content package "${adaptedPackage.id}": ${validation.errors.join('; ')}`);
     this._assertNoIdentityConflicts(adaptedPackage);
     const existingIndex = this._packages.findIndex(candidate => candidate.id === adaptedPackage.id);
@@ -523,7 +525,7 @@ class ContentRepositoryImpl implements ContentRepository {
       label: lookupLabel(lookup, this, scope),
       ayahRefs,
       lessonAvailability: this.findLearningContentForQuranLookup(lookup, scope).length > 0
-        ? 'published'
+        ? this.contentMode === 'preview' ? 'preview' : 'published'
         : 'no_published_lesson',
     };
   }
@@ -534,7 +536,7 @@ let _instance: ContentRepositoryImpl | null = null;
 
 export function getContentRepository(): ContentRepositoryImpl {
   if (!_instance) {
-    _instance = new ContentRepositoryImpl();
+    _instance = new ContentRepositoryImpl(resolveContentMode());
   }
   return _instance;
 }

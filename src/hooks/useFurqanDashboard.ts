@@ -64,10 +64,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
     const path = repo.getCurrentLearningPath();
     const levels = path ? repo.getLevelsForLearningPath(path.id) : [];
     const authoredSurahs = path ? repo.listAuthoredSurahs(path.id) : [];
-    const authoredNumbers = authoredSurahs.map(item => item.surah.surahNumber);
-    const firstAuthoredNumber = authoredNumbers.length > 0 ? Math.min(...authoredNumbers) : 105;
-    const roadmapSurahs = repo.listSurahsInDivision('hizb', 60)
-      .filter(surah => surah.surahNumber >= firstAuthoredNumber);
+    const roadmapSurahs = authoredSurahs.map(item => item.surah);
     try {
       if (path) await reconcileCurriculumProgress([path]);
       await syncCompletedLevelReviews(levels.flatMap(level => {
