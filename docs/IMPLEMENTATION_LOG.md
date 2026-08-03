@@ -160,6 +160,27 @@ included in the active package.
 - Removed activity `l1-order-ayah-1` is no longer offered; its history is not
   deleted.
 
+## 2026-08-03 - Open Surah and lesson navigation
+
+### Delivered
+
+- Surah roadmap cards remain selectable even when their verified lesson package
+  is not loaded; unavailable content uses a neutral pending state instead of a
+  lock icon or disabled interaction.
+- Published lesson nodes are directly accessible in any order. Completion is
+  still recorded and displayed, while content `unlockRules` remain available
+  for a future guided mode without restricting the current learner mode.
+
+### Compatibility
+
+- No content IDs, package schemas, progress records, or canonical Quran data
+  changed.
+- Navigation-only Surahs continue to open an explicit availability screen and
+  do not invent lesson, translation, tafsir, or audio content.
+- The configured development runtime package uses the same generic curriculum
+  assembler for every included Surah: introduction, one ayah level per ayah,
+  and a final Surah review with ordered curriculum nodes.
+
 ## 2026-08-03 - Surah curriculum schema v4 and Al-Fil revision r15
 
 ### Delivered

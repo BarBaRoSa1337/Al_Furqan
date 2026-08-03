@@ -37,7 +37,9 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { direction, preferences, ready: preferencesReady, t } = useLocalization();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string>();
-  const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID;
+  // The development runtime course contains the generic Surah/ayah node
+  // workflow for Al-Fil through An-Nas. Deployments can override this ID.
+  const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID ?? 'surah-al-fil-v1';
 
   const loadContent = useCallback(async () => {
     setState('loading');

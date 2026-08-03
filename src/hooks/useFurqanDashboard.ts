@@ -20,7 +20,7 @@ import {
   type HomePrimaryAction,
   type QuranLocationSummary,
 } from '../lib/progress/dashboard';
-import type { AuthoredSurahSummary, LearningPath, Level } from '../types/content';
+import type { AuthoredSurahSummary, LearningPath, Level, SurahRecord } from '../types/content';
 import { DEFAULT_PROGRESS, type AppProgress } from '../types/progress';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 
@@ -29,6 +29,7 @@ export interface FurqanDashboardState {
   path?: LearningPath;
   levels: Level[];
   authoredSurahs: AuthoredSurahSummary[];
+  roadmapSurahs: SurahRecord[];
   activeLevel?: Level;
   latestCompletedLevel?: Level;
   location?: QuranLocationSummary;
@@ -45,6 +46,7 @@ const INITIAL_STATE: FurqanDashboardState = {
   progress: DEFAULT_PROGRESS,
   levels: [],
   authoredSurahs: [],
+  roadmapSurahs: [],
   primaryAction: { kind: 'explore', href: '/discover' },
   dueReviewCount: 0,
   reviewItemCount: 0,
@@ -62,6 +64,10 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
     const path = repo.getCurrentLearningPath();
     const levels = path ? repo.getLevelsForLearningPath(path.id) : [];
     const authoredSurahs = path ? repo.listAuthoredSurahs(path.id) : [];
+    const authoredNumbers = authoredSurahs.map(item => item.surah.surahNumber);
+    const firstAuthoredNumber = authoredNumbers.length > 0 ? Math.min(...authoredNumbers) : 105;
+    const roadmapSurahs = repo.listSurahsInDivision('hizb', 60)
+      .filter(surah => surah.surahNumber >= firstAuthoredNumber);
     try {
       if (path) await reconcileCurriculumProgress([path]);
       await syncCompletedLevelReviews(levels.flatMap(level => {
@@ -86,6 +92,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
         path,
         levels,
         authoredSurahs,
+        roadmapSurahs,
         activeLevel,
         latestCompletedLevel,
         location: resolveQuranLocation(repo, locationLevel),
@@ -107,6 +114,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
         path,
         levels,
         authoredSurahs,
+        roadmapSurahs,
         loading: false,
         error: cause instanceof Error ? cause.message : 'Progress could not be loaded.',
       }));

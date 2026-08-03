@@ -20,6 +20,7 @@ export default function SurahPathScreen() {
   const repo = getContentRepository();
   const path = repo.getCurrentLearningPath();
   const authored = path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined;
+  const navigationSurah = surahId ? repo.getSurahById(surahId) : undefined;
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
 
   useFocusEffect(useCallback(() => {
@@ -33,7 +34,32 @@ export default function SurahPathScreen() {
   }, [path]));
 
   if (!authored) {
-    return <Screen style={styles.center}><Text style={styles.title}>Surah path unavailable</Text><Pressable onPress={() => router.replace('/roadmap')}><Text style={styles.link}>Back to Home</Text></Pressable></Screen>;
+    if (!navigationSurah) {
+      return <Screen style={styles.center}><Text style={styles.title}>Surah path unavailable</Text><Pressable onPress={() => router.replace('/roadmap')}><Text style={styles.link}>Back to Home</Text></Pressable></Screen>;
+    }
+    return (
+      <Screen>
+        <MoroccanBackdrop />
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Pressable accessibilityLabel="Back to Home" accessibilityRole="button" hitSlop={8} onPress={() => router.replace('/roadmap')} style={styles.back}>
+            <Ionicons color={colors.primary} name="arrow-back" size={24} />
+          </Pressable>
+          <View style={styles.hero}>
+            <SurahProgressRing completed={0} size={108} surahNumber={navigationSurah.surahNumber} total={1} />
+            <View style={styles.heroCopy}>
+              <Text style={styles.eyebrow}>CONTENT PENDING</Text>
+              <Text accessibilityRole="header" style={styles.title}>{navigationSurah.transliteratedName}</Text>
+              <Text style={styles.arabic}>{navigationSurah.arabicName}</Text>
+            </View>
+          </View>
+          <View style={styles.unavailableCard}>
+            <Text accessibilityRole="header" style={styles.unavailableTitle}>Verified lesson package unavailable</Text>
+            <Text style={styles.unavailableText}>This Surah is open in the roadmap. Its ayah lessons appear when the reviewed Quran text, translation, word data, and recitation package is loaded.</Text>
+            <Text style={styles.unavailableMeta}>{navigationSurah.ayahCount} ayat · {navigationSurah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
+          </View>
+        </ScrollView>
+      </Screen>
+    );
   }
 
   const completed = authored.levels.filter(level => progress.completedLevelIds.includes(level.id)).length;
@@ -88,5 +114,9 @@ const styles = StyleSheet.create({
   arabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 28, lineHeight: 40, writingDirection: 'rtl' },
   progress: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 13 },
   link: { color: colors.success, fontFamily: fonts.bold, marginTop: spacing.lg },
+  unavailableCard: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 18, borderWidth: 1, marginTop: spacing.xl, padding: spacing.lg },
+  unavailableTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 20 },
+  unavailableText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, marginTop: spacing.sm },
+  unavailableMeta: { color: colors.gold, fontFamily: fonts.medium, fontSize: 13, marginTop: spacing.md },
   roadmap: { paddingBottom: spacing.xl },
 });

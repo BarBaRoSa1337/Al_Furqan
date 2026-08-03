@@ -83,21 +83,23 @@ export default function RoadmapScreen() {
             <Text style={styles.pathEyebrow}>{t('home.learningPath')}</Text>
             <Text style={styles.pathTitle}>{dashboard.path?.title ?? t('home.quranPath')}</Text>
           </View>
-          <Text style={styles.pathProgress}>{dashboard.authoredSurahs.filter(item => item.levels.every(level => dashboard.progress.completedLevelIds.includes(level.id))).length}/{dashboard.authoredSurahs.length}</Text>
+          <Text style={styles.pathProgress}>{dashboard.authoredSurahs.filter(item => item.levels.every(level => dashboard.progress.completedLevelIds.includes(level.id))).length}/{dashboard.roadmapSurahs.length}</Text>
         </View>
 
         <View style={styles.roadmap}>
-          {dashboard.authoredSurahs.map(item => {
-            const completed = item.levels.filter(level => dashboard.progress.completedLevelIds.includes(level.id)).length;
-            const next = item.levels.find(level => !dashboard.progress.completedLevelIds.includes(level.id));
+          {dashboard.roadmapSurahs.map(surah => {
+            const item = dashboard.authoredSurahs.find(candidate => candidate.surah.id === surah.id);
+            const completed = item?.levels.filter(level => dashboard.progress.completedLevelIds.includes(level.id)).length ?? 0;
+            const next = item?.levels.find(level => !dashboard.progress.completedLevelIds.includes(level.id));
             return (
               <SurahRoadmapCard
                 completed={completed}
-                key={item.curriculum.id}
+                key={surah.id}
                 nextTitle={next?.title}
-                onPress={() => openSurah(item.surah.id)}
-                surah={item.surah}
-                total={item.levels.length}
+                onPress={() => openSurah(surah.id)}
+                pending={!item}
+                surah={surah}
+                total={item?.levels.length ?? 0}
               />
             );
           })}
