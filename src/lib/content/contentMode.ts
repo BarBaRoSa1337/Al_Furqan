@@ -12,3 +12,15 @@ export function validationModeForContentMode(contentMode: ContentMode): Validati
 export function isPreviewContentMode(contentMode = resolveContentMode()): boolean {
   return contentMode === 'preview';
 }
+
+export function isLocalPreviewRequested(value = process.env.EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW): boolean {
+  return value?.trim().toLowerCase() === 'true';
+}
+
+/** Local draft content is an opt-in preview provider, never a production fallback. */
+export function isLocalPreviewEnabled(
+  contentMode = resolveContentMode(),
+  value = process.env.EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW,
+): boolean {
+  return contentMode === 'preview' && isLocalPreviewRequested(value);
+}

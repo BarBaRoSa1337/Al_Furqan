@@ -182,6 +182,28 @@ included in the active package.
 - Production source, license, hash, editorial, Islamic, technical, and locale
   publication gates are unchanged and remain blocking.
 
+## 2026-08-04 - Local preview provider boundary
+
+### Delivered
+
+- Added an explicit local preview provider selected only by
+  `EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview` together with
+  `EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW=true`.
+- Local preview takes precedence over a configured runtime endpoint and
+  validates package identity, revision, SHA-256 payload digest, development
+  package validity, canonical Quran coverage, and curriculum coverage before
+  repository activation.
+- The provider is intentionally empty until the content pipeline supplies a
+  verified Surahs 105-114 export. It fails visibly rather than inventing Quran
+  text, translations, word data, recitation, or religious learning content.
+
+### Compatibility
+
+- Production mode still ignores local preview content and continues to require
+  a separately sourced production-valid backend package.
+- Package IDs, curriculum IDs, learner progress, attempts, review schedules,
+  and publication/review states are unchanged.
+
 ## 2026-08-03 - Open Surah and lesson navigation
 
 ### Delivered

@@ -13,8 +13,9 @@ import { getContentRepository } from '../lib/content/repository';
 import { getRuntimeApiBaseUrl, loadRuntimePackage } from '../lib/content/runtimeClient';
 import { LocalizationProvider, useLocalization } from '../lib/localization/LocalizationProvider';
 import { colors, fonts, radii, spacing } from '../theme/tokens';
-import { resolveContentMode } from '../lib/content/contentMode';
+import { isLocalPreviewEnabled, isLocalPreviewRequested, resolveContentMode } from '../lib/content/contentMode';
 import PreviewContentIndicator, { PREVIEW_INDICATOR_HEIGHT } from '../components/furqan/PreviewContentIndicator';
+import { loadBundledLocalPreviewPackage } from '../lib/content/localPreviewProvider';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -45,25 +46,33 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const runtimeApiBaseUrl = getRuntimeApiBaseUrl();
   const contentMode = resolveContentMode();
   const previewContent = contentMode === 'preview';
+  const localPreviewRequested = isLocalPreviewRequested();
+  const localPreviewEnabled = isLocalPreviewEnabled(contentMode);
 
   const loadContent = useCallback(async () => {
     setState('loading');
     setError(undefined);
     try {
       const repo = getContentRepository();
-      if (!runtimeApiBaseUrl) {
+      if (localPreviewRequested && !localPreviewEnabled) {
+        throw new Error('EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW=true requires EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview.');
+      }
+      if (localPreviewEnabled) {
+        loadBundledLocalPreviewPackage(packageId, preferences.lessonLocale);
+      } else if (!runtimeApiBaseUrl) {
         throw new Error(previewContent
           ? 'Preview mode requires EXPO_PUBLIC_FURQAN_API_BASE_URL.'
           : 'No production content backend is configured.');
+      } else {
+        await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
       }
-      await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
       if (!repo.getActivePackage()) throw new Error(`${contentMode} content package could not be activated.`);
       setState('ready');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('app.contentUnavailable'));
       setState('error');
     }
-  }, [contentMode, packageId, preferences.lessonLocale, previewContent, runtimeApiBaseUrl, t]);
+  }, [contentMode, localPreviewEnabled, localPreviewRequested, packageId, preferences.lessonLocale, previewContent, runtimeApiBaseUrl, t]);
 
   useEffect(() => {
     if (preferencesReady) void loadContent();

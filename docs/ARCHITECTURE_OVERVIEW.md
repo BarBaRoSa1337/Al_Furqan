@@ -150,6 +150,14 @@ preview marker. Missing or invalid mode configuration defaults to `production`,
 which accepts only packages passing the complete production validator. Preview
 and production package providers cannot substitute for one another.
 
+For credential-free development, `EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW=true` may
+be combined with `EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview`. This provider loads
+only a bundled, SHA-256-verified draft package for Surahs 105-114 and takes
+precedence over a runtime endpoint. It rejects missing or malformed artifacts,
+non-English preview requests, incomplete Surah coverage, and any attempt to
+enable it outside preview mode. It is not an offline distribution mechanism
+and is never available to production mode.
+
 ### 6. Studio publishing contract
 
 Owns:
