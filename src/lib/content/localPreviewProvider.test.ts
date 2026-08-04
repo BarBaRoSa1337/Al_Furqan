@@ -25,7 +25,16 @@ test('accepts a development-valid local artifact with the expected coverage', ()
   expect(validateLocalPreviewArtifact(artifact(), {
     expectedPackageId: surahAlFilPackage.id,
     expectedSurahNumbers: [105],
+    expectedLocale: 'en',
   }).id).toBe(surahAlFilPackage.id);
+});
+
+test('rejects a local artifact built for another lesson locale', () => {
+  expect(() => validateLocalPreviewArtifact(artifact(), {
+    expectedPackageId: surahAlFilPackage.id,
+    expectedSurahNumbers: [105],
+    expectedLocale: 'fr',
+  })).toThrow('locale does not match requested fr');
 });
 
 test('rejects a tampered local preview package', () => {

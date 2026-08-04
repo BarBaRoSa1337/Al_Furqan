@@ -15,7 +15,7 @@ import { LocalizationProvider, useLocalization } from '../lib/localization/Local
 import { colors, fonts, radii, spacing } from '../theme/tokens';
 import { isLocalPreviewEnabled, isLocalPreviewRequested, resolveContentMode } from '../lib/content/contentMode';
 import PreviewContentIndicator, { PREVIEW_INDICATOR_HEIGHT } from '../components/furqan/PreviewContentIndicator';
-import { loadBundledLocalPreviewPackage } from '../lib/content/localPreviewProvider';
+import { tryLoadBundledLocalPreviewPackage } from '../lib/content/localPreviewProvider';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -40,6 +40,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const { direction, preferences, ready: preferencesReady, t } = useLocalization();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string>();
+  const [previewProvider, setPreviewProvider] = useState<'backend' | 'local' | 'built_in'>();
   // The development runtime course contains the generic Surah/ayah node
   // workflow for Al-Fil through An-Nas. Deployments can override this ID.
   const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID ?? 'surah-al-fil-v1';
@@ -52,19 +53,34 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const loadContent = useCallback(async () => {
     setState('loading');
     setError(undefined);
+    setPreviewProvider(undefined);
     try {
       const repo = getContentRepository();
       if (localPreviewRequested && !localPreviewEnabled) {
         throw new Error('EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW=true requires EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview.');
       }
-      if (localPreviewEnabled) {
-        loadBundledLocalPreviewPackage(packageId, preferences.lessonLocale);
-      } else if (!runtimeApiBaseUrl) {
-        throw new Error(previewContent
-          ? 'Preview mode requires EXPO_PUBLIC_FURQAN_API_BASE_URL.'
-          : 'No production content backend is configured.');
+      if (runtimeApiBaseUrl) {
+        try {
+          await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
+          if (previewContent) setPreviewProvider('backend');
+        } catch (cause) {
+          if (!previewContent) throw cause;
+          console.warn('[content] Preview backend unavailable; trying local preview fallback.', cause);
+          const localLoaded = tryLocalPreview(packageId, preferences.lessonLocale, localPreviewEnabled);
+          if (localLoaded) setPreviewProvider('local');
+          else if (preferences.lessonLocale === 'en' && repo.getActivePackage()) setPreviewProvider('built_in');
+          else {
+            throw cause;
+          }
+        }
+      } else if (tryLocalPreview(packageId, preferences.lessonLocale, localPreviewEnabled)) {
+        setPreviewProvider('local');
+      } else if (previewContent && preferences.lessonLocale === 'en' && repo.getActivePackage()) {
+        setPreviewProvider('built_in');
       } else {
-        await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
+        throw new Error(previewContent
+          ? 'Preview content is unavailable for this lesson locale. Configure a backend or provide the local preview package.'
+          : 'No production content backend is configured.');
       }
       if (!repo.getActivePackage()) throw new Error(`${contentMode} content package could not be activated.`);
       setState('ready');
@@ -110,9 +126,19 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="complete/[id]" options={{ animation: 'fade' }} />
         </Stack>
       </View>
-      {previewContent ? <PreviewContentIndicator /> : null}
+      {previewContent && previewProvider ? <PreviewContentIndicator label={previewProvider === 'local' ? 'Local preview' : undefined} /> : null}
     </View>
   );
+}
+
+function tryLocalPreview(packageId: string, locale: Parameters<typeof tryLoadBundledLocalPreviewPackage>[1], enabled: boolean): boolean {
+  if (!enabled) return false;
+  try {
+    return tryLoadBundledLocalPreviewPackage(packageId, locale);
+  } catch (cause) {
+    console.warn('[content] Local preview artifact rejected; trying built-in fallback.', cause);
+    return false;
+  }
 }
 
 const styles = StyleSheet.create({

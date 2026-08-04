@@ -57,6 +57,14 @@ export interface ContentSource {
   reviewDate?: string;
   license?: string;
   notes?: string;
+  /** Provider provenance displayed to learners and retained in package manifests. */
+  sourceUrl?: string;
+  resourceKey?: string;
+  attributionText?: string;
+  transcriptInfo?: string;
+  retrievedAt?: string;
+  lastUpdatedAt?: string;
+  evidenceReference?: string;
 }
 
 // ─── Core Quran Content ────────────────────────────────────────────────────

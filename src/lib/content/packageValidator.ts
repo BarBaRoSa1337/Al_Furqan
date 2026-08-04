@@ -82,7 +82,18 @@ export function validatePackage(
   validateUniqueIds('level', pkg.levels.map(level => level.id), errors);
   validateUniqueIds('block', pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks.map(block => block.id))), errors);
 
-  pkg.sources.forEach(source => validateReviewStatus(`Source "${source.id}"`, source.reviewerStatus, mode, errors, warnings));
+  pkg.sources.forEach(source => {
+    validateReviewStatus(`Source "${source.id}"`, source.reviewerStatus, mode, errors, warnings);
+    if (source.sourceUrl) {
+      try {
+        if (new URL(source.sourceUrl).protocol !== 'https:') errors.push(`Source "${source.id}" sourceUrl must use HTTPS`);
+      } catch {
+        errors.push(`Source "${source.id}" has invalid sourceUrl`);
+      }
+    }
+    if (source.retrievedAt && !isValidDate(source.retrievedAt)) errors.push(`Source "${source.id}" has invalid retrievedAt date`);
+    if (source.lastUpdatedAt && !isValidDate(source.lastUpdatedAt)) errors.push(`Source "${source.id}" has invalid lastUpdatedAt date`);
+  });
   pkg.editions.forEach(edition => {
     validateSourceIds(`Edition "${edition.id}"`, [edition.textSourceId], pkg, errors);
     if (!edition.version) errors.push(`Edition "${edition.id}" missing version`);

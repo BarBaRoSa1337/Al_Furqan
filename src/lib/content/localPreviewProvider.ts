@@ -4,7 +4,7 @@ import { getPackagePayloadHash } from './governance';
 import { validatePackage } from './packageValidator';
 import { getContentRepository } from './repository';
 import {
-  bundledLocalPreviewArtifact,
+  bundledLocalPreviewArtifacts,
   type LocalPreviewArtifact,
 } from '../../content/local-preview/registry';
 
@@ -15,17 +15,29 @@ export function loadBundledLocalPreviewPackage(
   packageId: string,
   locale: SupportedLocale,
 ): void {
-  if (locale !== 'en') {
-    throw new Error('Local preview content is available only for the English lesson locale.');
+  if (locale !== 'en' && locale !== 'fr') {
+    throw new Error('Local preview content is available only for English and French lesson locales.');
   }
-  if (!bundledLocalPreviewArtifact) {
+  const artifact = bundledLocalPreviewArtifacts[locale];
+  if (!artifact) {
     throw new Error('Local preview content export is missing. Add the verified Surahs 105-114 package and SHA-256 manifest.');
   }
-  const pkg = validateLocalPreviewArtifact(bundledLocalPreviewArtifact, {
+  const pkg = validateLocalPreviewArtifact(artifact, {
     expectedPackageId: packageId,
     expectedSurahNumbers: LOCAL_PREVIEW_SURAH_NUMBERS,
+    expectedLocale: locale,
   });
   getContentRepository().registerPackage(pkg, true, 'built_in');
+}
+
+/** Returns false only when no generated artifact has been bundled. */
+export function tryLoadBundledLocalPreviewPackage(
+  packageId: string,
+  locale: SupportedLocale,
+): boolean {
+  if (!bundledLocalPreviewArtifacts[locale]) return false;
+  loadBundledLocalPreviewPackage(packageId, locale);
+  return true;
 }
 
 export function validateLocalPreviewArtifact(
@@ -33,6 +45,7 @@ export function validateLocalPreviewArtifact(
   options: {
     expectedPackageId?: string;
     expectedSurahNumbers?: readonly number[];
+    expectedLocale?: SupportedLocale;
   } = {},
 ): ContentPackage {
   const expectedPackageId = options.expectedPackageId ?? LOCAL_PREVIEW_PACKAGE_ID;
@@ -50,6 +63,9 @@ export function validateLocalPreviewArtifact(
   }
   if (getPackagePayloadHash(pkg) !== artifact.integrity.payloadSha256.toLowerCase()) {
     throw new Error('Local preview package SHA-256 digest does not match the bundled content.');
+  }
+  if (options.expectedLocale && pkg.metadata.language !== options.expectedLocale) {
+    throw new Error(`Local preview package locale does not match requested ${options.expectedLocale} content.`);
   }
 
   const validation = validatePackage(pkg, { mode: 'development' });

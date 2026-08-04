@@ -1,5 +1,38 @@
 # Implementation Log
 
+## 2026-08-04 - Source-backed local preview package tooling
+
+### Delivered
+
+- Added an explicit development importer for manually supplied Tanzil Uthmani
+  text and raw QuranEnc `english_rwwad` / `french_rashid` responses.
+- Added optional QuranEnc registry-first fetch tooling. Tanzil remains manual;
+  missing inputs fail with the exact required path before any output is written.
+- Added deterministic generation for Surahs 105-114: 48 ayat, one generic
+  introduction, ayah lessons, and a final review per Surah.
+- Generated lessons contain only canonical Arabic, unchanged English/French
+  translations and footnotes, word/ayah ordering, and exact translation matching.
+  Audio, tafsir, context, word meanings, reflections and wisdom cards are not
+  generated.
+- Added input hashes, generated-file hashes, source metadata, attribution,
+  provider versions, and an integrity-only manifest. Hashes do not represent
+  religious or editorial approval.
+- Runtime priority is backend first, explicit local preview second, then the
+  existing English Al-Fil development fallback. Production never loads local
+  preview content.
+
+### Release status
+
+Official QuranEnc `english_rwwad` 1.0.19 and `french_rashid` 1.0.3 raw inputs
+were fetched with retrieval evidence. Tanzil text and license remain required,
+so runtime bundle generation is still intentionally blocked. No approval or
+review record changed.
+
+### Verification
+
+Importer tests cover exact text preservation, footnote preservation, expected
+counts, deterministic output, development validation, and production rejection.
+
 This log records completed implementation milestones that change runtime
 behavior, data contracts, or release gates. Update it with each major change.
 

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import {
   AyahRecord,
   AudioBlock,
+  ContentSource,
   ContentRepository,
   ContextBlock,
   LevelBlock,
@@ -89,7 +90,7 @@ function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBloc
       <Text style={styles.overviewArabic}>{surah.arabicName}</Text>
       <Text accessibilityRole="header" style={styles.overviewTitle}>{surah.transliteratedName}</Text>
       <Text style={styles.overviewMeta}>{surah.englishName} · {surah.ayahCount} ayat · {surah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
-      <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+      <SourceAttribution source={source} unavailable={packageText(repo, 'content.sourceUnavailable')} />
     </Card>
   );
 }
@@ -148,11 +149,26 @@ function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah:
       {translation?.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
       <View style={styles.sourceGroup}>
         <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}</Text>
-        <Text style={styles.sourceValue}>{arabicSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+        <SourceAttribution source={arabicSource} unavailable={packageText(repo, 'content.sourceUnavailable')} />
         <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}</Text>
-        <Text style={styles.sourceValue}>{translationSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+        <SourceAttribution source={translationSource} unavailable={packageText(repo, 'content.sourceUnavailable')} />
       </View>
     </Card>
+  );
+}
+
+function SourceAttribution({ source, unavailable }: { source?: ContentSource; unavailable: string }) {
+  if (!source) return <Text style={styles.sourceValue}>{unavailable}</Text>;
+  const label = source.attributionText ?? source.name;
+  return (
+    <View style={styles.attribution}>
+      <Text style={styles.sourceValue}>{label} · v{source.version}</Text>
+      {source.sourceUrl ? (
+        <Pressable accessibilityRole="link" accessibilityLabel={`${source.name} source`} onPress={() => { void Linking.openURL(source.sourceUrl!); }}>
+          <Text style={styles.sourceLink}>{source.sourceUrl}</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -243,8 +259,10 @@ const styles = StyleSheet.create({
   ltrText: { textAlign: 'left', writingDirection: 'ltr' },
   rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   sourceGroup: { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.md, paddingTop: spacing.md, width: '100%' },
+  attribution: { alignItems: 'center', marginTop: 2 },
   sourceLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.6, textAlign: 'center', textTransform: 'uppercase' },
   sourceValue: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, marginBottom: spacing.sm, marginTop: 2, textAlign: 'center' },
+  sourceLink: { color: colors.primary, fontFamily: fonts.medium, fontSize: 11, marginBottom: spacing.sm, textAlign: 'center', textDecorationLine: 'underline' },
   tafsirControl: { justifyContent: 'center', minHeight: touch.minimum },
   tafsirHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   tafsirLabel: { color: colors.warning, fontFamily: fonts.bold, fontSize: 16 },

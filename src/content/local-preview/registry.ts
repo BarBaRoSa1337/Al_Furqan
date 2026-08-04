@@ -1,6 +1,7 @@
+import type { SupportedLocale } from '../../../packages/api-contracts/src';
 import type { ContentPackage } from '../../types/content';
 import rawIntegrity from './surahs-105-114.preview.sha256.json';
-import rawPackage from './surahs-105-114.preview.json';
+import rawBundle from './surahs-105-114.preview.json';
 
 export interface LocalPreviewIntegrityManifest {
   packageId: string;
@@ -13,28 +14,55 @@ export interface LocalPreviewArtifact {
   integrity: LocalPreviewIntegrityManifest;
 }
 
-/**
- * The checked-in placeholders intentionally do not resemble Quran content.
- * Replacing both JSON files with a verified export enables this provider with
- * no application-code changes.
- */
-export const bundledLocalPreviewArtifact: LocalPreviewArtifact | undefined = isIntegrityManifest(rawIntegrity) && isContentPackage(rawPackage)
-  ? { package: rawPackage, integrity: rawIntegrity }
-  : undefined;
+interface LocalPreviewBundle {
+  schemaVersion: 1;
+  contentMode: 'preview';
+  packages: Record<'en' | 'fr', ContentPackage>;
+}
 
-function isIntegrityManifest(value: unknown): value is LocalPreviewIntegrityManifest {
-  return Boolean(value) && typeof value === 'object'
-    && typeof (value as LocalPreviewIntegrityManifest).packageId === 'string'
-    && typeof (value as LocalPreviewIntegrityManifest).revisionId === 'string'
-    && typeof (value as LocalPreviewIntegrityManifest).payloadSha256 === 'string';
+interface LocalPreviewBundleIntegrity {
+  schemaVersion: 1;
+  packageId: string;
+  revisions: Record<'en' | 'fr', string>;
+  payloadSha256: Record<'en' | 'fr', string>;
+}
+
+const bundle: unknown = rawBundle;
+const integrity: unknown = rawIntegrity;
+
+export const bundledLocalPreviewArtifacts: Partial<Record<SupportedLocale, LocalPreviewArtifact>> = isBundle(bundle) && isBundleIntegrity(integrity)
+  ? Object.fromEntries((['en', 'fr'] as const).map(locale => [locale, {
+      package: bundle.packages[locale],
+      integrity: {
+        packageId: integrity.packageId,
+        revisionId: integrity.revisions[locale],
+        payloadSha256: integrity.payloadSha256[locale],
+      },
+    }]))
+  : {};
+
+function isBundle(value: unknown): value is LocalPreviewBundle {
+  if (!isRecord(value) || value.schemaVersion !== 1 || value.contentMode !== 'preview' || !isRecord(value.packages)) return false;
+  return isContentPackage(value.packages.en) && isContentPackage(value.packages.fr);
+}
+
+function isBundleIntegrity(value: unknown): value is LocalPreviewBundleIntegrity {
+  if (!isRecord(value) || value.schemaVersion !== 1 || typeof value.packageId !== 'string' || !isRecord(value.revisions) || !isRecord(value.payloadSha256)) return false;
+  const revisions = value.revisions;
+  const hashes = value.payloadSha256;
+  return ['en', 'fr'].every(locale => typeof revisions[locale] === 'string' && typeof hashes[locale] === 'string');
 }
 
 function isContentPackage(value: unknown): value is ContentPackage {
-  return Boolean(value) && typeof value === 'object'
-    && typeof (value as ContentPackage).id === 'string'
-    && typeof (value as ContentPackage).revisionId === 'string'
-    && Array.isArray((value as ContentPackage).surahs)
-    && Array.isArray((value as ContentPackage).ayat)
-    && Array.isArray((value as ContentPackage).learningPaths)
-    && Array.isArray((value as ContentPackage).levels);
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.revisionId === 'string'
+    && Array.isArray(value.surahs)
+    && Array.isArray(value.ayat)
+    && Array.isArray(value.learningPaths)
+    && Array.isArray(value.levels);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

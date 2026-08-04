@@ -7,19 +7,19 @@ import { colors, fonts, radii, spacing } from '../../theme/tokens';
 
 export const PREVIEW_INDICATOR_HEIGHT = 26;
 
-export default function PreviewContentIndicator() {
+export default function PreviewContentIndicator({ label }: { label?: string }) {
   const insets = useSafeAreaInsets();
   const { t } = useLocalization();
 
   return (
     <View
-      accessibilityLabel={t('content.previewIndicator')}
+      accessibilityLabel={label ?? t('content.previewIndicator')}
       accessibilityRole="text"
       pointerEvents="none"
       style={[styles.badge, { top: insets.top + 3 }]}
     >
       <Ionicons color={colors.warning} name="eye-outline" size={13} />
-      <Text style={styles.label}>{t('content.previewIndicator')}</Text>
+      <Text style={styles.label}>{label ?? t('content.previewIndicator')}</Text>
     </View>
   );
 }

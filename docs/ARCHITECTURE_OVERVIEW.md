@@ -153,10 +153,10 @@ and production package providers cannot substitute for one another.
 For credential-free development, `EXPO_PUBLIC_FURQAN_LOCAL_PREVIEW=true` may
 be combined with `EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview`. This provider loads
 only a bundled, SHA-256-verified draft package for Surahs 105-114 and takes
-precedence over a runtime endpoint. It rejects missing or malformed artifacts,
-non-English preview requests, incomplete Surah coverage, and any attempt to
-enable it outside preview mode. It is not an offline distribution mechanism
-and is never available to production mode.
+effect only when the configured backend is unavailable. It selects separate
+English or French lesson artifacts, rejects malformed artifacts or incomplete
+Surah coverage, and falls back to built-in English Al-Fil. Production mode
+rejects the local provider entirely. This is not the offline package system.
 
 ### 6. Studio publishing contract
 
