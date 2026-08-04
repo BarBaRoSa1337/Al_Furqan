@@ -1,5 +1,27 @@
 # Implementation Log
 
+## 2026-08-04 - Responsive Surah roadmap Home
+
+### Delivered
+
+- Replaced the stacked Home cards with a vertically scrolling, responsive
+  Surah trail driven by authored curriculum and Progress V5 data.
+- Added upright Surah capsules, segmented lesson progress, Arabic and English
+  names, ayah/revelation metadata, and respectful local SVG line illustrations.
+- Added visual completed, current, available, and future states. Future nodes
+  remain selectable and no roadmap state uses a padlock.
+- Home now contains Arabic-only Furqan branding, streak/points, the daily goal,
+  the Surah roadmap, and bottom navigation. Location selectors and support
+  cards were removed from Home without removing their destination pages.
+- Mobile uses a shallow alternating trail; tablet and web use a wider two-lane
+  path. Decorative animation honors reduced-motion preferences.
+
+### Compatibility
+
+No content schema, package, progress storage, navigation, or approval changes
+were introduced. The roadmap renders whichever authored Surahs are supplied by
+the active validated package.
+
 ## 2026-08-04 - Uniform short-Surah workflow and source capability locks
 
 ### Delivered

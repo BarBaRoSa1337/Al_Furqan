@@ -1,6 +1,7 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { colors, radii } from '../../theme/tokens';
 
 export function FurqanMark({ size = 44 }: { size?: number }) {
@@ -67,11 +68,23 @@ export function CourseArtwork({
 }
 
 export function MoroccanBackdrop({ inverted = false }: { inverted?: boolean }) {
+  const stroke = inverted ? colors.goldSoft : colors.gold;
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <View style={[styles.cornerPattern, inverted && styles.cornerPatternInverted, styles.cornerTop]} />
-      <View style={[styles.cornerPattern, inverted && styles.cornerPatternInverted, styles.cornerRight]} />
-      <View style={[styles.cornerPattern, inverted && styles.cornerPatternInverted, styles.cornerBottom]} />
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={[StyleSheet.absoluteFill, styles.backdrop]}>
+      <MoroccanCorner stroke={stroke} style={styles.cornerTop} />
+      <MoroccanCorner stroke={stroke} style={styles.cornerRight} />
+      <MoroccanCorner stroke={stroke} style={styles.cornerBottom} />
+    </View>
+  );
+}
+
+function MoroccanCorner({ stroke, style }: { stroke: string; style: object }) {
+  return (
+    <View style={[styles.cornerPattern, style]}>
+      <Svg accessible={false} height="100%" viewBox="0 0 120 120" width="100%">
+        <Path d="M60 5l13 27 30-10-10 30 27 13-27 13 10 30-30-10-13 27-13-27-30 10 10-30L0 65l27-13-10-30 30 10z" fill="none" stroke={stroke} strokeWidth="1.2" />
+        <Path d="M60 25l9 18 20-7-7 20 18 9-18 9 7 20-20-7-9 18-9-18-20 7 7-20-18-9 18-9-7-20 20 7z" fill="none" stroke={stroke} strokeWidth="1" />
+      </Svg>
     </View>
   );
 }
@@ -85,9 +98,9 @@ const styles = StyleSheet.create({
   artwork: { alignItems: 'center', borderRadius: radii.lg, justifyContent: 'center', overflow: 'hidden' },
   artArch: { alignItems: 'center', borderColor: colors.borderStrong, borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, height: '70%', justifyContent: 'center', width: '62%' },
   artFloor: { borderRadius: radii.pill, bottom: 9, height: 3, opacity: 0.7, position: 'absolute', width: '55%' },
-  cornerPattern: { borderColor: colors.gold, borderRadius: 18, borderWidth: 1, height: 110, opacity: 0.09, position: 'absolute', transform: [{ rotate: '45deg' }], width: 110 },
-  cornerPatternInverted: { borderColor: colors.goldSoft, opacity: 0.18 },
-  cornerTop: { right: -58, top: 120 },
-  cornerRight: { right: -68, top: 460 },
-  cornerBottom: { bottom: 80, left: -70 },
+  backdrop: { overflow: 'hidden' },
+  cornerPattern: { height: 150, opacity: 0.1, position: 'absolute', width: 150 },
+  cornerTop: { right: -74, top: 112 },
+  cornerRight: { right: -86, top: 520, transform: [{ rotate: '24deg' }] },
+  cornerBottom: { bottom: 82, left: -78, transform: [{ rotate: '-18deg' }] },
 });

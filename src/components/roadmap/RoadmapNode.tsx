@@ -36,7 +36,7 @@ export default function RoadmapNode({
   const locked = status === 'locked';
   const completed = status === 'completed';
   const active = status === 'active';
-  const icon = completed ? 'checkmark' : locked ? 'lock-closed' : 'play';
+  const icon = completed ? 'checkmark' : locked ? 'ellipse-outline' : 'play';
 
   return (
     <View style={[styles.wrapper, active && styles.activeWrapper]}>
