@@ -1,6 +1,7 @@
 import type { ContentPackage, LevelBlock } from '../../types/content';
 
 export function isBlockEligibleForProduction(block: LevelBlock, pkg: ContentPackage): boolean {
+  if (block.type === 'source_locked') return false;
   const sourcesApproved = (sourceIds: string[]) => sourceIds.length > 0 && sourceIds.every(id => pkg.sources.find(source => source.id === id)?.reviewerStatus === 'approved');
   if (block.type === 'context' || block.type === 'question' || block.type === 'summary') {
     return block.reviewerStatus === 'approved' && sourcesApproved(block.sourceIds);

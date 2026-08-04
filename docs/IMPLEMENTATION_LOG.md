@@ -1,5 +1,31 @@
 # Implementation Log
 
+## 2026-08-04 - Uniform short-Surah workflow and source capability locks
+
+### Delivered
+
+- Applied the Al-Fil learning sequence to every ayah lesson in Surahs 105-114:
+  listen/read, translation, word meanings, tafsir, ayah reconstruction,
+  understanding practice, and optional extra practice.
+- Added preview-only source-lock blocks. Protected word and tafsir steps remain
+  visible and non-blocking when Quran Foundation credentials or locale
+  resources are unavailable; each points to a source-derived practice step.
+- Added validated MP3Quran Al-Husary reciter 118, mushaf 118, riwayah 1 stream
+  metadata and ayah timing for all 48 ayat. Audio is streamed directly and is
+  never downloaded, rehosted, or persisted.
+- The authenticated backend now maps Quran Foundation word translations and
+  transliterations to canonical word-token IDs and maps resource 169 tafsir to
+  exact cited ayat. A failed protected-resource batch degrades to lock cards.
+- Added revision-alias review migration so matching activity schedules retain
+  their stage and due date across immutable package updates. Progress V5,
+  attempts, completion, XP, streaks, and receipts remain unchanged.
+
+### Release status
+
+This remains development preview content. Production validation rejects
+source-lock blocks and continues to require source, legal, editorial, Islamic,
+and technical approval. No review status was promoted.
+
 ## 2026-08-04 - Source-backed local preview package tooling
 
 ### Delivered
@@ -12,10 +38,10 @@
   recorded in source metadata; build no longer needs manual provenance values.
 - Added deterministic generation for Surahs 105-114: 48 ayat, one generic
   introduction, ayah lessons, and a final review per Surah.
-- Generated lessons contain only canonical Arabic, unchanged English/French
-  translations and footnotes, word/ayah ordering, and exact translation matching.
-  Audio, tafsir, context, word meanings, reflections and wisdom cards are not
-  generated.
+- Generated lessons contain canonical Arabic, unchanged English/French
+  translations and footnotes, MP3Quran stream metadata, source-derived
+  exercises, and explicit locked placeholders for protected word meanings and
+  tafsir. Reflections and wisdom cards are not generated.
 - Added input hashes, generated-file hashes, source metadata, attribution,
   provider versions, and an integrity-only manifest. Hashes do not represent
   religious or editorial approval.

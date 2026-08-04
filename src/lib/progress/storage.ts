@@ -73,7 +73,7 @@ export interface CompleteLevelOptions {
   now?: Date;
   locale?: string;
 }
-export interface ReviewCatalogEntry { level: Level; packageRevisionId: string; locale?: string; }
+export interface ReviewCatalogEntry { level: Level; packageRevisionId: string; previousRevisionIds?: string[]; locale?: string; }
 
 export class ProgressStorageError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -151,9 +151,12 @@ export async function getDueReviewStates(now: Date = new Date(), locale?: string
 
 export async function syncCompletedLevelReviews(entries: ReviewCatalogEntry[], now: Date = new Date()): Promise<void> {
   await mutateSnapshot(snapshot => {
-    entries.forEach(({ level, packageRevisionId, locale }) => {
+    entries.forEach(({ level, packageRevisionId, previousRevisionIds, locale }) => {
       const progress = snapshot.levels[level.id];
-      if (progress?.completed) registerLevelReviews(snapshot, level, packageRevisionId, now, locale);
+      if (progress?.completed) {
+        migrateReviewRevisions(snapshot, level, packageRevisionId, previousRevisionIds ?? [], locale);
+        registerLevelReviews(snapshot, level, packageRevisionId, now, locale);
+      }
     });
   });
 }
@@ -843,6 +846,20 @@ function registerLevelReviews(snapshot: ProgressSnapshotV5, level: Level, packag
       languageIndependent: activity.languageIndependent,
     }, attemptedAt);
   });
+}
+
+function migrateReviewRevisions(snapshot: ProgressSnapshotV5, level: Level, packageRevisionId: string, previousRevisionIds: string[], locale = 'en'): void {
+  level.steps.flatMap(step => step.blocks)
+    .filter((block): block is Extract<Level['steps'][number]['blocks'][number], { type: 'activity' }> => block.type === 'activity' && Boolean(block.activity.reviewSchedule))
+    .forEach(({ activity }) => {
+      const currentKey = reviewStateKey(level.id, activity.id, packageRevisionId, locale, activity.languageIndependent);
+      if (snapshot.reviews[currentKey]) return;
+      const previous = previousRevisionIds
+        .map(revision => snapshot.reviews[reviewStateKey(level.id, activity.id, revision, locale, activity.languageIndependent)])
+        .find(Boolean);
+      if (!previous) return;
+      snapshot.reviews[currentKey] = { ...previous, packageRevisionId };
+    });
 }
 
 function toReviewOutcome(answer: unknown, correct: boolean): ReviewOutcome {

@@ -52,6 +52,8 @@ export function validatePackage(
   if (!pkg.version) errors.push('Package missing version');
   if (![1, 2, 3, 4].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
   if (!pkg.revisionId) errors.push('Package missing revisionId');
+  validateUniqueIds('previous package revision', pkg.previousRevisionIds ?? [], errors);
+  if (pkg.previousRevisionIds?.includes(pkg.revisionId)) errors.push('Package revision cannot migrate from itself');
   if (!pkg.title) errors.push('Package missing title');
   if (pkg.sources.length === 0) errors.push('Package has no sources');
   if (pkg.editions.length === 0) errors.push('Package has no Quran editions');
@@ -589,6 +591,16 @@ function validateLevel(
         if (block.reciterId && !pkg.reciters.some(reciter => reciter.id === block.reciterId)) errors.push(`${blockLabel} references missing reciter "${block.reciterId}"`);
         if (block.required && block.ayahRefs.some(ref => !pkg.recitationTracks.some(track => sameRef(track.ayahRef, ref) && (!block.reciterId || track.reciterId === block.reciterId)))) errors.push(`${blockLabel} requires unavailable recitation tracks`);
       }
+      if (block.type === 'source_locked') {
+        validateSourceIds(blockLabel, [block.sourceId], pkg, errors);
+        if (mode === 'production') errors.push(`${blockLabel} source-locked content cannot ship in production`);
+        if (step.required !== false) errors.push(`${blockLabel} source-locked step must be optional`);
+        const alternative = level.steps.find(candidate => candidate.id === block.alternativeStepId);
+        if (!alternative || alternative.id === step.id) errors.push(`${blockLabel} references missing alternative step "${block.alternativeStepId}"`);
+        if (alternative && !alternative.blocks.some(candidate => candidate.type === 'activity' || candidate.type === 'question')) {
+          errors.push(`${blockLabel} alternative step "${block.alternativeStepId}" is not interactive`);
+        }
+      }
       if (block.type === 'media' && !pkg.mediaAssets.some(asset => asset.id === block.assetId)) errors.push(`${blockLabel} references missing media asset "${block.assetId}"`);
       if (block.type === 'surah_overview' && block.surahId !== level.surahId) errors.push(`${blockLabel} references a different surah`);
       if (block.type === 'context' || block.type === 'question' || block.type === 'summary') {
@@ -788,6 +800,7 @@ function validateBoundedNumber(label: string, value: number, maximum: number, er
 }
 
 function isBlockAllowedInStep(kind: ReturnType<typeof getLevelStepKind>, blockType: Level['steps'][number]['blocks'][number]['type']): boolean {
+  if (blockType === 'source_locked') return kind === 'context' || kind === 'read' || kind === 'word_meaning' || kind === 'tafsir' || kind === 'summary';
   if (kind === 'surah_introduction') return blockType === 'surah_overview' || blockType === 'context' || blockType === 'media';
   if (kind === 'context') return blockType === 'context' || blockType === 'media';
   if (kind === 'read') return blockType === 'quran_passage' || blockType === 'ayah_ref' || blockType === 'audio' || blockType === 'media';

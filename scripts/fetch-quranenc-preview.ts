@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import {
   EXPECTED_AYAH_COUNTS,
+  MP3QURAN_PERMISSION_URL,
   PREVIEW_SURAH_NUMBERS,
   QURANENC_REGISTRY_URLS,
   QURANENC_RESOURCES,
@@ -16,6 +17,7 @@ import {
   TANZIL_TEXT_TYPE,
   TANZIL_TEXT_VERSION,
 } from '../packages/content-preview/src/constants';
+import { Mp3QuranClient } from '../apps/server/src/mp3Quran';
 import {
   parseQuranEncPayload,
   parseTanzilText,
@@ -30,6 +32,7 @@ import type {
 const INPUT_ROOT = join(process.cwd(), 'packages/content-preview/source-inputs');
 const QURANENC_ROOT = join(INPUT_ROOT, 'quranenc');
 const TANZIL_ROOT = join(INPUT_ROOT, 'tanzil');
+const MP3QURAN_ROOT = join(INPUT_ROOT, 'mp3quran/husary-118');
 const TIMEOUT_MS = 20_000;
 const EXPECTED_QURAN_AYAH_COUNT = 6_236;
 
@@ -40,6 +43,26 @@ async function main(): Promise<void> {
     await fetchTanzilInputs();
   }
   await fetchQuranEncInputs();
+  if (!quranEncOnly) await fetchMp3QuranInputs();
+}
+
+async function fetchMp3QuranInputs(): Promise<void> {
+  const client = new Mp3QuranClient();
+  const streams = [];
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    const stream = await client.resolveHusaryHafs(surah);
+    if (stream.segments.length !== EXPECTED_AYAH_COUNTS[surah]) {
+      throw new Error(`MP3Quran Surah ${surah} timing count mismatch.`);
+    }
+    streams.push(stream);
+  }
+  const payload = {
+    retrievedAt: new Date().toISOString(),
+    permissionEvidenceUrl: MP3QURAN_PERMISSION_URL,
+    streams,
+  };
+  await writeRaw(join(MP3QURAN_ROOT, 'streams.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  console.log('Fetched MP3Quran Al-Husary Hafs stream metadata: Surahs 105-114, 48 ayah segments, no audio persisted.');
 }
 
 async function fetchTanzilInputs(): Promise<void> {

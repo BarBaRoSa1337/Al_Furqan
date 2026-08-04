@@ -59,6 +59,17 @@ const OPTIONAL_TEXT_DEFAULTS: Record<string, string> = {
   'activity.arabicKeyboard': 'Arabic keyboard',
   'activity.keyboardSpace': 'Space',
   'activity.keyboardBackspace': 'Backspace',
+  'content.sourceLocked': '{capability} is source-locked',
+  'content.sourceLockedAlternative': 'Continue to the source-backed practice alternative.',
+  'content.sourceLock.credentials_required': 'This resource requires the protected Furqan backend and is not stored in local preview.',
+  'content.sourceLock.license_restricted': 'This resource is hidden until its distribution rights cover this app.',
+  'content.sourceLock.locale_unavailable': 'The selected source is not available in your lesson language.',
+  'content.sourceLock.provider_unavailable': 'The source could not be verified for this package revision.',
+  'content.capability.audio': 'Recitation',
+  'content.capability.word_meaning': 'Word meanings',
+  'content.capability.tafsir': 'Tafsir',
+  'content.capability.context': 'Context',
+  'content.capability.verified_recap': 'Verified recap',
 };
 
 export function packageText(repo: ContentRepository, key: PackageTextKey, values: Record<string, string | number> = {}, locale: SupportedLocale = getCurrentInterfaceLocale()): string {

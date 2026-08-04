@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { PREVIEW_GENERATOR_VERSION, PREVIEW_PACKAGE_ID, PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES, TANZIL_LICENSE_URL, TANZIL_SOURCE_URL } from '../packages/content-preview/src/constants';
 import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
-import type { PreviewSourceInputs, QuranEncResourceMetadata, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
+import type { PreviewAudioInputs, PreviewSourceInputs, QuranEncResourceMetadata, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { getPackagePayloadHash, stableStringify } from '../src/lib/content/governance';
 
 const ROOT = process.cwd();
@@ -27,6 +27,7 @@ async function main(): Promise<void> {
     englishSurahs: readSurahInputs(files, 'english_rwwad'),
     frenchMetadata: parseJson(files.get('quranenc/french_rashid/metadata.json')!, 'french_rashid metadata'),
     frenchSurahs: readSurahInputs(files, 'french_rashid'),
+    audio: parseAudioInputs(files.get('mp3quran/husary-118/streams.json')!),
     englishRetrieval,
     frenchRetrieval,
     sourceFileHashes: Object.fromEntries([...files].map(([path, content]) => [path, sha256(content)])),
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
       { provider: inputs.tanzilMetadata.provider, sourceUrl: TANZIL_SOURCE_URL, downloadUrl: inputs.tanzilMetadata.downloadUrl, licenseUrl: TANZIL_LICENSE_URL, resourceKey: 'quran-uthmani.txt', version: inputs.tanzilMetadata.textVersion, textType: inputs.tanzilMetadata.textType, retrievalDate: inputs.tanzilMetadata.retrievedAt, attributionText: inputs.tanzilMetadata.attributionText, licenseIdentifier: 'CC BY 3.0', modificationAllowed: inputs.tanzilMetadata.modificationAllowed, inputFileSha256: { text: inputs.sourceFileHashes!['tanzil/quran-uthmani.txt'], license: inputs.sourceFileHashes!['tanzil/LICENSE.txt'], metadata: inputs.sourceFileHashes!['tanzil/metadata.json'] } },
       quranEncManifestSource(result.sourceMetadata.english, englishRetrieval, inputs.sourceFileHashes!),
       quranEncManifestSource(result.sourceMetadata.french, frenchRetrieval, inputs.sourceFileHashes!),
+      { provider: 'MP3Quran.net', sourceUrl: 'https://www.mp3quran.net/api/v3', resourceKey: 'reciter-118:mushaf-118:riwayah-1', version: 'api-v3', retrievalDate: inputs.audio.retrievedAt, attributionText: 'Recitation streamed directly from MP3Quran.net.', licenseIdentifier: 'Published permission evidence; direct streaming only', evidenceReference: inputs.audio.streams[0]?.permissionEvidenceUrl, inputFileSha256: inputs.sourceFileHashes!['mp3quran/husary-118/streams.json'] },
     ],
     sourceInputFileSha256: inputs.sourceFileHashes,
     generatedFiles,
@@ -78,13 +80,19 @@ async function main(): Promise<void> {
 }
 
 async function readSourceFiles(): Promise<Map<string, string>> {
-  const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', 'tanzil/metadata.json', ...(['en', 'fr'] as const).flatMap(locale => {
+  const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', 'tanzil/metadata.json', 'mp3quran/husary-118/streams.json', ...(['en', 'fr'] as const).flatMap(locale => {
     const key = QURANENC_RESOURCES[locale].key;
     return [`quranenc/${key}/metadata.json`, `quranenc/${key}/retrieval.json`, ...PREVIEW_SURAH_NUMBERS.map(surah => `quranenc/${key}/surahs/${surah}.json`)];
   })];
   const files = new Map<string, string>();
   for (const path of paths) files.set(path, await readRequired(join(INPUT_ROOT, path)));
   return files;
+}
+
+function parseAudioInputs(text: string): PreviewAudioInputs {
+  const value = parseJson(text, 'MP3Quran stream metadata');
+  if (!isRecord(value) || typeof value.retrievedAt !== 'string' || !Array.isArray(value.streams)) throw new Error('MP3Quran stream metadata is malformed.');
+  return { retrievedAt: value.retrievedAt, streams: value.streams as PreviewAudioInputs['streams'] };
 }
 
 function verifyTanzilHashes(files: Map<string, string>, metadata: TanzilSourceMetadata): void {

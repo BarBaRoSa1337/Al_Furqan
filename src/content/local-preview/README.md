@@ -22,6 +22,8 @@ provider verifies the digest, validates the development package, and requires
 canonical ayat plus curriculum for every Surah from Al-Fil (105) through
 An-Nas (114).
 
-The generated bundle contains Tanzil 1.1 Arabic and QuranEnc English/French
-source evidence. It remains draft preview content and contains no audio or
-religious explanations.
+The generated bundle contains Tanzil 1.1 Arabic, QuranEnc English/French source
+evidence, and stream-only MP3Quran Al-Husary metadata for all 48 ayat. It
+contains no cached audio. Protected Quran Foundation word meanings and tafsir
+remain visible as non-blocking source locks with source-derived alternatives.
+The package remains draft preview content and never passes production gates.

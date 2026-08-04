@@ -82,7 +82,13 @@ client receives `no-store` responses and does not persist provider payloads.
   from the approved provider host. Furqan does not download, rehost or persist
   it. The published permission page is hash-bound as evidence; named legal
   approval is still required before the draft source can pass production.
-- Current Furqan tafsir summaries remain draft and unverified.
+- Local preview stores only validated MP3Quran stream/timing metadata for
+  Surahs 105-114; it never stores MP3 bytes.
+- Quran Foundation resource 169 tafsir and word-by-word meanings are resolved
+  only by the backend. Local preview exposes source-lock cards and safe
+  alternatives instead of copying or inventing these resources.
+- Provider tafsir markup may be normalized for React Native display, while the
+  exact provider text and its hash remain attached to the tafsir record.
 
 Provider credentials are backend deployment secrets. `QF_CLIENT_ID` and
 `QF_CLIENT_SECRET` are used only by `apps/server` for OAuth client credentials.

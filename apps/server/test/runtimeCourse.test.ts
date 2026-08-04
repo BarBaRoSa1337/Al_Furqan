@@ -9,13 +9,19 @@ const selected = surahAlFilPackage.surahs.filter(surah => surah.surahNumber >= 1
 const dependencies = {
   quranFoundation: {
     get: async (path: string) => {
+      const tafsir = path.match(/by_ayah\/(\d+):(\d+)$/);
+      if (tafsir) return {
+        data: { tafsir: { resource_id: 169, text: `<p>Exact tafsir ${tafsir[1]}:${tafsir[2]}</p>` } },
+        fetchedAt: '2026-08-03T00:00:00.000Z', expiresAt: '2026-08-04T00:00:00.000Z',
+        provider: 'quran-foundation' as const, sourceVersion: 'content-api-v4' as const, cacheStatus: 'miss' as const,
+      };
       const match = path.match(/(\d+):(\d+)$/);
       if (!match) throw new Error('Unexpected Quran Foundation path');
       const [surah, ayah] = [Number(match[1]), Number(match[2])];
       return {
         data: { verse: { verse_key: `${surah}:${ayah}`, text_uthmani: `نَصّ ${surah}:${ayah}`, words: [
-          { position: 1, text_uthmani: 'نَصّ', char_type_name: 'word', transliteration: { text: 'nass' } },
-          { position: 2, text_uthmani: 'قُرْآن', char_type_name: 'word', transliteration: { text: 'quran' } },
+          { position: 1, text_uthmani: 'نَصّ', char_type_name: 'word', transliteration: { text: 'nass' }, translation: { text: 'text' } },
+          { position: 2, text_uthmani: 'قُرْآن', char_type_name: 'word', transliteration: { text: 'quran' }, translation: { text: 'Quran' } },
         ] } },
         fetchedAt: '2026-08-03T00:00:00.000Z', expiresAt: '2026-08-04T00:00:00.000Z',
         provider: 'quran-foundation' as const, sourceVersion: 'content-api-v4' as const, cacheStatus: 'miss' as const,
@@ -46,12 +52,41 @@ test('assembles a validated ten-Surah canonical practice course', async () => {
   assert.equal(contentPackage.ayat.length, 48);
   assert.equal(contentPackage.learningPaths[0].surahCurricula?.length, 10);
   assert.equal(contentPackage.levels.length, 68);
+  assert.equal(contentPackage.ayat.every(ayah => ayah.wordMeanings?.length === ayah.wordTokenIds.length), true);
+  assert.equal(contentPackage.ayat.every(ayah => ayah.tafsirEntries.length === 1), true);
+  const ayahLevels = contentPackage.levels.filter(level => level.ayahRefs.length === 1 && !level.metadata?.isFinalReview);
+  assert.equal(ayahLevels.every(level => level.steps.some(step => step.kind === 'word_meaning' && step.blocks[0].type === 'word_explorer')), true);
+  assert.equal(ayahLevels.every(level => level.steps.some(step => step.kind === 'tafsir' && step.blocks[0].type === 'tafsir_ref')), true);
+  assert.equal(ayahLevels.every(level => {
+    const optionalActivities = level.steps
+      .filter(step => step.required === false && step.blocks[0].type === 'activity')
+      .map(step => step.blocks[0].type === 'activity' ? step.blocks[0].activity.kind : undefined);
+    return (['match_word_meaning', 'fill_gap', 'type_missing_text'] as const)
+      .every(type => optionalActivities.includes(type));
+  }), true);
   assert.deepEqual(contentPackage.learningPaths[0].surahIds.at(-1), 'surah-114');
   assert.deepEqual(contentPackage.learningPaths[0].surahCurricula?.[0].lessons.map(item => item.levelId), [
     'al-fil-level-introduction', 'al-fil-level-1-context-ayah-1', 'al-fil-level-2-ayah-2',
     'al-fil-level-3-ayah-3', 'al-fil-level-4-ayah-4', 'al-fil-level-5-ayah-5', 'al-fil-level-final-review',
   ]);
   assert.deepEqual(validatePackage(contentPackage, { mode: 'development' }).errors, []);
+});
+
+test('locks unavailable tafsir and keeps the source-backed alternative', async () => {
+  const lockedDependencies = {
+    ...dependencies,
+    quranFoundation: {
+      get: async (path: string, query?: URLSearchParams) => {
+        if (path.includes('/tafsirs/')) throw new Error('Resource restricted');
+        return dependencies.quranFoundation.get(path);
+      },
+    },
+  };
+  const result = await buildShortSurahRuntimeCourse('en', lockedDependencies as never);
+  assert.ok(result);
+  const locked = result.package.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).filter(block => block.type === 'source_locked' && block.capability === 'tafsir');
+  assert.equal(locked.length, 48);
+  assert.deepEqual(validatePackage(result.package, { mode: 'development' }).errors, []);
 });
 
 test('fails closed for incomplete lesson locales', async () => {

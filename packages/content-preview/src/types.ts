@@ -46,6 +46,26 @@ export interface TanzilSourceMetadata {
   files: Record<'quran-uthmani.txt' | 'LICENSE.txt', { url: string; sha256: string }>;
 }
 
+export interface PreviewAudioStream {
+  provider: 'mp3quran';
+  reciterId: 118;
+  mushafId: 118;
+  riwayahId: 1;
+  surahId: number;
+  uri: string;
+  approvedHostnames: readonly string[];
+  segments: Array<{ ayah: number; startMs: number; endMs: number }>;
+  deliveryMode: 'stream_only';
+  providerVersion: 'api-v3';
+  attributionText: string;
+  permissionEvidenceUrl: string;
+}
+
+export interface PreviewAudioInputs {
+  retrievedAt: string;
+  streams: PreviewAudioStream[];
+}
+
 export interface PreviewSourceInputs {
   tanzilText: string;
   tanzilLicense: string;
@@ -54,6 +74,7 @@ export interface PreviewSourceInputs {
   englishSurahs: Record<number, unknown>;
   frenchMetadata: unknown;
   frenchSurahs: Record<number, unknown>;
+  audio: PreviewAudioInputs;
   sourceFileHashes?: Record<string, string>;
   englishRetrieval: SourceRetrievalEvidence;
   frenchRetrieval: SourceRetrievalEvidence;

@@ -311,6 +311,25 @@ test('keeps old schedules while syncing the active r16 package revision', async 
   expect(reviews.filter(review => review.packageRevisionId === 'surah-al-fil-v1-r16')).toHaveLength(3);
 });
 
+test('preserves review stage and due date across declared package revisions', async () => {
+  const level = ayah1Level;
+  await seedSnapshot({ [level.id]: readyProgress(level) });
+  await completeLevel(level, surahAlFilLearningPath, { packageRevisionId: 'preview-v1', now: new Date('2026-01-01T00:00:00.000Z') });
+  await recordReviewAttempt({
+    levelId: level.id, pathId: level.pathId, activityId: 'l1-fill-gap-1', answer: ['fixture'], correct: true,
+    evaluationVersion: '2', packageRevisionId: 'preview-v1', reviewSchedule: { intervalDays: [1, 3, 7] }, outcome: 'correct',
+    now: new Date('2026-01-02T00:00:00.000Z'),
+  });
+
+  await syncCompletedLevelReviews([{ level, packageRevisionId: 'preview-v2', previousRevisionIds: ['preview-v1'] }], new Date('2026-01-03T00:00:00.000Z'));
+
+  expect((await getReviewStates()).find(review => review.activityId === 'l1-fill-gap-1' && review.packageRevisionId === 'preview-v2')).toEqual(expect.objectContaining({
+    stage: 2,
+    dueAt: '2026-01-05T00:00:00.000Z',
+    lastReviewedAt: '2026-01-02T00:00:00.000Z',
+  }));
+});
+
 test('backfills review state from the latest attempt instead of completion time', async () => {
   const level = ayah1Level;
   const progress = readyProgress(level);

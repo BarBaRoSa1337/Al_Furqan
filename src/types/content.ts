@@ -178,6 +178,10 @@ export interface TafsirEntry {
   sourceId: string;
   reviewerStatus: ReviewerStatus;
   explanation?: string;
+  /** Exact provider payload retained when display markup is normalized without rewriting words. */
+  providerText?: string;
+  providerResourceId?: string;
+  contentHash?: string;
   citation?: {
     sourceId: string;
     locator: string;
@@ -433,6 +437,7 @@ export type ContentBlock =
   | ContextBlock
   | WordExplorerBlock
   | AudioBlock
+  | SourceLockedBlock
   | MediaBlock
   | QuestionBlock
   | SummaryLevelBlock;
@@ -503,6 +508,20 @@ export interface AudioBlock {
   ayahRefs: AyahRef[];
   reciterId?: string;
   required?: boolean;
+}
+
+export type SourceCapability = 'audio' | 'word_meaning' | 'tafsir' | 'context' | 'verified_recap';
+export type SourceLockReason = 'credentials_required' | 'license_restricted' | 'locale_unavailable' | 'provider_unavailable';
+
+/** Preview-only placeholder for a governed resource that cannot be supplied safely. */
+export interface SourceLockedBlock {
+  id: string;
+  type: 'source_locked';
+  capability: SourceCapability;
+  sourceId: string;
+  reason: SourceLockReason;
+  alternativeStepId: string;
+  locale?: string;
 }
 
 export interface MediaBlock {
@@ -585,6 +604,8 @@ export interface ContentPackage {
   version: string;
   schemaVersion: number;
   revisionId: string;
+  /** Prior immutable revisions whose matching review schedules migrate forward. */
+  previousRevisionIds?: string[];
   title: string;
   description: string;
   type: 'surah' | 'juz' | 'topic' | 'course';

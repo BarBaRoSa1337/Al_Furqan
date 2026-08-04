@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES } from '../packages/content-preview/src/constants';
 import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
-import type { PreviewSourceInputs, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
+import type { PreviewAudioInputs, PreviewSourceInputs, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { validatePackage } from '../src/lib/content/packageValidator';
 
 const ROOT = process.cwd();
@@ -22,6 +22,7 @@ async function main(): Promise<void> {
     englishSurahs: await readSurahs(read, QURANENC_RESOURCES.en.key),
     frenchMetadata: JSON.parse(await read('quranenc/french_rashid/metadata.json')),
     frenchSurahs: await readSurahs(read, QURANENC_RESOURCES.fr.key),
+    audio: JSON.parse(await read('mp3quran/husary-118/streams.json')) as PreviewAudioInputs,
     englishRetrieval,
     frenchRetrieval,
   };
@@ -34,7 +35,7 @@ async function main(): Promise<void> {
     const development = validatePackage(pkg, { mode: 'development' });
     if (!development.valid) throw new Error(`${locale} preview package invalid: ${development.errors.join('; ')}`);
     if (validatePackage(pkg, { mode: 'production' }).valid) throw new Error(`${locale} preview package unexpectedly passes production validation.`);
-    if (pkg.ayat.length !== 48 || pkg.learningPaths[0]?.surahCurricula?.length !== 10 || pkg.levels.length !== 68) throw new Error(`${locale} preview coverage is incomplete.`);
+    if (pkg.ayat.length !== 48 || pkg.recitationTracks.length !== 48 || pkg.learningPaths[0]?.surahCurricula?.length !== 10 || pkg.levels.length !== 68) throw new Error(`${locale} preview coverage is incomplete.`);
   }
   console.log('Validated English/French local preview: 10 Surahs, 48 ayat, 68 nodes. Production still blocked.');
 }

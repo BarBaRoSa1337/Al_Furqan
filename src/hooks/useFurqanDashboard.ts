@@ -69,7 +69,7 @@ export function useFurqanDashboard(): FurqanDashboardState & { refresh: () => Pr
       if (path) await reconcileCurriculumProgress([path]);
       await syncCompletedLevelReviews(levels.flatMap(level => {
         const pkg = repo.getPackageForLevel(level.id);
-        return pkg ? [{ level, packageRevisionId: pkg.revisionId, locale: lessonLocale }] : [];
+        return pkg ? [{ level, packageRevisionId: pkg.revisionId, previousRevisionIds: pkg.previousRevisionIds, locale: lessonLocale }] : [];
       }));
       const [progress, dueStates, reviewStates, receipt] = await Promise.all([
         getAppProgress(),

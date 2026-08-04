@@ -20,10 +20,13 @@ test('generated bundle preserves source ayat and covers every manifest output', 
   for (const locale of ['en', 'fr'] as const) {
     expect(bundle.packages[locale].surahs).toHaveLength(10);
     expect(bundle.packages[locale].ayat).toHaveLength(48);
+    expect(bundle.packages[locale].recitationTracks).toHaveLength(48);
+    expect(bundle.packages[locale].recitationTracks.every((track: { deliveryMode: string }) => track.deliveryMode === 'stream_only')).toBe(true);
     bundle.packages[locale].ayat.forEach((ayah: { ref: { surahNumber: number; ayahNumber: number }; arabicText: { text: string } }) => {
       expect(ayah.arabicText.text).toBe(sourceAyat.get(`${ayah.ref.surahNumber}:${ayah.ref.ayahNumber}`));
     });
   }
+  expect(manifest.sources).toEqual(expect.arrayContaining([expect.objectContaining({ provider: 'MP3Quran.net', resourceKey: 'reciter-118:mushaf-118:riwayah-1' })]));
   manifest.generatedFiles.forEach((file: { path: string; sha256: string }) => {
     expect(sha256(readFileSync(join(ROOT, file.path)))).toBe(file.sha256);
   });

@@ -10,6 +10,7 @@ import {
   LevelBlock,
   MediaBlock,
   QuranPassageBlock,
+  SourceLockedBlock,
   SurahOverviewBlock,
   TafsirEntry,
   TranslationBlock,
@@ -67,6 +68,8 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     }
     case 'audio':
       return <CanonicalAudioBlock block={block} repo={repo} />;
+    case 'source_locked':
+      return <SourceLockedCard block={block} repo={repo} />;
     case 'media':
       return <CanonicalMediaBlock block={block} repo={repo} />;
     case 'question':
@@ -133,6 +136,20 @@ function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: Content
   const asset = repo.getPackageForBlock(block.id)?.mediaAssets.find(candidate => candidate.id === block.assetId);
   if (!asset) return null;
   return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /><Text style={styles.source}>{asset.altText}</Text></Card>;
+}
+
+function SourceLockedCard({ block, repo }: { block: SourceLockedBlock; repo: ContentRepository }) {
+  const source = repo.getSourceById(block.sourceId);
+  const capability = packageText(repo, `content.capability.${block.capability}`);
+  const reason = packageText(repo, `content.sourceLock.${block.reason}`);
+  return (
+    <Card style={styles.lockedCard}>
+      <Text accessibilityRole="header" style={styles.lockedTitle}>{packageText(repo, 'content.sourceLocked', { capability })}</Text>
+      <Text accessibilityLiveRegion="polite" style={styles.lockedText}>{reason}</Text>
+      <Text style={styles.lockedAlternative}>{packageText(repo, 'content.sourceLockedAlternative')}</Text>
+      <SourceAttribution source={source} unavailable={packageText(repo, 'content.sourceUnavailable')} />
+    </Card>
+  );
 }
 
 function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
@@ -284,4 +301,8 @@ const styles = StyleSheet.create({
   wordText: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
   media: { width: '100%', minHeight: 180 },
   pressed: { opacity: 0.68 },
+  lockedCard: { borderColor: colors.border, borderWidth: 1 },
+  lockedTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 17, marginBottom: spacing.sm },
+  lockedText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
+  lockedAlternative: { color: colors.success, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.md },
 });

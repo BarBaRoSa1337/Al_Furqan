@@ -35,7 +35,7 @@ export default function ReviewScreen() {
     let cancelled = false;
     const catalog = repo.levels.flatMap(level => {
       const pkg = repo.getPackageForLevel(level.id);
-      return pkg ? [{ level, packageRevisionId: pkg.revisionId, locale: lessonLocale }] : [];
+      return pkg ? [{ level, packageRevisionId: pkg.revisionId, previousRevisionIds: pkg.previousRevisionIds, locale: lessonLocale }] : [];
     });
     void syncCompletedLevelReviews(catalog).then(() => getDueReviewStates(new Date(), lessonLocale)).then(states => {
       if (!cancelled) setItems(resolveDueReviewItems(repo, states));

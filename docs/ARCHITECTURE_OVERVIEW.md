@@ -78,6 +78,12 @@ context -> read -> translation -> word_meaning -> tafsir
 - Content: `ContextBlock`, `QuranPassageBlock`, `TranslationBlock`, `WordMeaningBlock`, `TafsirBlock`, `AudioBlock`, `MediaBlock`, and `SummaryBlock`.
 - Practice: `LearningActivity` wrapped by a practice activity block.
 
+Preview packages may use `SourceLockedBlock` for a governed capability that
+cannot be supplied under the active provider, locale, credential, or license
+policy. The containing step is optional, identifies its source and reason, and
+references an interactive alternative in the same level. Production rejects
+source-locked content rather than treating it as publication-ready.
+
 Arabic Quran payloads remain canonical references. A passage or activity segment selects `AyahRef` and stable `WordToken` IDs; curriculum never stores Arabic Quran text.
 
 Completion rules are explicit on a level. A schema-v2 level requires all required teaching steps, one successful memory activity from `memorize` or `memory_practice`, and one successful understanding activity or question from `understanding_practice`.
@@ -116,6 +122,11 @@ Owns:
 - package-independent progress.
 
 Progress remains valid when a content package is updated, subject to explicit migration rules.
+
+Package revisions may declare prior immutable revision IDs for matching review
+activities. Review synchronization copies the active stage and due date to the
+new revision while retaining the historical record. This does not modify the
+Progress V5 storage shape or award progress rewards.
 
 Progress schema V4 keeps level completion shared while scoping religious
 attempts and reviews by lesson locale. Only activities explicitly marked
