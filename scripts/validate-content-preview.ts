@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES } from '../packages/content-preview/src/constants';
-import { buildPreviewPackages } from '../packages/content-preview/src/importer';
-import type { PreviewSourceInputs, SourceRetrievalEvidence } from '../packages/content-preview/src/types';
+import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
+import type { PreviewSourceInputs, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { validatePackage } from '../src/lib/content/packageValidator';
 
 const ROOT = process.cwd();
@@ -13,11 +13,11 @@ async function main(): Promise<void> {
   const read = async (path: string) => readRequired(join(INPUT_ROOT, path));
   const englishRetrieval = parseRetrieval(await read('quranenc/english_rwwad/retrieval.json'), 'english_rwwad');
   const frenchRetrieval = parseRetrieval(await read('quranenc/french_rashid/retrieval.json'), 'french_rashid');
+  const tanzilMetadata = parseTanzilMetadata(JSON.parse(await read('tanzil/metadata.json')));
   const inputs: PreviewSourceInputs = {
     tanzilText: await read('tanzil/quran-uthmani.txt'),
     tanzilLicense: await read('tanzil/LICENSE.txt'),
-    tanzilVersion: requireEnv('TANZIL_SOURCE_VERSION'),
-    tanzilRetrievedAt: requireEnv('TANZIL_RETRIEVED_AT'),
+    tanzilMetadata,
     englishMetadata: JSON.parse(await read('quranenc/english_rwwad/metadata.json')),
     englishSurahs: await readSurahs(read, QURANENC_RESOURCES.en.key),
     frenchMetadata: JSON.parse(await read('quranenc/french_rashid/metadata.json')),
@@ -25,6 +25,7 @@ async function main(): Promise<void> {
     englishRetrieval,
     frenchRetrieval,
   };
+  await verifyTanzilEvidence(read, tanzilMetadata);
   await verifyEvidence(read, englishRetrieval, 'quranenc/english_rwwad');
   await verifyEvidence(read, frenchRetrieval, 'quranenc/french_rashid');
   const result = buildPreviewPackages(inputs);
@@ -36,6 +37,13 @@ async function main(): Promise<void> {
     if (pkg.ayat.length !== 48 || pkg.learningPaths[0]?.surahCurricula?.length !== 10 || pkg.levels.length !== 68) throw new Error(`${locale} preview coverage is incomplete.`);
   }
   console.log('Validated English/French local preview: 10 Surahs, 48 ayat, 68 nodes. Production still blocked.');
+}
+
+async function verifyTanzilEvidence(read: (path: string) => Promise<string>, metadata: TanzilSourceMetadata): Promise<void> {
+  for (const path of ['quran-uthmani.txt', 'LICENSE.txt'] as const) {
+    const content = await read(`tanzil/${path}`);
+    if (sha256(content) !== metadata.files[path].sha256) throw new Error(`Raw source hash mismatch: tanzil/${path}.`);
+  }
 }
 
 async function readSurahs(read: (path: string) => Promise<string>, key: string): Promise<Record<number, unknown>> {
@@ -57,12 +65,6 @@ function parseRetrieval(text: string, key: string): SourceRetrievalEvidence {
 
 async function readRequired(path: string): Promise<string> {
   try { return await readFile(path, 'utf8'); } catch { throw new Error(`Missing required local preview input: ${relative(ROOT, path)}.`); }
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`${name} is required.`);
-  return value;
 }
 
 function sha256(value: string): string { return createHash('sha256').update(value).digest('hex'); }

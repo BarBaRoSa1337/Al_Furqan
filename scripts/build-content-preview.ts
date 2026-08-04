@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { PREVIEW_GENERATOR_VERSION, PREVIEW_PACKAGE_ID, PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES, TANZIL_LICENSE_URL, TANZIL_SOURCE_URL } from '../packages/content-preview/src/constants';
-import { buildPreviewPackages } from '../packages/content-preview/src/importer';
-import type { PreviewSourceInputs, QuranEncResourceMetadata, SourceRetrievalEvidence } from '../packages/content-preview/src/types';
+import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
+import type { PreviewSourceInputs, QuranEncResourceMetadata, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { getPackagePayloadHash, stableStringify } from '../src/lib/content/governance';
 
 const ROOT = process.cwd();
@@ -15,13 +15,14 @@ async function main(): Promise<void> {
   const files = await readSourceFiles();
   const englishRetrieval = parseRetrieval(files.get('quranenc/english_rwwad/retrieval.json')!, 'english_rwwad');
   const frenchRetrieval = parseRetrieval(files.get('quranenc/french_rashid/retrieval.json')!, 'french_rashid');
+  const tanzilMetadata = parseTanzilMetadata(parseJson(files.get('tanzil/metadata.json')!, 'Tanzil metadata'));
+  verifyTanzilHashes(files, tanzilMetadata);
   verifyRetrievalHashes(files, 'quranenc/english_rwwad', englishRetrieval);
   verifyRetrievalHashes(files, 'quranenc/french_rashid', frenchRetrieval);
   const inputs: PreviewSourceInputs = {
     tanzilText: files.get('tanzil/quran-uthmani.txt')!,
     tanzilLicense: files.get('tanzil/LICENSE.txt')!,
-    tanzilVersion: requireEnv('TANZIL_SOURCE_VERSION'),
-    tanzilRetrievedAt: requireIsoEnv('TANZIL_RETRIEVED_AT'),
+    tanzilMetadata,
     englishMetadata: parseJson(files.get('quranenc/english_rwwad/metadata.json')!, 'english_rwwad metadata'),
     englishSurahs: readSurahInputs(files, 'english_rwwad'),
     frenchMetadata: parseJson(files.get('quranenc/french_rashid/metadata.json')!, 'french_rashid metadata'),
@@ -50,7 +51,7 @@ async function main(): Promise<void> {
   await writeFile(runtimeIntegrityPath, integrityJson, 'utf8');
 
   const generatedFiles = await fileHashes([generatedBundlePath, runtimeBundlePath, runtimeIntegrityPath]);
-  const generatedAt = latestDate(inputs.tanzilRetrievedAt, englishRetrieval.retrievedAt, frenchRetrieval.retrievedAt);
+  const generatedAt = latestDate(inputs.tanzilMetadata.retrievedAt, englishRetrieval.retrievedAt, frenchRetrieval.retrievedAt);
   const manifest = {
     packageId: PREVIEW_PACKAGE_ID,
     packageSchemaVersion: result.packages.en.schemaVersion,
@@ -60,7 +61,7 @@ async function main(): Promise<void> {
     locales: ['en', 'fr'],
     includedSurahs: PREVIEW_SURAH_NUMBERS.map(surah => ({ surah, ayahCount: result.packages.en.surahs.find(item => item.surahNumber === surah)!.ayahCount })),
     sources: [
-      { provider: 'tanzil', sourceUrl: TANZIL_SOURCE_URL, licenseUrl: TANZIL_LICENSE_URL, resourceKey: 'quran-uthmani.txt', version: inputs.tanzilVersion, retrievalDate: inputs.tanzilRetrievedAt, attributionText: 'Tanzil Quran Text. Copyright Tanzil Project. Licensed under CC BY 3.0.', licenseIdentifier: 'CC BY 3.0', inputFileSha256: { text: inputs.sourceFileHashes!['tanzil/quran-uthmani.txt'], license: inputs.sourceFileHashes!['tanzil/LICENSE.txt'] } },
+      { provider: inputs.tanzilMetadata.provider, sourceUrl: TANZIL_SOURCE_URL, downloadUrl: inputs.tanzilMetadata.downloadUrl, licenseUrl: TANZIL_LICENSE_URL, resourceKey: 'quran-uthmani.txt', version: inputs.tanzilMetadata.textVersion, textType: inputs.tanzilMetadata.textType, retrievalDate: inputs.tanzilMetadata.retrievedAt, attributionText: inputs.tanzilMetadata.attributionText, licenseIdentifier: 'CC BY 3.0', modificationAllowed: inputs.tanzilMetadata.modificationAllowed, inputFileSha256: { text: inputs.sourceFileHashes!['tanzil/quran-uthmani.txt'], license: inputs.sourceFileHashes!['tanzil/LICENSE.txt'], metadata: inputs.sourceFileHashes!['tanzil/metadata.json'] } },
       quranEncManifestSource(result.sourceMetadata.english, englishRetrieval, inputs.sourceFileHashes!),
       quranEncManifestSource(result.sourceMetadata.french, frenchRetrieval, inputs.sourceFileHashes!),
     ],
@@ -77,13 +78,21 @@ async function main(): Promise<void> {
 }
 
 async function readSourceFiles(): Promise<Map<string, string>> {
-  const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', ...(['en', 'fr'] as const).flatMap(locale => {
+  const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', 'tanzil/metadata.json', ...(['en', 'fr'] as const).flatMap(locale => {
     const key = QURANENC_RESOURCES[locale].key;
     return [`quranenc/${key}/metadata.json`, `quranenc/${key}/retrieval.json`, ...PREVIEW_SURAH_NUMBERS.map(surah => `quranenc/${key}/surahs/${surah}.json`)];
   })];
   const files = new Map<string, string>();
   for (const path of paths) files.set(path, await readRequired(join(INPUT_ROOT, path)));
   return files;
+}
+
+function verifyTanzilHashes(files: Map<string, string>, metadata: TanzilSourceMetadata): void {
+  for (const path of ['quran-uthmani.txt', 'LICENSE.txt'] as const) {
+    const content = files.get(`tanzil/${path}`);
+    if (content === undefined) throw new Error(`Tanzil metadata references missing file tanzil/${path}.`);
+    if (metadata.files[path].sha256 !== sha256(content)) throw new Error(`Tanzil raw source hash mismatch: tanzil/${path}.`);
+  }
 }
 
 function readSurahInputs(files: Map<string, string>, key: string): Record<number, unknown> {
@@ -121,18 +130,6 @@ async function readRequired(path: string): Promise<string> {
 
 function parseJson(text: string, label: string): unknown {
   try { return JSON.parse(text) as unknown; } catch (error) { throw new Error(`${label} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`); }
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`${name} is required to record Tanzil provenance.`);
-  return value;
-}
-
-function requireIsoEnv(name: string): string {
-  const value = requireEnv(name);
-  if (!Number.isFinite(new Date(value).getTime())) throw new Error(`${name} must be an ISO date.`);
-  return value;
 }
 
 function latestDate(...values: string[]): string {

@@ -21,9 +21,15 @@ import {
   PREVIEW_SURAH_NUMBERS,
   QURANENC_RESOURCES,
   TANZIL_LICENSE_URL,
+  TANZIL_LICENSE_RAW_URL,
+  TANZIL_ATTRIBUTION,
+  TANZIL_DOWNLOAD_OPTIONS,
+  TANZIL_DOWNLOAD_URL,
   TANZIL_SOURCE_URL,
+  TANZIL_TEXT_TYPE,
+  TANZIL_TEXT_VERSION,
 } from './constants';
-import type { PreviewGeneratedFiles, PreviewSourceInputs, QuranEncResourceMetadata, QuranEncRow } from './types';
+import type { PreviewGeneratedFiles, PreviewSourceInputs, QuranEncResourceMetadata, QuranEncRow, TanzilSourceMetadata } from './types';
 
 const TANZIL_SOURCE_ID = 'tanzil-quran-uthmani';
 const ENGLISH_SOURCE_ID = 'quranenc-english-rowwad';
@@ -95,6 +101,36 @@ export function resolveQuranEncMetadata(value: unknown, resourceKey: string, loc
   };
 }
 
+export function parseTanzilMetadata(value: unknown): TanzilSourceMetadata {
+  if (!isRecord(value)
+    || value.schemaVersion !== 1
+    || value.provider !== 'Tanzil Project'
+    || value.textVersion !== TANZIL_TEXT_VERSION
+    || value.textType !== TANZIL_TEXT_TYPE
+    || value.sourceUrl !== TANZIL_SOURCE_URL
+    || value.downloadUrl !== TANZIL_DOWNLOAD_URL
+    || value.licenseUrl !== TANZIL_LICENSE_URL
+    || typeof value.retrievedAt !== 'string'
+    || value.attributionText !== TANZIL_ATTRIBUTION
+    || value.modificationAllowed !== false
+    || !isRecord(value.downloadOptions)
+    || !isRecord(value.files)) {
+    throw new Error('Tanzil source metadata is malformed.');
+  }
+  for (const [key, expected] of Object.entries(TANZIL_DOWNLOAD_OPTIONS)) {
+    if (value.downloadOptions[key] !== expected) throw new Error(`Tanzil source metadata has invalid download option ${key}.`);
+  }
+  const textFile = value.files['quran-uthmani.txt'];
+  const licenseFile = value.files['LICENSE.txt'];
+  if (!isSourceFileEvidence(textFile)) throw new Error('Tanzil source metadata is missing valid evidence for quran-uthmani.txt.');
+  if (!isSourceFileEvidence(licenseFile)) throw new Error('Tanzil source metadata is missing valid evidence for LICENSE.txt.');
+  if (textFile.url !== TANZIL_DOWNLOAD_URL || licenseFile.url !== TANZIL_LICENSE_RAW_URL) {
+    throw new Error('Tanzil source metadata does not reference the official source files.');
+  }
+  if (!isDate(value.retrievedAt)) throw new Error('Tanzil retrieval date must be an ISO date.');
+  return value as unknown as TanzilSourceMetadata;
+}
+
 export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGeneratedFiles {
   validateSourceEvidence(inputs);
   const tanzil = parseTanzilText(inputs.tanzilText);
@@ -119,7 +155,7 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
       const ref = { surahNumber: surah.surahNumber, ayahNumber };
       const tokenIds = splitExactWords(arabicText).map((arabicText, index) => {
         const id = `${key}:word:${index + 1}`;
-        wordTokens.push({ id, editionId: EDITION_ID, ayahRef: ref, position: index + 1, arabicText, sourceId: TANZIL_SOURCE_ID, sourceVersion: inputs.tanzilVersion });
+        wordTokens.push({ id, editionId: EDITION_ID, ayahRef: ref, position: index + 1, arabicText, sourceId: TANZIL_SOURCE_ID, sourceVersion: inputs.tanzilMetadata.textVersion });
         return id;
       });
       ayat.push({
@@ -129,7 +165,7 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
         arabicText: { text: arabicText, sourceId: TANZIL_SOURCE_ID, reviewerStatus: 'draft' },
         wordTokenIds: tokenIds,
         sourceId: TANZIL_SOURCE_ID,
-        sourceVersion: inputs.tanzilVersion,
+        sourceVersion: inputs.tanzilMetadata.textVersion,
         checksum: hashText(arabicText),
         translations: [translationFor(en, 'en', ENGLISH_SOURCE_ID, english), translationFor(fr, 'fr', FRENCH_SOURCE_ID, french)],
         tafsirEntries: [],
@@ -142,7 +178,7 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
       en: buildLocalePackage('en', inputs, surahs, ayat, wordTokens, english, french),
       fr: buildLocalePackage('fr', inputs, surahs, ayat, wordTokens, english, french),
     },
-    sourceMetadata: { tanzil: { version: inputs.tanzilVersion, license: inputs.tanzilLicense, retrievedAt: inputs.tanzilRetrievedAt }, english, french },
+    sourceMetadata: { tanzil: inputs.tanzilMetadata, english, french },
     sourceSurahs: surahs,
   };
 }
@@ -174,7 +210,7 @@ function buildLocalePackage(
     sourceMetadata: { reviewerStatus: 'draft', sourceIds: [TANZIL_SOURCE_ID, selectedSourceId, STRUCTURE_SOURCE_ID], notes: 'Development preview only. No editorial or Islamic approval asserted.' },
   };
   const sources = sourceRecords(inputs, english, french);
-  const editions: QuranEdition[] = [{ id: EDITION_ID, qiraah: 'asim', riwayah: 'hafs', displayName: 'Hafs an Asim', textSourceId: TANZIL_SOURCE_ID, fontProfileId: 'madani-mushaf', version: inputs.tanzilVersion, checksum: hashText(inputs.tanzilText) }];
+  const editions: QuranEdition[] = [{ id: EDITION_ID, qiraah: 'asim', riwayah: 'hafs', displayName: 'Hafs an Asim', textSourceId: TANZIL_SOURCE_ID, fontProfileId: 'madani-mushaf', version: inputs.tanzilMetadata.textVersion, checksum: hashText(inputs.tanzilText) }];
   const publications: LocalePublication[] = [
     { locale: 'en', status: 'draft', version: english.version, availableAlternatives: ['fr'] },
     { locale: 'fr', status: 'draft', version: french.version, availableAlternatives: ['en'] },
@@ -274,7 +310,7 @@ function sourceRecords(inputs: PreviewSourceInputs, english: QuranEncResourceMet
   const structure = basePackage.sources.find(source => source.id === STRUCTURE_SOURCE_ID);
   if (!structure) throw new Error('Repository Quran structure source is unavailable.');
   return [
-    { id: TANZIL_SOURCE_ID, name: 'Tanzil Uthmani Quran text', publisher: 'Tanzil Project', version: inputs.tanzilVersion, language: 'ar', reviewerStatus: 'draft', license: 'CC BY 3.0', sourceUrl: TANZIL_SOURCE_URL, attributionText: 'Tanzil Quran Text. Copyright Tanzil Project. Licensed under CC BY 3.0.', retrievedAt: inputs.tanzilRetrievedAt, evidenceReference: TANZIL_LICENSE_URL, notes: 'Arabic text preserved unchanged from manually supplied official source.' },
+    { id: TANZIL_SOURCE_ID, name: 'Tanzil Uthmani Quran text', publisher: 'Tanzil Project', version: inputs.tanzilMetadata.textVersion, language: 'ar', reviewerStatus: 'draft', license: 'CC BY 3.0', sourceUrl: TANZIL_SOURCE_URL, attributionText: inputs.tanzilMetadata.attributionText, retrievedAt: inputs.tanzilMetadata.retrievedAt, evidenceReference: TANZIL_LICENSE_URL, notes: 'Arabic text preserved unchanged from the terms-accepted official Tanzil source.' },
     translationSource(ENGLISH_SOURCE_ID, english, 'en', inputs.englishRetrieval.retrievedAt),
     translationSource(FRENCH_SOURCE_ID, french, 'fr', inputs.frenchRetrieval.retrievedAt),
     { ...structure, sourceUrl: 'https://api-docs.quran.com/', notes: `${structure.notes ?? ''} Reused only for structural Surah metadata in development preview.` },
@@ -340,8 +376,7 @@ function addTanzilRecord(records: Map<string, string>, surah: number, ayah: numb
 
 function validateSourceEvidence(inputs: PreviewSourceInputs): void {
   if (!/(creative commons attribution 3\.0|cc\s*by\s*3\.0)/i.test(inputs.tanzilLicense)) throw new Error('Tanzil LICENSE.txt must preserve the complete CC BY 3.0 notice.');
-  if (!inputs.tanzilVersion.trim()) throw new Error('Tanzil source version is required.');
-  if (!isDate(inputs.tanzilRetrievedAt)) throw new Error('Tanzil retrieval date must be an ISO date.');
+  parseTanzilMetadata(inputs.tanzilMetadata);
 }
 
 function validateRetrieval(evidence: PreviewSourceInputs['englishRetrieval'], metadata: QuranEncResourceMetadata): void {
@@ -366,6 +401,13 @@ function requiredString(value: Record<string, unknown>, key: string, resourceKey
   const candidate = value[key];
   if (typeof candidate !== 'string' || !candidate.trim()) throw new Error(`QuranEnc registry resource "${resourceKey}" is missing ${key}.`);
   return candidate;
+}
+
+function isSourceFileEvidence(value: unknown): value is { url: string; sha256: string } {
+  return isRecord(value)
+    && typeof value.url === 'string'
+    && typeof value.sha256 === 'string'
+    && /^[a-f0-9]{64}$/i.test(value.sha256);
 }
 
 function requiredStringOrNumber(value: Record<string, unknown>, key: string, resourceKey: string): string | number {

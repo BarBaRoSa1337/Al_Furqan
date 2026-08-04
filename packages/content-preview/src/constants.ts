@@ -19,6 +19,19 @@ export const EXPECTED_AYAH_COUNTS: Record<number, number> = {
 
 export const TANZIL_SOURCE_URL = 'https://tanzil.net/download/';
 export const TANZIL_LICENSE_URL = 'https://tanzil.net/docs/Text_License';
+export const TANZIL_LICENSE_RAW_URL = 'https://tanzil.net/docs/_export/raw/text_license';
+export const TANZIL_TEXT_VERSION = '1.1';
+export const TANZIL_TEXT_TYPE = 'Uthmani';
+export const TANZIL_ATTRIBUTION = 'Tanzil Quran Text. Copyright (C) 2007-2021 Tanzil Project. License: Creative Commons Attribution 3.0.';
+export const TANZIL_DOWNLOAD_OPTIONS = {
+  quranType: 'uthmani',
+  outType: 'txt-2',
+  marks: 'true',
+  sajdah: 'true',
+  tatweel: 'true',
+  agree: 'true',
+} as const;
+export const TANZIL_DOWNLOAD_URL = `https://tanzil.net/pub/download/index.php?${new URLSearchParams(TANZIL_DOWNLOAD_OPTIONS).toString()}`;
 export const QURANENC_REGISTRY_URLS = {
   en: 'https://quranenc.com/api/v1/translations/list/en?localization=en',
   fr: 'https://quranenc.com/api/v1/translations/list/fr?localization=en',

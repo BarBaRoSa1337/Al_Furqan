@@ -4,10 +4,12 @@
 
 ### Delivered
 
-- Added an explicit development importer for manually supplied Tanzil Uthmani
-  text and raw QuranEnc `english_rwwad` / `french_rashid` responses.
-- Added optional QuranEnc registry-first fetch tooling. Tanzil remains manual;
-  missing inputs fail with the exact required path before any output is written.
+- Added an explicit, terms-gated fetch command for Tanzil 1.1 Uthmani text,
+  the official Tanzil license notice, and raw QuranEnc
+  `english_rwwad` / `french_rashid` responses.
+- Tanzil acceptance must be exactly `TANZIL_TERMS_ACCEPTED=true`. Download
+  options, retrieval dates, attribution, modification policy, and hashes are
+  recorded in source metadata; build no longer needs manual provenance values.
 - Added deterministic generation for Surahs 105-114: 48 ayat, one generic
   introduction, ayah lessons, and a final review per Surah.
 - Generated lessons contain only canonical Arabic, unchanged English/French
@@ -23,15 +25,16 @@
 
 ### Release status
 
-Official QuranEnc `english_rwwad` 1.0.19 and `french_rashid` 1.0.3 raw inputs
-were fetched with retrieval evidence. Tanzil text and license remain required,
-so runtime bundle generation is still intentionally blocked. No approval or
-review record changed.
+Official Tanzil 1.1 Uthmani text, QuranEnc `english_rwwad` 1.0.19, and
+`french_rashid` 1.0.3 were fetched with retrieval evidence. The generated
+English/French runtime bundle now contains all ten Surahs and remains available
+only through explicit preview mode. No approval or review record changed.
 
 ### Verification
 
-Importer tests cover exact text preservation, footnote preservation, expected
-counts, deterministic output, development validation, and production rejection.
+Importer and artifact tests cover acceptance policy, raw hashes, exact text and
+footnote preservation, expected counts, deterministic output, manifest
+coverage, development validation, runtime loading, and production rejection.
 
 This log records completed implementation milestones that change runtime
 behavior, data contracts, or release gates. Update it with each major change.

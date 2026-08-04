@@ -22,6 +22,6 @@ provider verifies the digest, validates the development package, and requires
 canonical ayat plus curriculum for every Surah from Al-Fil (105) through
 An-Nas (114).
 
-The checked-in `status` objects are non-content placeholders. Registry remains
-empty until generation supplies Tanzil Arabic, QuranEnc English/French, source
-evidence, and draft metadata. Bundle contains no audio or explanations.
+The generated bundle contains Tanzil 1.1 Arabic and QuranEnc English/French
+source evidence. It remains draft preview content and contains no audio or
+religious explanations.
