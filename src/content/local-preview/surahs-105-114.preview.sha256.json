@@ -1,3 +1,12 @@
 {
-  "status": "source_export_required"
+  "schemaVersion": 1,
+  "packageId": "surah-al-fil-v1",
+  "revisions": {
+    "en": "surahs-105-114-local-preview-v1-en",
+    "fr": "surahs-105-114-local-preview-v1-fr"
+  },
+  "payloadSha256": {
+    "en": "55238262731f8501eee8efddf72ee275ef409b01aeb055d3c5c74a971faeb187",
+    "fr": "b10f7a50b92c3ef97d8cd88e7477dc11fdaf44aa694d3c3be5cf9eb35c428e1d"
+  }
 }

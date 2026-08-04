@@ -2,6 +2,7 @@ import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { getPackagePayloadHash } from './governance';
 import { isLocalPreviewEnabled, isLocalPreviewRequested } from './contentMode';
 import { validateLocalPreviewArtifact } from './localPreviewProvider';
+import { bundledLocalPreviewArtifacts } from '../../content/local-preview/registry';
 
 const artifact = () => ({
   package: structuredClone(surahAlFilPackage),
@@ -49,4 +50,10 @@ test('rejects a tampered local preview package', () => {
 
 test('rejects incomplete local preview Surah coverage', () => {
   expect(() => validateLocalPreviewArtifact(artifact())).toThrow('missing canonical content for Surah 106');
+});
+
+test.each(['en', 'fr'] as const)('loads the generated ten-Surah %s runtime artifact', locale => {
+  const generated = bundledLocalPreviewArtifacts[locale];
+  expect(generated).toBeDefined();
+  expect(validateLocalPreviewArtifact(generated!, { expectedLocale: locale }).surahs.filter(surah => !surah.navigationOnly)).toHaveLength(10);
 });
