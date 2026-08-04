@@ -1,0 +1,416 @@
+{
+  "retrievedAt": "2026-08-04T11:13:27.682Z",
+  "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html",
+  "streams": [
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 105,
+      "uri": "https://server13.mp3quran.net/husr/105.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 8236,
+          "endMs": 18571
+        },
+        {
+          "ayah": 2,
+          "startMs": 18571,
+          "endMs": 27033
+        },
+        {
+          "ayah": 3,
+          "startMs": 27033,
+          "endMs": 36311
+        },
+        {
+          "ayah": 4,
+          "startMs": 36311,
+          "endMs": 46142
+        },
+        {
+          "ayah": 5,
+          "startMs": 46142,
+          "endMs": 54628
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 106,
+      "uri": "https://server13.mp3quran.net/husr/106.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7901,
+          "endMs": 13737
+        },
+        {
+          "ayah": 2,
+          "startMs": 13737,
+          "endMs": 24646
+        },
+        {
+          "ayah": 3,
+          "startMs": 24646,
+          "endMs": 33376
+        },
+        {
+          "ayah": 4,
+          "startMs": 33376,
+          "endMs": 48038
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 107,
+      "uri": "https://server13.mp3quran.net/husr/107.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 8434,
+          "endMs": 16687
+        },
+        {
+          "ayah": 2,
+          "startMs": 16687,
+          "endMs": 24751
+        },
+        {
+          "ayah": 3,
+          "startMs": 24751,
+          "endMs": 33629
+        },
+        {
+          "ayah": 4,
+          "startMs": 33629,
+          "endMs": 39837
+        },
+        {
+          "ayah": 5,
+          "startMs": 39837,
+          "endMs": 50132
+        },
+        {
+          "ayah": 6,
+          "startMs": 50132,
+          "endMs": 58009
+        },
+        {
+          "ayah": 7,
+          "startMs": 58009,
+          "endMs": 64771
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 108,
+      "uri": "https://server13.mp3quran.net/husr/108.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7569,
+          "endMs": 16483
+        },
+        {
+          "ayah": 2,
+          "startMs": 16483,
+          "endMs": 22285
+        },
+        {
+          "ayah": 3,
+          "startMs": 22285,
+          "endMs": 30120
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 109,
+      "uri": "https://server13.mp3quran.net/husr/109.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7494,
+          "endMs": 17174
+        },
+        {
+          "ayah": 2,
+          "startMs": 17174,
+          "endMs": 24782
+        },
+        {
+          "ayah": 3,
+          "startMs": 24782,
+          "endMs": 35410
+        },
+        {
+          "ayah": 4,
+          "startMs": 35410,
+          "endMs": 44194
+        },
+        {
+          "ayah": 5,
+          "startMs": 44194,
+          "endMs": 54429
+        },
+        {
+          "ayah": 6,
+          "startMs": 54429,
+          "endMs": 61508
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 110,
+      "uri": "https://server13.mp3quran.net/husr/110.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7696,
+          "endMs": 16946
+        },
+        {
+          "ayah": 2,
+          "startMs": 16946,
+          "endMs": 29819
+        },
+        {
+          "ayah": 3,
+          "startMs": 29819,
+          "endMs": 45887
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 111,
+      "uri": "https://server13.mp3quran.net/husr/111.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7297,
+          "endMs": 16894
+        },
+        {
+          "ayah": 2,
+          "startMs": 16894,
+          "endMs": 27100
+        },
+        {
+          "ayah": 3,
+          "startMs": 27100,
+          "endMs": 34892
+        },
+        {
+          "ayah": 4,
+          "startMs": 34892,
+          "endMs": 42348
+        },
+        {
+          "ayah": 5,
+          "startMs": 42348,
+          "endMs": 50440
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 112,
+      "uri": "https://server13.mp3quran.net/husr/112.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7928,
+          "endMs": 13724
+        },
+        {
+          "ayah": 2,
+          "startMs": 13724,
+          "endMs": 18803
+        },
+        {
+          "ayah": 3,
+          "startMs": 18803,
+          "endMs": 24728
+        },
+        {
+          "ayah": 4,
+          "startMs": 24728,
+          "endMs": 32840
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 113,
+      "uri": "https://server13.mp3quran.net/husr/113.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 7961,
+          "endMs": 14264
+        },
+        {
+          "ayah": 2,
+          "startMs": 14264,
+          "endMs": 19696
+        },
+        {
+          "ayah": 3,
+          "startMs": 19696,
+          "endMs": 27381
+        },
+        {
+          "ayah": 4,
+          "startMs": 27381,
+          "endMs": 36613
+        },
+        {
+          "ayah": 5,
+          "startMs": 36613,
+          "endMs": 44373
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    },
+    {
+      "provider": "mp3quran",
+      "reciterId": 118,
+      "mushafId": 118,
+      "riwayahId": 1,
+      "surahId": 114,
+      "uri": "https://server13.mp3quran.net/husr/114.mp3",
+      "approvedHostnames": [
+        "server13.mp3quran.net"
+      ],
+      "segments": [
+        {
+          "ayah": 1,
+          "startMs": 8367,
+          "endMs": 16294
+        },
+        {
+          "ayah": 2,
+          "startMs": 16294,
+          "endMs": 21019
+        },
+        {
+          "ayah": 3,
+          "startMs": 21019,
+          "endMs": 25962
+        },
+        {
+          "ayah": 4,
+          "startMs": 25962,
+          "endMs": 35378
+        },
+        {
+          "ayah": 5,
+          "startMs": 35378,
+          "endMs": 45874
+        },
+        {
+          "ayah": 6,
+          "startMs": 45874,
+          "endMs": 54341
+        }
+      ],
+      "deliveryMode": "stream_only",
+      "providerVersion": "api-v3",
+      "attributionText": "Recitation streamed directly from MP3Quran.net.",
+      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+    }
+  ]
+}
