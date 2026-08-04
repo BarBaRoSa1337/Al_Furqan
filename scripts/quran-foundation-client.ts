@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use the authenticated OAuth client in apps/server/src/quranFoundation.ts instead.
+ * This manual token-based client exists only for the legacy CLI structure import script.
+ * It will be removed once the import script is migrated to the server's OAuth flow.
+ */
 export const DEFAULT_QF_CONTENT_API_BASE = 'https://apis.quran.foundation/content/api/v4';
 
 export function quranFoundationHeaders(): Record<string, string> {

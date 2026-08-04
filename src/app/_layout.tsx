@@ -124,6 +124,9 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="review" />
           <Stack.Screen name="lesson/[id]" />
           <Stack.Screen name="complete/[id]" options={{ animation: 'fade' }} />
+          <Stack.Screen name="attributions" />
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="terms" />
         </Stack>
       </View>
       {previewContent && previewProvider ? <PreviewContentIndicator label={previewProvider === 'local' ? 'Local preview' : undefined} /> : null}

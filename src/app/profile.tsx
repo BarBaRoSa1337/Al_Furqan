@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../../packages/api-contracts/src';
 import BottomNavigation from '../components/furqan/BottomNavigation';
 import { CourseArtwork, MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
@@ -13,6 +14,7 @@ import { isLessonLocaleAvailable } from '../lib/content/publication';
 
 export default function ProfileScreen() {
   const dashboard = useFurqanDashboard();
+  const router = useRouter();
   const { preferences, setInterfaceLocale, setLessonLocale, t, updatePreferences } = useLocalization();
   const contentPackage = getContentRepository().getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
@@ -111,6 +113,33 @@ export default function ProfileScreen() {
             })}
           </View>
         ) : null}
+        <View style={styles.detailCard}>
+          <Text style={styles.detailTitle}>Legal</Text>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push('/attributions')}
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalLinkText}>Sources & Attributions</Text>
+            <Text style={styles.legalArrow}>→</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push('/privacy')}
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+            <Text style={styles.legalArrow}>→</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push('/terms')}
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalLinkText}>Terms of Use</Text>
+            <Text style={styles.legalArrow}>→</Text>
+          </Pressable>
+        </View>
       </ScrollView>
       <BottomNavigation active="profile" reviewCount={dashboard.dueReviewCount} />
     </Screen>
@@ -188,4 +217,7 @@ const styles = StyleSheet.create({
   preferenceOptionSelected: { backgroundColor: colors.successSoft, borderColor: colors.success },
   preferenceOptionText: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 12 },
   preferenceOptionTextSelected: { color: colors.success },
+  legalLink: { alignItems: 'center', borderTopColor: colors.border, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md },
+  legalLinkText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 14 },
+  legalArrow: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 16 },
 });

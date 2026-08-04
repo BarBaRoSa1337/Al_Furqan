@@ -1,6 +1,8 @@
 const API_BASE = 'https://www.mp3quran.net/api/v3';
 const APPROVED_STREAM_HOSTS = ['server13.mp3quran.net'] as const;
 
+import { MP3QURAN_PERMISSION_STATUS } from '../../../packages/content-preview/src/constants';
+
 interface ProviderMushaf { id: number; rewaya_id?: number; server: string; surah_list: string; }
 interface ProviderReciter { id: number; name: string; moshaf: ProviderMushaf[]; }
 interface Timing { ayah: number; start_time: number; end_time: number; }
@@ -21,9 +23,18 @@ export interface Mp3QuranStream {
 }
 
 export class Mp3QuranClient {
-  constructor(private readonly fetcher: typeof fetch = fetch) {}
+  constructor(
+    private readonly fetcher: typeof fetch = fetch,
+    private readonly mode: 'development' | 'production' = 'development',
+  ) {}
 
   async resolveHusaryHafs(surah: number): Promise<Mp3QuranStream> {
+    if (MP3QURAN_PERMISSION_STATUS !== 'verified' && this.mode === 'production') {
+      throw new Error(
+        'MP3Quran permission evidence is not verified; audio is blocked in production. '
+        + 'Obtain written permission from MP3Quran and set MP3QURAN_PERMISSION_STATUS to verified.',
+      );
+    }
     if (!Number.isInteger(surah) || surah < 1 || surah > 114) throw new Error('Invalid Surah');
     const catalog = await this.json<{ reciters: ProviderReciter[] }>(`${API_BASE}/reciters?language=eng&reciter=118&sura=${surah}`);
     const reciter = catalog.reciters.find(item => item.id === 118);
@@ -43,7 +54,7 @@ export class Mp3QuranClient {
       uri, approvedHostnames: APPROVED_STREAM_HOSTS,
       segments, deliveryMode: 'stream_only', providerVersion: 'api-v3',
       attributionText: 'Recitation streamed directly from MP3Quran.net.',
-      permissionEvidenceUrl: 'https://www.mp3quran.net/privacy-en.html',
+      permissionEvidenceUrl: 'https://www.mp3quran.net/en/page/about',
     };
   }
 

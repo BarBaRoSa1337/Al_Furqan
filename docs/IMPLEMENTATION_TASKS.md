@@ -7,10 +7,20 @@
 - [x] Quarantine sources with unsupported license claims.
 - [x] Add source-specific native and web audio cache policies.
 - [x] Move Quran Foundation importers to authenticated CLI use.
+- [x] Add MP3Quran production permission gate (blocks audio in production until verified).
+- [x] Add user-facing attribution screen with all source credits.
+- [x] Add Privacy Policy and Terms of Use template pages.
+- [x] Fix QuranEnc attribution to include quranenc.com source URL and version.
+- [x] Document QuranEnc version update procedure.
+- [x] Create source terms registry documentation.
+- [x] Add license grant templates for all sources.
+- [x] Deprecate legacy Quran Foundation CLI token client.
 - [ ] Attach verified MP3QuranNet permission evidence and exact resource scope.
 - [ ] Record editorial, shaykh, technical, and legal reviewer attestations.
 - [ ] Add exact edition/page/entry citations for authored tafsir summaries.
 - [ ] Supply application Privacy Policy and Terms before provider-backed release.
+- [ ] Enroll in Quran Foundation developer program.
+
 
 ## Phase 0 — Inventory and baseline
 

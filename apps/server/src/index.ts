@@ -11,7 +11,7 @@ const clientSecret = process.env.QF_CLIENT_SECRET;
 if (!clientId || !clientSecret) throw new Error('QF_CLIENT_ID and QF_CLIENT_SECRET are required');
 const quranFoundation = new QuranFoundationClient({ environment: process.env.QF_ENV === 'production' ? 'production' : 'prelive', clientId, clientSecret }, new MemoryServerCache());
 const quranEnc = new QuranEncClient();
-const mp3Quran = new Mp3QuranClient();
+const mp3Quran = new Mp3QuranClient(fetch, process.env.QF_ENV === 'production' ? 'production' : 'development');
 const app = createApp({
   quranFoundation,
   quranEnc,

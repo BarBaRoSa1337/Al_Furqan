@@ -1,6 +1,6 @@
 {
   "retrievedAt": "2026-08-04T11:13:27.682Z",
-  "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html",
+  "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about",
   "streams": [
     {
       "provider": "mp3quran",
@@ -42,7 +42,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -79,7 +79,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -131,7 +131,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -163,7 +163,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -210,7 +210,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -242,7 +242,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -284,7 +284,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -321,7 +321,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -363,7 +363,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     },
     {
       "provider": "mp3quran",
@@ -410,7 +410,7 @@
       "deliveryMode": "stream_only",
       "providerVersion": "api-v3",
       "attributionText": "Recitation streamed directly from MP3Quran.net.",
-      "permissionEvidenceUrl": "https://www.mp3quran.net/privacy-en.html"
+      "permissionEvidenceUrl": "https://www.mp3quran.net/en/page/about"
     }
   ]
 }

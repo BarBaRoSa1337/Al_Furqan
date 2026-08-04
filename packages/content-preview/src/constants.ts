@@ -48,4 +48,14 @@ export const QURANENC_RESOURCES = {
 
 export const MP3QURAN_SOURCE_ID = 'mp3quran-husary-hafs-118';
 export const MP3QURAN_RECITER_ID = 'mahmoud-khalil-al-husary';
-export const MP3QURAN_PERMISSION_URL = 'https://www.mp3quran.net/privacy-en.html';
+/**
+ * Published reference for MP3Quran usage terms. Replace with the URL of
+ * verified written permission once obtained from MP3Quran.
+ */
+export const MP3QURAN_PERMISSION_URL = 'https://www.mp3quran.net/en/page/about';
+
+/**
+ * Permission verification status. Set to 'verified' only after formal
+ * written permission has been obtained and stored as evidence.
+ */
+export const MP3QURAN_PERMISSION_STATUS: 'pending' | 'verified' = 'pending';

@@ -13,6 +13,7 @@ export interface QuranEncResult {
   locale: string;
   publisher: string;
   attributionText: string;
+  attributionUrl: string;
   data: unknown;
 }
 
@@ -38,7 +39,8 @@ export class QuranEncClient {
       version: resource.version,
       locale: resource.locale,
       publisher: resource.publisher,
-      attributionText: `${resource.publisher}, provided by QuranEnc. Provider text is unmodified.`,
+      attributionText: `${resource.publisher}, provided by QuranEnc (quranenc.com). Version ${resource.version}. Provider text is unmodified.`,
+      attributionUrl: 'https://quranenc.com',
       data: await response.json(),
     };
   }
