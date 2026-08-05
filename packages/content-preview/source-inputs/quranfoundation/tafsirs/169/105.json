@@ -1,0 +1,1833 @@
+{
+  "verses": {
+    "104:1": {
+      "id": 6180,
+      "words": [
+        {
+          "id": 108,
+          "position": 1,
+          "audioUrl": "wbw/104_001_001.mp3",
+          "verseKey": "104:1",
+          "verseId": 6180,
+          "location": "104:1:1",
+          "textUthmani": "وَيْلٌۭ",
+          "textImlaeiSimple": "ويل",
+          "codeV2": "ﱒ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱒ",
+          "translation": {
+            "text": "Woe",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "waylun",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 109,
+          "position": 2,
+          "audioUrl": "wbw/104_001_002.mp3",
+          "verseKey": "104:1",
+          "verseId": 6180,
+          "location": "104:1:2",
+          "textUthmani": "لِّكُلِّ",
+          "textImlaeiSimple": "لكل",
+          "codeV2": "ﱓ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱓ",
+          "translation": {
+            "text": "to every",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "likulli",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 110,
+          "position": 3,
+          "audioUrl": "wbw/104_001_003.mp3",
+          "verseKey": "104:1",
+          "verseId": 6180,
+          "location": "104:1:3",
+          "textUthmani": "هُمَزَةٍۢ",
+          "textImlaeiSimple": "همزة",
+          "codeV2": "ﱔ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱔ",
+          "translation": {
+            "text": "slanderer",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "humazatin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 111,
+          "position": 4,
+          "audioUrl": "wbw/104_001_004.mp3",
+          "verseKey": "104:1",
+          "verseId": 6180,
+          "location": "104:1:4",
+          "textUthmani": "لُّمَزَةٍ",
+          "textImlaeiSimple": "لمزة",
+          "codeV2": "ﱕ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱕ",
+          "translation": {
+            "text": "backbiter",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "lumazatin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 112,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:1",
+          "verseId": 6180,
+          "location": "104:1:5",
+          "textUthmani": "١",
+          "textImlaeiSimple": "١",
+          "codeV2": "ﱖ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱖ",
+          "translation": {
+            "text": "(1)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:2": {
+      "id": 6181,
+      "words": [
+        {
+          "id": 1031,
+          "position": 1,
+          "audioUrl": "wbw/104_002_001.mp3",
+          "verseKey": "104:2",
+          "verseId": 6181,
+          "location": "104:2:1",
+          "textUthmani": "ٱلَّذِى",
+          "textImlaeiSimple": "الذي",
+          "codeV2": "ﱗ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱗ",
+          "translation": {
+            "text": "The one who",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "alladhī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1032,
+          "position": 2,
+          "audioUrl": "wbw/104_002_002.mp3",
+          "verseKey": "104:2",
+          "verseId": 6181,
+          "location": "104:2:2",
+          "textUthmani": "جَمَعَ",
+          "textImlaeiSimple": "جمع",
+          "codeV2": "ﱘ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱘ",
+          "translation": {
+            "text": "collects",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "jamaʿa",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1033,
+          "position": 3,
+          "audioUrl": "wbw/104_002_003.mp3",
+          "verseKey": "104:2",
+          "verseId": 6181,
+          "location": "104:2:3",
+          "textUthmani": "مَالًۭا",
+          "textImlaeiSimple": "مالا",
+          "codeV2": "ﱙ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱙ",
+          "translation": {
+            "text": "wealth",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mālan",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1034,
+          "position": 4,
+          "audioUrl": "wbw/104_002_004.mp3",
+          "verseKey": "104:2",
+          "verseId": 6181,
+          "location": "104:2:4",
+          "textUthmani": "وَعَدَّدَهُۥ",
+          "textImlaeiSimple": "وعدده",
+          "codeV2": "ﱚ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱚ",
+          "translation": {
+            "text": "and counts it",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "waʿaddadahu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1035,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:2",
+          "verseId": 6181,
+          "location": "104:2:5",
+          "textUthmani": "٢",
+          "textImlaeiSimple": "٢",
+          "codeV2": "ﱛ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 7,
+          "text": "ﱛ",
+          "translation": {
+            "text": "(2)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:3": {
+      "id": 6182,
+      "words": [
+        {
+          "id": 2234,
+          "position": 1,
+          "audioUrl": "wbw/104_003_001.mp3",
+          "verseKey": "104:3",
+          "verseId": 6182,
+          "location": "104:3:1",
+          "textUthmani": "يَحْسَبُ",
+          "textImlaeiSimple": "يحسب",
+          "codeV2": "ﱜ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱜ",
+          "translation": {
+            "text": "Thinking",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "yaḥsabu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2235,
+          "position": 2,
+          "audioUrl": "wbw/104_003_002.mp3",
+          "verseKey": "104:3",
+          "verseId": 6182,
+          "location": "104:3:2",
+          "textUthmani": "أَنَّ",
+          "textImlaeiSimple": "ان",
+          "codeV2": "ﱝ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱝ",
+          "translation": {
+            "text": "that",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "anna",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2236,
+          "position": 3,
+          "audioUrl": "wbw/104_003_003.mp3",
+          "verseKey": "104:3",
+          "verseId": 6182,
+          "location": "104:3:3",
+          "textUthmani": "مَالَهُۥٓ",
+          "textImlaeiSimple": "ماله",
+          "codeV2": "ﱞ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱞ",
+          "translation": {
+            "text": "his wealth",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mālahu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2237,
+          "position": 4,
+          "audioUrl": "wbw/104_003_004.mp3",
+          "verseKey": "104:3",
+          "verseId": 6182,
+          "location": "104:3:4",
+          "textUthmani": "أَخْلَدَهُۥ",
+          "textImlaeiSimple": "اخلده",
+          "codeV2": "ﱟ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱟ",
+          "translation": {
+            "text": "will make him immortal",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "akhladahu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2238,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:3",
+          "verseId": 6182,
+          "location": "104:3:5",
+          "textUthmani": "٣",
+          "textImlaeiSimple": "٣",
+          "codeV2": "ﱠ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱠ",
+          "translation": {
+            "text": "(3)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:4": {
+      "id": 6183,
+      "words": [
+        {
+          "id": 3599,
+          "position": 1,
+          "audioUrl": "wbw/104_004_001.mp3",
+          "verseKey": "104:4",
+          "verseId": 6183,
+          "location": "104:4:1",
+          "textUthmani": "كَلَّا ۖ",
+          "textImlaeiSimple": "كلا",
+          "codeV2": "ﱡﱢ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱡﱢ",
+          "translation": {
+            "text": "Nay",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "kallā",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3601,
+          "position": 2,
+          "audioUrl": "wbw/104_004_003.mp3",
+          "verseKey": "104:4",
+          "verseId": 6183,
+          "location": "104:4:2",
+          "textUthmani": "لَيُنۢبَذَنَّ",
+          "textImlaeiSimple": "لينبذن",
+          "codeV2": "ﱣ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱣ",
+          "translation": {
+            "text": "Surely he will be thrown",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "layunbadhanna",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3602,
+          "position": 3,
+          "audioUrl": "wbw/104_004_004.mp3",
+          "verseKey": "104:4",
+          "verseId": 6183,
+          "location": "104:4:3",
+          "textUthmani": "فِى",
+          "textImlaeiSimple": "في",
+          "codeV2": "ﱤ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱤ",
+          "translation": {
+            "text": "in",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "fī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3603,
+          "position": 4,
+          "audioUrl": "wbw/104_004_005.mp3",
+          "verseKey": "104:4",
+          "verseId": 6183,
+          "location": "104:4:4",
+          "textUthmani": "ٱلْحُطَمَةِ",
+          "textImlaeiSimple": "الحطمة",
+          "codeV2": "ﱥ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱥ",
+          "translation": {
+            "text": "the Crusher",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-ḥuṭamati",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3604,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:4",
+          "verseId": 6183,
+          "location": "104:4:5",
+          "textUthmani": "٤",
+          "textImlaeiSimple": "٤",
+          "codeV2": "ﱦ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 8,
+          "text": "ﱦ",
+          "translation": {
+            "text": "(4)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:5": {
+      "id": 6184,
+      "words": [
+        {
+          "id": 4913,
+          "position": 1,
+          "audioUrl": "wbw/104_005_001.mp3",
+          "verseKey": "104:5",
+          "verseId": 6184,
+          "location": "104:5:1",
+          "textUthmani": "وَمَآ",
+          "textImlaeiSimple": "وما",
+          "codeV2": "ﱧ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱧ",
+          "translation": {
+            "text": "And what",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "wamā",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4914,
+          "position": 2,
+          "audioUrl": "wbw/104_005_002.mp3",
+          "verseKey": "104:5",
+          "verseId": 6184,
+          "location": "104:5:2",
+          "textUthmani": "أَدْرَىٰكَ",
+          "textImlaeiSimple": "ادراك",
+          "codeV2": "ﱨ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱨ",
+          "translation": {
+            "text": "will make you know",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "adrāka",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4915,
+          "position": 3,
+          "audioUrl": "wbw/104_005_003.mp3",
+          "verseKey": "104:5",
+          "verseId": 6184,
+          "location": "104:5:3",
+          "textUthmani": "مَا",
+          "textImlaeiSimple": "ما",
+          "codeV2": "ﱩ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱩ",
+          "translation": {
+            "text": "what",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mā",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4916,
+          "position": 4,
+          "audioUrl": "wbw/104_005_004.mp3",
+          "verseKey": "104:5",
+          "verseId": 6184,
+          "location": "104:5:4",
+          "textUthmani": "ٱلْحُطَمَةُ",
+          "textImlaeiSimple": "الحطمة",
+          "codeV2": "ﱪ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱪ",
+          "translation": {
+            "text": "the Crusher (is)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-ḥuṭamatu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4917,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:5",
+          "verseId": 6184,
+          "location": "104:5:5",
+          "textUthmani": "٥",
+          "textImlaeiSimple": "٥",
+          "codeV2": "ﱫ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱫ",
+          "translation": {
+            "text": "(5)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:6": {
+      "id": 6185,
+      "words": [
+        {
+          "id": 6148,
+          "position": 1,
+          "audioUrl": "wbw/104_006_001.mp3",
+          "verseKey": "104:6",
+          "verseId": 6185,
+          "location": "104:6:1",
+          "textUthmani": "نَارُ",
+          "textImlaeiSimple": "نار",
+          "codeV2": "ﱬ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱬ",
+          "translation": {
+            "text": "A Fire",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "nāru",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6149,
+          "position": 2,
+          "audioUrl": "wbw/104_006_002.mp3",
+          "verseKey": "104:6",
+          "verseId": 6185,
+          "location": "104:6:2",
+          "textUthmani": "ٱللَّهِ",
+          "textImlaeiSimple": "الله",
+          "codeV2": "ﱭ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱭ",
+          "translation": {
+            "text": "Allah",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-lahi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6150,
+          "position": 3,
+          "audioUrl": "wbw/104_006_003.mp3",
+          "verseKey": "104:6",
+          "verseId": 6185,
+          "location": "104:6:3",
+          "textUthmani": "ٱلْمُوقَدَةُ",
+          "textImlaeiSimple": "الموقدة",
+          "codeV2": "ﱮ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱮ",
+          "translation": {
+            "text": "kindled",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-mūqadatu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6151,
+          "position": 4,
+          "audioUrl": null,
+          "verseKey": "104:6",
+          "verseId": 6185,
+          "location": "104:6:4",
+          "textUthmani": "٦",
+          "textImlaeiSimple": "٦",
+          "codeV2": "ﱯ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱯ",
+          "translation": {
+            "text": "(6)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:7": {
+      "id": 6186,
+      "words": [
+        {
+          "id": 7378,
+          "position": 1,
+          "audioUrl": "wbw/104_007_001.mp3",
+          "verseKey": "104:7",
+          "verseId": 6186,
+          "location": "104:7:1",
+          "textUthmani": "ٱلَّتِى",
+          "textImlaeiSimple": "التي",
+          "codeV2": "ﱰ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱰ",
+          "translation": {
+            "text": "Which",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "allatī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 7379,
+          "position": 2,
+          "audioUrl": "wbw/104_007_002.mp3",
+          "verseKey": "104:7",
+          "verseId": 6186,
+          "location": "104:7:2",
+          "textUthmani": "تَطَّلِعُ",
+          "textImlaeiSimple": "تطلع",
+          "codeV2": "ﱱ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 9,
+          "text": "ﱱ",
+          "translation": {
+            "text": "mounts up",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "taṭṭaliʿu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 7380,
+          "position": 3,
+          "audioUrl": "wbw/104_007_003.mp3",
+          "verseKey": "104:7",
+          "verseId": 6186,
+          "location": "104:7:3",
+          "textUthmani": "عَلَى",
+          "textImlaeiSimple": "على",
+          "codeV2": "ﱲ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱲ",
+          "translation": {
+            "text": "to",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ʿalā",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 7381,
+          "position": 4,
+          "audioUrl": "wbw/104_007_004.mp3",
+          "verseKey": "104:7",
+          "verseId": 6186,
+          "location": "104:7:4",
+          "textUthmani": "ٱلْأَفْـِٔدَةِ",
+          "textImlaeiSimple": "الافيدة",
+          "codeV2": "ﱳ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱳ",
+          "translation": {
+            "text": "the hearts",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-afidati",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 7382,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "104:7",
+          "verseId": 6186,
+          "location": "104:7:5",
+          "textUthmani": "٧",
+          "textImlaeiSimple": "٧",
+          "codeV2": "ﱴ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱴ",
+          "translation": {
+            "text": "(7)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:8": {
+      "id": 6187,
+      "words": [
+        {
+          "id": 8482,
+          "position": 1,
+          "audioUrl": "wbw/104_008_001.mp3",
+          "verseKey": "104:8",
+          "verseId": 6187,
+          "location": "104:8:1",
+          "textUthmani": "إِنَّهَا",
+          "textImlaeiSimple": "انها",
+          "codeV2": "ﱵ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱵ",
+          "translation": {
+            "text": "Indeed, it",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "innahā",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 8483,
+          "position": 2,
+          "audioUrl": "wbw/104_008_002.mp3",
+          "verseKey": "104:8",
+          "verseId": 6187,
+          "location": "104:8:2",
+          "textUthmani": "عَلَيْهِم",
+          "textImlaeiSimple": "عليهم",
+          "codeV2": "ﱶ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱶ",
+          "translation": {
+            "text": "(will be) upon them",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ʿalayhim",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 8484,
+          "position": 3,
+          "audioUrl": "wbw/104_008_003.mp3",
+          "verseKey": "104:8",
+          "verseId": 6187,
+          "location": "104:8:3",
+          "textUthmani": "مُّؤْصَدَةٌۭ",
+          "textImlaeiSimple": "موصدة",
+          "codeV2": "ﱷ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱷ",
+          "translation": {
+            "text": "closed over",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mu'ṣadatun",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 8485,
+          "position": 4,
+          "audioUrl": null,
+          "verseKey": "104:8",
+          "verseId": 6187,
+          "location": "104:8:4",
+          "textUthmani": "٨",
+          "textImlaeiSimple": "٨",
+          "codeV2": "ﱸ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱸ",
+          "translation": {
+            "text": "(8)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "104:9": {
+      "id": 6188,
+      "words": [
+        {
+          "id": 10159,
+          "position": 1,
+          "audioUrl": "wbw/104_009_001.mp3",
+          "verseKey": "104:9",
+          "verseId": 6188,
+          "location": "104:9:1",
+          "textUthmani": "فِى",
+          "textImlaeiSimple": "في",
+          "codeV2": "ﱹ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱹ",
+          "translation": {
+            "text": "In",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "fī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 10160,
+          "position": 2,
+          "audioUrl": "wbw/104_009_002.mp3",
+          "verseKey": "104:9",
+          "verseId": 6188,
+          "location": "104:9:2",
+          "textUthmani": "عَمَدٍۢ",
+          "textImlaeiSimple": "عمد",
+          "codeV2": "ﱺ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱺ",
+          "translation": {
+            "text": "columns",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ʿamadin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 10161,
+          "position": 3,
+          "audioUrl": "wbw/104_009_003.mp3",
+          "verseKey": "104:9",
+          "verseId": 6188,
+          "location": "104:9:3",
+          "textUthmani": "مُّمَدَّدَةٍۭ",
+          "textImlaeiSimple": "ممددة",
+          "codeV2": "ﱻ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱻ",
+          "translation": {
+            "text": "extended",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mumaddadatin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 10162,
+          "position": 4,
+          "audioUrl": null,
+          "verseKey": "104:9",
+          "verseId": 6188,
+          "location": "104:9:4",
+          "textUthmani": "٩",
+          "textImlaeiSimple": "٩",
+          "codeV2": "ﱼ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 10,
+          "text": "ﱼ",
+          "translation": {
+            "text": "(9)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "105:1": {
+      "id": 6189,
+      "words": [
+        {
+          "id": 137,
+          "position": 1,
+          "audioUrl": "wbw/105_001_001.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:1",
+          "textUthmani": "أَلَمْ",
+          "textImlaeiSimple": "الم",
+          "codeV2": "ﱽ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﱽ",
+          "translation": {
+            "text": "Have not",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "alam",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 138,
+          "position": 2,
+          "audioUrl": "wbw/105_001_002.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:2",
+          "textUthmani": "تَرَ",
+          "textImlaeiSimple": "تر",
+          "codeV2": "ﱾ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﱾ",
+          "translation": {
+            "text": "you seen",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "tara",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 139,
+          "position": 3,
+          "audioUrl": "wbw/105_001_003.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:3",
+          "textUthmani": "كَيْفَ",
+          "textImlaeiSimple": "كيف",
+          "codeV2": "ﱿ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﱿ",
+          "translation": {
+            "text": "how",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "kayfa",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 140,
+          "position": 4,
+          "audioUrl": "wbw/105_001_004.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:4",
+          "textUthmani": "فَعَلَ",
+          "textImlaeiSimple": "فعل",
+          "codeV2": "ﲀ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲀ",
+          "translation": {
+            "text": "dealt",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "faʿala",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 141,
+          "position": 5,
+          "audioUrl": "wbw/105_001_005.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:5",
+          "textUthmani": "رَبُّكَ",
+          "textImlaeiSimple": "ربك",
+          "codeV2": "ﲁ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲁ",
+          "translation": {
+            "text": "your Lord",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "rabbuka",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 142,
+          "position": 6,
+          "audioUrl": "wbw/105_001_006.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:6",
+          "textUthmani": "بِأَصْحَـٰبِ",
+          "textImlaeiSimple": "باصحاب",
+          "codeV2": "ﲂ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲂ",
+          "translation": {
+            "text": "with (the) Companions",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "bi-aṣḥābi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 143,
+          "position": 7,
+          "audioUrl": "wbw/105_001_007.mp3",
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:7",
+          "textUthmani": "ٱلْفِيلِ",
+          "textImlaeiSimple": "الفيل",
+          "codeV2": "ﲃ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲃ",
+          "translation": {
+            "text": "(of the) Elephant",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-fīli",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 144,
+          "position": 8,
+          "audioUrl": null,
+          "verseKey": "105:1",
+          "verseId": 6189,
+          "location": "105:1:8",
+          "textUthmani": "١",
+          "textImlaeiSimple": "١",
+          "codeV2": "ﲄ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲄ",
+          "translation": {
+            "text": "(1)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "105:2": {
+      "id": 6190,
+      "words": [
+        {
+          "id": 1019,
+          "position": 1,
+          "audioUrl": "wbw/105_002_001.mp3",
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:1",
+          "textUthmani": "أَلَمْ",
+          "textImlaeiSimple": "الم",
+          "codeV2": "ﲅ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲅ",
+          "translation": {
+            "text": "Did not",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "alam",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1020,
+          "position": 2,
+          "audioUrl": "wbw/105_002_002.mp3",
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:2",
+          "textUthmani": "يَجْعَلْ",
+          "textImlaeiSimple": "يجعل",
+          "codeV2": "ﲆ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 13,
+          "text": "ﲆ",
+          "translation": {
+            "text": "He make",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "yajʿal",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1021,
+          "position": 3,
+          "audioUrl": "wbw/105_002_003.mp3",
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:3",
+          "textUthmani": "كَيْدَهُمْ",
+          "textImlaeiSimple": "كيدهم",
+          "codeV2": "ﲇ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲇ",
+          "translation": {
+            "text": "their plan",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "kaydahum",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1022,
+          "position": 4,
+          "audioUrl": "wbw/105_002_004.mp3",
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:4",
+          "textUthmani": "فِى",
+          "textImlaeiSimple": "في",
+          "codeV2": "ﲈ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲈ",
+          "translation": {
+            "text": "go",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "fī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1023,
+          "position": 5,
+          "audioUrl": "wbw/105_002_005.mp3",
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:5",
+          "textUthmani": "تَضْلِيلٍۢ",
+          "textImlaeiSimple": "تضليل",
+          "codeV2": "ﲉ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲉ",
+          "translation": {
+            "text": "astray",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "taḍlīlin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 1024,
+          "position": 6,
+          "audioUrl": null,
+          "verseKey": "105:2",
+          "verseId": 6190,
+          "location": "105:2:6",
+          "textUthmani": "٢",
+          "textImlaeiSimple": "٢",
+          "codeV2": "ﲊ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲊ",
+          "translation": {
+            "text": "(2)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "105:3": {
+      "id": 6191,
+      "words": [
+        {
+          "id": 2361,
+          "position": 1,
+          "audioUrl": "wbw/105_003_001.mp3",
+          "verseKey": "105:3",
+          "verseId": 6191,
+          "location": "105:3:1",
+          "textUthmani": "وَأَرْسَلَ",
+          "textImlaeiSimple": "وارسل",
+          "codeV2": "ﲋ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲋ",
+          "translation": {
+            "text": "And He sent",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "wa-arsala",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2362,
+          "position": 2,
+          "audioUrl": "wbw/105_003_002.mp3",
+          "verseKey": "105:3",
+          "verseId": 6191,
+          "location": "105:3:2",
+          "textUthmani": "عَلَيْهِمْ",
+          "textImlaeiSimple": "عليهم",
+          "codeV2": "ﲌ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲌ",
+          "translation": {
+            "text": "against them",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ʿalayhim",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2363,
+          "position": 3,
+          "audioUrl": "wbw/105_003_003.mp3",
+          "verseKey": "105:3",
+          "verseId": 6191,
+          "location": "105:3:3",
+          "textUthmani": "طَيْرًا",
+          "textImlaeiSimple": "طيرا",
+          "codeV2": "ﲍ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲍ",
+          "translation": {
+            "text": "birds",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ṭayran",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2364,
+          "position": 4,
+          "audioUrl": "wbw/105_003_004.mp3",
+          "verseKey": "105:3",
+          "verseId": 6191,
+          "location": "105:3:4",
+          "textUthmani": "أَبَابِيلَ",
+          "textImlaeiSimple": "ابابيل",
+          "codeV2": "ﲎ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲎ",
+          "translation": {
+            "text": "(in) flocks",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "abābīla",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2365,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "105:3",
+          "verseId": 6191,
+          "location": "105:3:5",
+          "textUthmani": "٣",
+          "textImlaeiSimple": "٣",
+          "codeV2": "ﲏ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 14,
+          "text": "ﲏ",
+          "translation": {
+            "text": "(3)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "105:4": {
+      "id": 6192,
+      "words": [
+        {
+          "id": 3867,
+          "position": 1,
+          "audioUrl": "wbw/105_004_001.mp3",
+          "verseKey": "105:4",
+          "verseId": 6192,
+          "location": "105:4:1",
+          "textUthmani": "تَرْمِيهِم",
+          "textImlaeiSimple": "ترميهم",
+          "codeV2": "ﲐ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲐ",
+          "translation": {
+            "text": "Striking them",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "tarmīhim",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3868,
+          "position": 2,
+          "audioUrl": "wbw/105_004_002.mp3",
+          "verseKey": "105:4",
+          "verseId": 6192,
+          "location": "105:4:2",
+          "textUthmani": "بِحِجَارَةٍۢ",
+          "textImlaeiSimple": "بحجارة",
+          "codeV2": "ﲑ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲑ",
+          "translation": {
+            "text": "with stones",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "biḥijāratin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3869,
+          "position": 3,
+          "audioUrl": "wbw/105_004_003.mp3",
+          "verseKey": "105:4",
+          "verseId": 6192,
+          "location": "105:4:3",
+          "textUthmani": "مِّن",
+          "textImlaeiSimple": "من",
+          "codeV2": "ﲒ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲒ",
+          "translation": {
+            "text": "of",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "min",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3870,
+          "position": 4,
+          "audioUrl": "wbw/105_004_004.mp3",
+          "verseKey": "105:4",
+          "verseId": 6192,
+          "location": "105:4:4",
+          "textUthmani": "سِجِّيلٍۢ",
+          "textImlaeiSimple": "سجيل",
+          "codeV2": "ﲓ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲓ",
+          "translation": {
+            "text": "baked clay",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "sijjīlin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 3871,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "105:4",
+          "verseId": 6192,
+          "location": "105:4:5",
+          "textUthmani": "٤",
+          "textImlaeiSimple": "٤",
+          "codeV2": "ﲔ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲔ",
+          "translation": {
+            "text": "(4)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "105:5": {
+      "id": 6193,
+      "words": [
+        {
+          "id": 5092,
+          "position": 1,
+          "audioUrl": "wbw/105_005_001.mp3",
+          "verseKey": "105:5",
+          "verseId": 6193,
+          "location": "105:5:1",
+          "textUthmani": "فَجَعَلَهُمْ",
+          "textImlaeiSimple": "فجعلهم",
+          "codeV2": "ﲕ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲕ",
+          "translation": {
+            "text": "Then He made them",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "fajaʿalahum",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5093,
+          "position": 2,
+          "audioUrl": "wbw/105_005_002.mp3",
+          "verseKey": "105:5",
+          "verseId": 6193,
+          "location": "105:5:2",
+          "textUthmani": "كَعَصْفٍۢ",
+          "textImlaeiSimple": "كعصف",
+          "codeV2": "ﲖ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲖ",
+          "translation": {
+            "text": "like straw",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "kaʿaṣfin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5094,
+          "position": 3,
+          "audioUrl": "wbw/105_005_003.mp3",
+          "verseKey": "105:5",
+          "verseId": 6193,
+          "location": "105:5:3",
+          "textUthmani": "مَّأْكُولٍۭ",
+          "textImlaeiSimple": "ماكول",
+          "codeV2": "ﲗ",
+          "charTypeName": "word",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲗ",
+          "translation": {
+            "text": "eaten up",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "makūlin",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5095,
+          "position": 4,
+          "audioUrl": null,
+          "verseKey": "105:5",
+          "verseId": 6193,
+          "location": "105:5:4",
+          "textUthmani": "٥",
+          "textImlaeiSimple": "٥",
+          "codeV2": "ﲘ",
+          "charTypeName": "end",
+          "pageNumber": 601,
+          "lineNumber": 15,
+          "text": "ﲘ",
+          "translation": {
+            "text": "(5)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    }
+  },
+  "resourceId": 169,
+  "resourceName": "Ibn Kathir (Abridged)",
+  "languageId": 38,
+  "slug": "en-tafisr-ibn-kathir",
+  "translatedName": {
+    "name": "Ibn Kathir (Abridged)",
+    "languageName": "english"
+  },
+  "text": "<h2 class=\"title tafsirContent eng-text-setting font-sans fontSize-one\">Which was revealed in Mecca</h2>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿بِسْمِ اللَّهِ الرَّحْمَـنِ الرَّحِيمِ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">In the name of Allah, the Beneficent, the Merciful</p>\n<h2 class=\"title tafsirContent eng-text-setting font-sans fontSize-one\">A Summary of the Story of the People of the Elephant</h2>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">This is the story of the people of the Elephant, in brief, and summarized. It has already been mentioned in the story of the People of the Ditch that Dhu Nuas, the last king of Himyar, a polytheist -- was the one who ordered killing the People of the Ditch. They were Christians and their number was approximately twenty thousand. None of them except a man named Daws Dhu Tha`laban escaped. He fled to Ash-Sham where he sought protection from Caesar, the emperor of Ash-Sham, who was also a Christian. Caesar wrote to An-Najashi, the king of Ethiopia (Abyssinia), who was closer to the home of the man. An-Najashi sent two governors with him: Aryat and Abrahah bin As-Sabah Abu Yaksum, along with a great army. The army entered Yemen and began searching the houses and looting in search of the king of Himyar (Dhu Nuwas). Dhu Nuwas was eventually killed by drowning in the sea. Thus, the Ethiopians were free to rule Yemen, with Aryat and Abrahah as its governors. However, they continually disagreed about matters, attacked each other, fought each other and warred against each other, until one of them said to the other, \"There is no need for our two armies to fight. Instead let us fight each other (in a duel) and the one who kills the other will be the ruler of Yemen.'' So the other accepted the challenge and they held a duel. Behind each man was a channel of water (to keep either from fleeing). Aryat gained the upper hand and struck Abrahah with his sword, splitting his nose and mouth, and slashing his face. But `Atawdah, Abrahah's guard, attacked Aryat and killed him. Thus, Abrahah returned wounded to Yemen where he was treated for his injuries and recovered. He thus became the commander of the Abyssinian army in Yemen.</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">Then the king of Abyssinia, An-Najashi wrote to him, blaming him for what had happened (between him and Aryat) and threatened him, saying that he swore to tread on the soil of Yemen and cut off his forelock. Therefore, Abrahah sent a messenger with gifts and precious objects to An-Najashi to appease him and flatter him, and a sack containing soil from Yemen and a piece of hair cut from his forelock. He said in his letter to the king, \"Let the king walk upon this soil and thus fulfill his oath, and this is my forelock hair that I send to you.'' When An-Najashi received this, he was pleased with Abrahah and gave him his approval. Then Abrahah wrote to An-Najashi saying that he would build a church for him in Yemen the like of which had never been built before. Thus, he began to build a huge church in San`a', tall and beautifully crafted and decorated on all sides. The Arabs called it Al-Qullays because of its great height, and because if one looked at it, his cap would be in danger of falling off as he tilted his head back. Then Abrahah Al-Ashram decided to force the Arabs to make their pilgrimage to this magnificent church, just as they had performed pilgrimage to the Ka`bah in Makkah. He announced this in his kingdom (Yemen), but it was rejected by the Arab tribes of `Adnan and Qahtan. The Quraysh were infuriated by it, so much so that one of them journeyed to the church and entered it one night. He then relieved himself in the church and ran away (escaping the people). When its custodians saw what he had done, they reported it to their king, Abrahah, saying; \"One of the Quraysh has done this in anger over their House in whose place you have appointed this church.'' Upon hearing this, Abrahah swore to march to the House of Makkah (the Ka`bah) and destroy it stone by stone. Muqatil bin Sulayman mentioned that a group of young men from the Quraysh entered the church and started a fire in it on an extremely windy day. So the church caught on fire and collapsed to the ground. Due to this Abrahah prepared himself and set out with a huge and powerful army so that none might prevent him from carrying out his mission. He took along a great, powerful elephant that had a huge body the like of which had never been seen before. This elephant was called Mahmud and it was sent to Abrahah from An-Najashi, the king of Abyssinia, particularly for this expedition. It has also been said that he had eight other elephants with him; their number was also reported to be twelve, plus the large one, Mahmud -- and Allah knows best. Their intention was to use this big elephant to demolish the Ka`bah. They planned to do this by fastening chains to the pillars of the Ka`bah and placing the other ends around the neck of the elephant. Then they would make the elephant pull on them in order to tear down the walls of the Ka`bah all at one time. When the Arabs heard of Abrahah's expedition, they considered it an extremely grave matter. They held it to be an obligation upon them to defend the Sacred House and repel whoever intended a plot against it. Thus, the noblest man of the people of Yemen and the greatest of their chiefs set out to face him (Abrahah). His name was Dhu Nafr. He called his people, and whoever would respond to his call among the Arabs, to go to war against Abrahah and fight in defense of the Sacred House. He called the people to stop Abrahah's plan to demolish and tear down the Ka`bah. So the people responded to him and they entered into battle with Abrahah, but he defeated them. This was due to Allah's will and His intent to honor and venerate the Ka`bah.</p>\n<h2 class=\"title tafsirContent eng-text-setting font-sans fontSize-one\">Dhu Nafr was captured and taken along with the army of Abrahah.</h2>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">The army continued on its way until it came to the land of Khath`am where it was confronted by Nufayl bin Habib Al-Kath`ami along with his people, the Shahran and Nahis tribes. They fought Abrahah but he defeated them and captured Nufayl bin Habib. Initially he wanted to kill him, but he forgave him and took him as his guide to show him the way to Al-Hijaz.</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">When they approached the area of At-Ta'if, its people -- the people of Thaqif -- went out to Abrahah. They wanted to appease him because they were fearful for their place of worship, which they called Al-Lat. Abrahah was kind to them and they sent a man named Abu Righal with him as a guide. When they reached a place known as Al-Mughammas, which is near Makkah, they settled there. Then he sent his troops on a foray to capture the camels and other grazing animals of the Makkans, which they did, including about two hundred camels belonging to `Abdul-Muttalib. The leader of this particular expedition was a man named Al-Aswad bin Mafsud. According to what Ibn Ishaq mentioned, some of the Arabs used to satirize him (because of the part he played in this historical in this historical incident). Then Abrahah sent an emissary named Hanatah Al-Himyari to enter Makkah, commanding him to bring the head of the Quraysh to him. He also commanded him to inform him that the king will not fight the people of Makkah unless they try to prevent him from the destruction of the Ka`bah. Hanatah went to the city and he was directed to `Abdul-Muttalib bin Hashim, to whom he relayed Abrahah's message. `Abdul-Muttalib replied, \"By Allah! We have no wish to fight him, nor are we in any position to do so. This is the Sacred House of Allah, and the house of His Khalil, Ibrahim, and if He wishes to prevent him (Abrahah) from (destroying) it, it is His House and His Sacred Place (to do so). And if He lets him approach it, by Allah, We have no means to defend it from him.'' So Hanatah told him, \"Come with me to him (Abrahah).'' And so `Abdul-Muttalib went with him. When Abrahah saw him, he was impressed by him, because `Abdul-Muttalib was a large and handsome man. So Abrahah descended from his seat and sat with him on a carpet on the ground. Then he asked his translator to say to him, \"What do you need'' `Abdul-Muttalib replied to the translator, \"I want the king to return my camels which he has taken from me which are two hundred in number.'' Abrahah then told his translator to tell him, \"I was impressed by you when I first saw you, but now I withdraw from you after you have spoken to me. You are asking me about two hundred camels which I have taken from you and you leave the matter of a house which is (the foundation of) religion and the religion of your fathers, which I have come to destroy and you do not speak to me about it'' `Abdul-Muttalib said to him, \"Verily, I am the lord of the camels. As for the House, it has its Lord Who will defend it.'' Abrahah said, \"I cannot be prevented (from destroying it).'' `Abdul-Muttalib answered, \"Then do so.'' It is said that a number of the chiefs of the Arabs accompanied `Abdul-Muttalib and offered Abrahah a third of the wealth of the tribe of Tihamah if he would withdraw from the House, but he refused and returned `Abdul-Muttalib's camels to him. `Abdul-Muttalib then returned to his people and ordered them to leave Makkah and seek shelter at the top of the mountains, fearful of the excesses which might be committed by the army against them. Then he took hold of the metal ring of the door of the Ka`bah, and along with a number of Quraysh, he called upon Allah to give them victory over Abrahah and his army. `Abdul-Muttalib said, while hanging on to the ring of the Ka`bah's door, \"There is no matter more important to any man right now than the defense of his livestock and property. So, O my Lord! Defend Your property. Their cross and their cunning will not be victorious over your cunning by the time morning comes.'' According to Ibn Ishaq, then `Abdul-Muttalib let go of the metal ring of the door of the Ka`bah, and they left Makkah and ascended to the mountains tops. Muqatil bin Sulayman mentioned that they left one hundred animals (camels) tied near the Ka`bah hoping that some of the army would take some of them without a right to do so, and thus bring about the vengeance of Allah upon themselves.</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">When morning came, Abrahah prepared to enter the sacred city of Makkah. He prepared the elephant named Mahmud. He mobilized his army, and they turned the elephant towards the Ka`bah. At that moment Nufayl bin Habib approached it and stood next to it, and taking it by its ear, he said, \"Kneel, Mahmud! Then turn around and return directly to whence you came. For verily, you are in the Sacred City of Allah.'' Then he released the elephant's ear and it knelt, after which Nufayl bin Habib left and hastened to the mountains. Abrahah's men beat the elephant in an attempt to make it rise, but it refused. They beat it on its head with axes and used hooked staffs to pull it out of its resistance and make it stand, but it refused. So they turned him towards Yemen, and he rose and walked quickly. Then they turned him towards Ash-Sham and he did likewise. Then they turned him towards the east and he did the same thing. Then they turned him towards Makkah and he knelt down again. Then Allah sent against them the birds from the sea, like swallows and herons. Each bird carried three stones the size of chickpeas and lentils, one in each claw and one in its beak. Everyone who was hit by them was destroyed, though not all of them were hit. They fled in panic along the road asking about the whereabouts of Nufayl that he might point out to them the way home. Nufayl, however, was at the top of the mountain with the Quraysh and the Arabs of the Hijaz observing the wrath which Allah had caused to descend on the people of the elephant. Nufayl then began to say, \"Where will they flee when the One True God is the Pursuer For Al-Ashram is defeated and not the victor. Ibn Ishaq reported that Nufayl said these lines of poetry at that time,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">\"Didn't you live with continued support We favored you all with a revolving eye in the morning (i.e., a guide along the way). If you saw, but you did not see it at the side of the rock covered mountain that which we saw. Then you will excuse me and praise my affair, and do not grieve over what is lost between us. I praised Allah when I saw the birds, and I feared that the stones might be thrown down upon us. So all the people are asking about the whereabouts of Nufayl, as if I have some debt that I owe the Abyssinians.'' `Ata' bin Yasar and others have said that all of them were not struck by the torment at this hour of retribution. Rather some of them were destroyed immediately, while others were gradually broken down limb by limb while trying to escape. Abrahah was of those who was broken down limb by limb until he eventually died in the land of Khath`am. Ibn Ishaq said that they left (Makkah) being struck down and destroyed along every path and at every water spring. Abrahah's body was afflicted by the pestilence of the stones and his army carried him away with them as he was falling apart piece by piece, until they arrived back in San`a'. When they arrived there he was but like the baby chick of a bird. And he did not die until his heart fell out of his chest. So they claim. Ibn Ishaq said that when Allah sent Muhammad with the prophethood, among the things that he used to recount to the Quraysh as blessings that Allah had favored them with of His bounties, was His defending them from the attack of the Abyssinians. Due to this they (the Quraysh) were allowed to remain (safely in Makkah) for a period of time. Thus, Allah said,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَـبِ الْفِيلِ - أَلَمْ يَجْعَلْ كَيْدَهُمْ فِى تَضْلِيلٍ - وَأَرْسَلَ عَلَيْهِمْ طَيْراً أَبَابِيلَ - تَرْمِيهِم بِحِجَارَةٍ مِّن سِجِّيلٍ - فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُولِ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(Have you not seen how your Lord dealt with the Owners of the Elephant Did He not make their plot go astray And He sent against them birds, in flocks (Ababil). Striking them with stones of Sijjil. And He made them like `Asf, Ma'kul.)</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿لإِيلَـفِ قُرَيْشٍ - إِيلَـفِهِمْ رِحْلَةَ الشِّتَآءِ وَالصَّيْفِ - فَلْيَعْبُدُواْ رَبَّ هَـذَا الْبَيْتِ - الَّذِى أَطْعَمَهُم مِّن جُوعٍ وَءَامَنَهُم مِّنْ خوْفٍ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(For the Ilaf of the Quraysh, their Ilaf caravans, in winter and in summer. So, let them worship the Lord of this House, Who has fed them against hunger, and has made them safe from fear.) (106:1-4) meaning, that Allah would not alter their situation because Allah wanted good for them if they accepted Him. Ibn Hisham said, \"Al-Ababil are the groups, as the Arabs do not speak of just one (bird).'' He also said, \"As for As-Sijjil, Yunus An-Nahwi and Abu `Ubaydah have informed me that according to the Arabs, it means something hard and solid.'' He then said, \"Some of the commentators have mentioned that it is actually two Persian words that the Arabs have made into one word. The two words are Sanj and Jil, Sanj meaning stones, and Jil meaning clay. The rocks are of these two types: stone and clay.'' He continued saying, \"Al-`Asf are the leaves of the crops that are not gathered. One of them is called `Asfah.'' This is the end of what he mentioned. Hammad bin Salamah narrated from `Asim, who related from Zirr, who related from `Abdullah and Abu Salamah bin `Abdur-Rahman that they said,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿طَيْراً أَبَابِيلَ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(birds Ababil.) \"In groups.'' Ibn `Abbas and Ad-Dahhak both said, \"Ababil means some of them following after others.'' Al-Hasan Al-Basri and Qatadah both said, \"Ababil means many.'' Mujahid said, \"Ababil means in various, successive groups.'' Ibn Zayd said, \"Ababil means different, coming from here and there. They came upon them from everywhere.'' Al-Kasa'i said, \"I heard some of the grammarians saying, \"The singular of Ababil is Ibil.'' Ibn Jarir recorded from Ishaq bin `Abdullah bin Al-Harith bin Nawfal that he said concerning Allah's statement,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿وَأَرْسَلَ عَلَيْهِمْ طَيْراً أَبَابِيلَ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(And He sent against them birds, Ababil.) \"This means in divisions just as camels march in divisions (in their herds).'' It is reported that Ibn `Abbas said,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿وَأَرْسَلَ عَلَيْهِمْ طَيْراً أَبَابِيلَ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(And He sent against them birds, Ababil.) \"They had snouts like the beaks of birds and paws like the paws of dogs.'' It has been reported that `Ikrimah said commenting on Allah's statement,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿طَيْراً أَبَابِيلَ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(birds, Ababil.) \"They were green birds that came out of the sea and they had heads like the heads of predatory animals.'' It has been reported from `Ubayd bin `Umayr that he commented:</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿طَيْراً أَبَابِيلَ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(birds, Ababil.) \"They were black birds of the sea that had stones in their beaks and claws.'' And the chains of narration (for these statements) are all authentic. It is reported from `Ubayd bin `Umayr that he said, \"When Allah wanted to destroy the People of the Elephant, he sent birds upon them that came from sea swallows. Each of the birds was carrying three small stones -- two stones with its feet and one stone in its beak. They came until they gathered in rows over their heads. Then they gave a loud cry and threw what was in their claws and beaks. Thus, no stone fell upon the head of any man except that it came out of his behind (i.e., it went through him), and it did not fall on any part of his body except that it came out from the opposite side. Then Allah sent a severe wind that struck the stones and increased them in force. Thus, they were all destroyed.''</p>\n<h2 class=\"title tafsirContent eng-text-setting font-sans fontSize-one\">Concerning Allah's statement,</h2>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">﴿فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُولِ ﴾</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(And He made them like `Asf, Ma'kul.) Sa`id bin Jubayr said, \"This means straw, which the common people call Habbur.'' In a report from Sa`id he said, \"The leaves of wheat.'' He also said, \"Al-`Asf is straw, and Al-Ma'kul refers to the fodder that is cut for animals.'' Al-Hasan Al-Basri said the same thing. Ibn `Abbas said, \"Al-`Asf is the shell of the grain, just like the covering of wheat.'' Ibn Zayd said, \"Al-`Asf are the leaves of vegetation and produce. When the cattle eat it they defecate it out and it becomes dung.'' The meaning of this is that Allah destroyed them, annihilated them and repelled them in their plan and their anger. They did not achieve any good. He made a mass destruction of them, and not one of them returned (to their land) to relate what happened except that he was wounded. This is just like what happened to their king, Abrahah. For indeed he was split open, exposing his heart when he reached his land of San`a'. He informed the people of what happened to them and then he died. His son Yaksum became the king after him, and then Yaksum's brother, Masruq bin Abrahah succeeded him. Then Sayf bin Dhi Yazan Al-Himyari went to Kisra (the king of Persia) and sought his help against the Abyssinians. Therefore, Kisra dispatched some of his army with Sayf Al-Himyari to fight with him against the Abyssinians. Thus, Allah returned their kingdom to them (i.e., the Arabs of Yemen) along with all the sovereignty their fathers possessed. Then large delegations of Arabs came to him (Sayf Al-Himyari) to congratulate him for their victory. We have mentioned previously in the Tafsir of Surat Al-Fath that when the Messenger of Allah approached the mountain pass that would lead him to the Quraysh on the Day of Al-Hudaybiyyah, his she-camel knelt down. Then the people attempted to make her get up but she refused. So, the people said, \"Al-Qaswa' has become stubborn.'' The Prophet replied,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">«مَا خَلَأَتِ الْقَصْوَاءُ، وَمَا ذَاكَ لَهَا بِخُلُقٍ، وَلَكِنْ حَبَسَهَا حَابِسُ الْفِيل»</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(Al-Qaswa' has not become stubborn, for that is not part of her character. Rather, she has been stopped by He Who restrained the Elephant (of Abrahah).) Then he said,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">«وَالَّذِي نَفْسِي بِيَدِهِ لَا يَسْأَلُونِّي الْيَوْمَ خُطَّةً يُعَظِّمُونَ فِيهَا حُرُمَاتِ اللهِ إِلَّا أَجَبْتُهُمْ إِلَيْهَا»</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(I swear by He in Whose Hand is my soul, they (the Quraysh) will not ask me for any matter (of the treaty) in which the sacred things of Allah are honored except that I will agree with them on it.) Then he beckoned the she-camel to rise and she stood up. This Hadith is of those that Al-Bukhari was alone in recording. It has been recorded in the Two Sahihs that on the Day of the conquest of Makkah, the Messenger of Allah said,</p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\" dir=\"rtl\"> </p>\n<div class=\"arabic_text_style mushaf-arb-text font-MushafFont fontSize-five\" dir=\"rtl\" align=\"right\">«إِنَّ اللهَ حَبَسَ عَنْ مَكَّةَ الْفِيلَ، وَسَلَّطَ عَلَيْهَا رَسُولَهُ وَالْمُؤْمِنِينَ، وَإِنَّهُ قَدْ عَادَتْ حُرْمَتُهَا الْيَوْمَ كَحُرْمَتِهَا بِالْأَمْسِ، أَلَا فَلْيُبَلِّغِ الشَّاهِدُ الْغَائِب»</div>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\"> </p>\n<p class=\"tafsirContent eng-text-setting font-sans fontSize-one\">(Verily, Allah restrained the Elephant from Makkah, and He has given His Messenger and the believers authority over it. And indeed its sacredness has returned just as it was sacred yesterday. So, let those who are present inform those who are absent. ) This is the end of the Tafsir of Surat Al-Fil, and all praise and thanks are due to Allah.</p>"
+}

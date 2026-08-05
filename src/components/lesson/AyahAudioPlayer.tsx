@@ -80,9 +80,11 @@ export default function AyahAudioPlayer({
   }, [contentPackage, currentTrack]);
 
   useEffect(() => {
-    player.replace(currentUri || null);
-    pendingPlay.current = Platform.OS !== 'web';
-    handledFinish.current = false;
+    if (currentUri) {
+      player.replace(currentUri);
+      pendingPlay.current = Platform.OS !== 'web';
+      handledFinish.current = false;
+    }
   }, [currentUri, player]);
 
   useEffect(() => {
@@ -113,16 +115,18 @@ export default function AyahAudioPlayer({
       void player.seekTo((tracks[0]?.startMs ?? 0) / 1000).then(() => player.play());
       return;
     }
-    player.pause();
+    try { player.pause(); } catch { /* player may already be released */ }
   }, [player, repeatCount, round, segmentEnd, status.currentTime, status.didJustFinish, trackIndex, tracks]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
-      if (state !== 'active') player.pause();
+      if (state !== 'active') {
+        try { player.pause(); } catch { /* player may already be released */ }
+      }
     });
     return () => {
       subscription.remove();
-      player.pause();
+      try { player.pause(); } catch { /* player may already be released */ }
     };
   }, [player]);
 

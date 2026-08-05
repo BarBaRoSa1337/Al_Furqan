@@ -1,0 +1,693 @@
+{
+  "verses": {
+    "114:1": {
+      "id": 6231,
+      "words": [
+        {
+          "id": 115,
+          "position": 1,
+          "audioUrl": "wbw/114_001_001.mp3",
+          "verseKey": "114:1",
+          "verseId": 6231,
+          "location": "114:1:1",
+          "textUthmani": "قُلْ",
+          "textImlaeiSimple": "قل",
+          "codeV2": "ﱰ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱰ",
+          "translation": {
+            "text": "Say",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "qul",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 116,
+          "position": 2,
+          "audioUrl": "wbw/114_001_002.mp3",
+          "verseKey": "114:1",
+          "verseId": 6231,
+          "location": "114:1:2",
+          "textUthmani": "أَعُوذُ",
+          "textImlaeiSimple": "اعوذ",
+          "codeV2": "ﱱ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱱ",
+          "translation": {
+            "text": "I seek refuge",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "aʿūdhu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 117,
+          "position": 3,
+          "audioUrl": "wbw/114_001_003.mp3",
+          "verseKey": "114:1",
+          "verseId": 6231,
+          "location": "114:1:3",
+          "textUthmani": "بِرَبِّ",
+          "textImlaeiSimple": "برب",
+          "codeV2": "ﱲ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱲ",
+          "translation": {
+            "text": "in (the) Lord",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "birabbi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 118,
+          "position": 4,
+          "audioUrl": "wbw/114_001_004.mp3",
+          "verseKey": "114:1",
+          "verseId": 6231,
+          "location": "114:1:4",
+          "textUthmani": "ٱلنَّاسِ",
+          "textImlaeiSimple": "الناس",
+          "codeV2": "ﱳ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱳ",
+          "translation": {
+            "text": "(of) mankind",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-nāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 119,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "114:1",
+          "verseId": 6231,
+          "location": "114:1:5",
+          "textUthmani": "١",
+          "textImlaeiSimple": "١",
+          "codeV2": "ﱴ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱴ",
+          "translation": {
+            "text": "(1)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "114:2": {
+      "id": 6232,
+      "words": [
+        {
+          "id": 932,
+          "position": 1,
+          "audioUrl": "wbw/114_002_001.mp3",
+          "verseKey": "114:2",
+          "verseId": 6232,
+          "location": "114:2:1",
+          "textUthmani": "مَلِكِ",
+          "textImlaeiSimple": "ملك",
+          "codeV2": "ﱵ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱵ",
+          "translation": {
+            "text": "(The) King",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "maliki",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 933,
+          "position": 2,
+          "audioUrl": "wbw/114_002_002.mp3",
+          "verseKey": "114:2",
+          "verseId": 6232,
+          "location": "114:2:2",
+          "textUthmani": "ٱلنَّاسِ",
+          "textImlaeiSimple": "الناس",
+          "codeV2": "ﱶ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱶ",
+          "translation": {
+            "text": "(of) mankind",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-nāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 934,
+          "position": 3,
+          "audioUrl": null,
+          "verseKey": "114:2",
+          "verseId": 6232,
+          "location": "114:2:3",
+          "textUthmani": "٢",
+          "textImlaeiSimple": "٢",
+          "codeV2": "ﱷ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱷ",
+          "translation": {
+            "text": "(2)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "114:3": {
+      "id": 6233,
+      "words": [
+        {
+          "id": 2819,
+          "position": 1,
+          "audioUrl": "wbw/114_003_001.mp3",
+          "verseKey": "114:3",
+          "verseId": 6233,
+          "location": "114:3:1",
+          "textUthmani": "إِلَـٰهِ",
+          "textImlaeiSimple": "الاه",
+          "codeV2": "ﱸ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 12,
+          "text": "ﱸ",
+          "translation": {
+            "text": "(The) God",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ilāhi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2820,
+          "position": 2,
+          "audioUrl": "wbw/114_003_002.mp3",
+          "verseKey": "114:3",
+          "verseId": 6233,
+          "location": "114:3:2",
+          "textUthmani": "ٱلنَّاسِ",
+          "textImlaeiSimple": "الناس",
+          "codeV2": "ﱹ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱹ",
+          "translation": {
+            "text": "(of) mankind",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-nāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 2821,
+          "position": 3,
+          "audioUrl": null,
+          "verseKey": "114:3",
+          "verseId": 6233,
+          "location": "114:3:3",
+          "textUthmani": "٣",
+          "textImlaeiSimple": "٣",
+          "codeV2": "ﱺ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱺ",
+          "translation": {
+            "text": "(3)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "114:4": {
+      "id": 6234,
+      "words": [
+        {
+          "id": 4131,
+          "position": 1,
+          "audioUrl": "wbw/114_004_001.mp3",
+          "verseKey": "114:4",
+          "verseId": 6234,
+          "location": "114:4:1",
+          "textUthmani": "مِن",
+          "textImlaeiSimple": "من",
+          "codeV2": "ﱻ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱻ",
+          "translation": {
+            "text": "From",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "min",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4132,
+          "position": 2,
+          "audioUrl": "wbw/114_004_002.mp3",
+          "verseKey": "114:4",
+          "verseId": 6234,
+          "location": "114:4:2",
+          "textUthmani": "شَرِّ",
+          "textImlaeiSimple": "شر",
+          "codeV2": "ﱼ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱼ",
+          "translation": {
+            "text": "(the) evil",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "sharri",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4133,
+          "position": 3,
+          "audioUrl": "wbw/114_004_003.mp3",
+          "verseKey": "114:4",
+          "verseId": 6234,
+          "location": "114:4:3",
+          "textUthmani": "ٱلْوَسْوَاسِ",
+          "textImlaeiSimple": "الوسواس",
+          "codeV2": "ﱽ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱽ",
+          "translation": {
+            "text": "(of) the whisperer",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-waswāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4134,
+          "position": 4,
+          "audioUrl": "wbw/114_004_004.mp3",
+          "verseKey": "114:4",
+          "verseId": 6234,
+          "location": "114:4:4",
+          "textUthmani": "ٱلْخَنَّاسِ",
+          "textImlaeiSimple": "الخناس",
+          "codeV2": "ﱾ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱾ",
+          "translation": {
+            "text": "the one who withdraws",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-khanāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 4135,
+          "position": 5,
+          "audioUrl": null,
+          "verseKey": "114:4",
+          "verseId": 6234,
+          "location": "114:4:5",
+          "textUthmani": "٤",
+          "textImlaeiSimple": "٤",
+          "codeV2": "ﱿ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﱿ",
+          "translation": {
+            "text": "(4)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "114:5": {
+      "id": 6235,
+      "words": [
+        {
+          "id": 5496,
+          "position": 1,
+          "audioUrl": "wbw/114_005_001.mp3",
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:1",
+          "textUthmani": "ٱلَّذِى",
+          "textImlaeiSimple": "الذي",
+          "codeV2": "ﲀ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 13,
+          "text": "ﲀ",
+          "translation": {
+            "text": "The one who",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "alladhī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5497,
+          "position": 2,
+          "audioUrl": "wbw/114_005_002.mp3",
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:2",
+          "textUthmani": "يُوَسْوِسُ",
+          "textImlaeiSimple": "يوسوس",
+          "codeV2": "ﲁ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 14,
+          "text": "ﲁ",
+          "translation": {
+            "text": "whispers",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "yuwaswisu",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5498,
+          "position": 3,
+          "audioUrl": "wbw/114_005_003.mp3",
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:3",
+          "textUthmani": "فِى",
+          "textImlaeiSimple": "في",
+          "codeV2": "ﲂ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 14,
+          "text": "ﲂ",
+          "translation": {
+            "text": "in",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "fī",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5499,
+          "position": 4,
+          "audioUrl": "wbw/114_005_004.mp3",
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:4",
+          "textUthmani": "صُدُورِ",
+          "textImlaeiSimple": "صدور",
+          "codeV2": "ﲃ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 14,
+          "text": "ﲃ",
+          "translation": {
+            "text": "(the) breasts",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "ṣudūri",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5500,
+          "position": 5,
+          "audioUrl": "wbw/114_005_005.mp3",
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:5",
+          "textUthmani": "ٱلنَّاسِ",
+          "textImlaeiSimple": "الناس",
+          "codeV2": "ﲄ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 14,
+          "text": "ﲄ",
+          "translation": {
+            "text": "(of) mankind",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-nāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 5501,
+          "position": 6,
+          "audioUrl": null,
+          "verseKey": "114:5",
+          "verseId": 6235,
+          "location": "114:5:6",
+          "textUthmani": "٥",
+          "textImlaeiSimple": "٥",
+          "codeV2": "ﲅ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 14,
+          "text": "ﲅ",
+          "translation": {
+            "text": "(5)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    },
+    "114:6": {
+      "id": 6236,
+      "words": [
+        {
+          "id": 6729,
+          "position": 1,
+          "audioUrl": "wbw/114_006_001.mp3",
+          "verseKey": "114:6",
+          "verseId": 6236,
+          "location": "114:6:1",
+          "textUthmani": "مِنَ",
+          "textImlaeiSimple": "من",
+          "codeV2": "ﲆ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 15,
+          "text": "ﲆ",
+          "translation": {
+            "text": "From",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "mina",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6730,
+          "position": 2,
+          "audioUrl": "wbw/114_006_002.mp3",
+          "verseKey": "114:6",
+          "verseId": 6236,
+          "location": "114:6:2",
+          "textUthmani": "ٱلْجِنَّةِ",
+          "textImlaeiSimple": "الجنة",
+          "codeV2": "ﲇ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 15,
+          "text": "ﲇ",
+          "translation": {
+            "text": "the jinn",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "l-jinati",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6731,
+          "position": 3,
+          "audioUrl": "wbw/114_006_003.mp3",
+          "verseKey": "114:6",
+          "verseId": 6236,
+          "location": "114:6:3",
+          "textUthmani": "وَٱلنَّاسِ",
+          "textImlaeiSimple": "والناس",
+          "codeV2": "ﲈ",
+          "charTypeName": "word",
+          "pageNumber": 604,
+          "lineNumber": 15,
+          "text": "ﲈ",
+          "translation": {
+            "text": "and men",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": "wal-nāsi",
+            "languageName": "english",
+            "languageId": 38
+          }
+        },
+        {
+          "id": 6732,
+          "position": 4,
+          "audioUrl": null,
+          "verseKey": "114:6",
+          "verseId": 6236,
+          "location": "114:6:4",
+          "textUthmani": "٦",
+          "textImlaeiSimple": "٦",
+          "codeV2": "ﲉ",
+          "charTypeName": "end",
+          "pageNumber": 604,
+          "lineNumber": 15,
+          "text": "ﲉ",
+          "translation": {
+            "text": "(6)",
+            "languageName": "english",
+            "languageId": 38
+          },
+          "transliteration": {
+            "text": null,
+            "languageName": "english",
+            "languageId": 38
+          }
+        }
+      ]
+    }
+  },
+  "resourceId": 169,
+  "resourceName": "Ibn Kathir (Abridged)",
+  "languageId": 38,
+  "slug": "en-tafisr-ibn-kathir",
+  "translatedName": {
+    "name": "Ibn Kathir (Abridged)",
+    "languageName": "english"
+  },
+  "text": "<h2>Which was revealed in Makkah</h2>\n<p>بِسْمِ اللَّهِ الرَّحْمَـنِ الرَّحِيمِ</p>\n<p>In the Name of Allah, the Most Gracious, the Most Merciful.</p>\n<p>These are three attributes from the attributes of the Lord, the Mighty and Majestic. They are lordship, sovereignty, and divinity. Thus, He is the Lord of everything, the King of everything, and the God of everything. All things are created by Him, owned by Him, and subservient to Him. Therefore, He commands whoever is seeking protection to seek refuge with the One Who has these attributes from the evil of the whisperer who withdraws. This (the whisperer) is the devil that is assigned to man. For verily, there is not any of the Children of Adam except that he has a companion that beautifies wicked deeds for him. This devil will go to any lengths to confuse and confound him. The only person who is safe is He Whom Allah protects.</p>\n<p>It is confirmed in the Sahih that he (the Prophet) said,</p>\n<p>«مَا مِنْكُمْ مِنْ أَحَدٍ إِلَّا قَدْ وُكِّلَ بِهِ قَرِينُهُ»</p>\n<p>(There is not a single one of you except that his companion (a devil) has been assigned to him.) They (the Companions) said, \"What about you, O Messenger of Allah\" He replied,</p>\n<p>«نَعَمْ، إِلَّا أَنَّ اللهَ أَعَانَنِي عَلَيْهِ فَأَسْلَمَ، فَلَا يَأْمُرُنِي إِلَّا بِخَيْرٍ»</p>\n<p>(Yes. However, Allah has helped me against him, and he has accepted Islam. Thus, he only commands me to do good.) It is also confirmed in the Two Sahihs from Anas, who reported the story of Safiyyah when she came to visit the Prophet while he was performing I`tikaf, that he went out with her during the night to walk her back to her house. So, two men from the Ansar met him (on the way). When they saw the Prophet, they began walking swiftly. So, the Messenger of Allah ﷺ said,</p>\n<p>«عَلَى رِسْلِكُمَا، إِنَّهَا صَفِيَّةُ بِنْتُ حُيَيَ»</p>\n<p>(Slow down! This is Safiyyah bint Huyay!) They said, \"Glory be to Allah, O Messenger of Allah!\" He said,</p>\n<p>«إِنَّ الشَّيْطَانَ يَجْرِي مِنِ ابْنِ آدَمَ مَجْرَى الدَّم، وَإِنِّي خَشِيتُ أَنْ يَقْذِفَ فِي قُلُوبِكُمَا شَيْئًا، أَوْ قَالَ: شَرًّا»</p>\n<p>(Verily, Shaytan runs in the Son of Adam like the running of the blood. And verily, I feared that he might cast something into your hearts -- or he said -- evil.) Sa`id bin Jubayr reported that Ibn `Abbas said concerning Allah's statement,</p>\n<p>الْوَسْوَاسِ الْخَنَّاسِ</p>\n<p>(The whisperer (Al-Waswas) who withdraws.) \"The devil who is squatting (perched) upon the heart of the Son of Adam. So when he becomes absentminded and heedless, he whispers. Then, when he remembers Allah, he withdraws.\" Mujahid and Qatadah also said this.</p>\n<p>Al-Mu`tamir bin Sulayman reported that his father said, \"It has been mentioned to me that Shaytan is Al-Waswas. He blows into the heart of the Son of Adam when he is sad and when he is happy. But when he (man) remembers Allah, Shaytan withdraws.\" Al-`Awfi reported from Ibn `Abbas;</p>\n<p>الْوَسْوَاسِ</p>\n<p>(The whisperer.) \"He is Shaytan. He whispers, and then when he is obeyed, he withdraws.\" As for Allah's saying;</p>\n<p>الَّذِى يُوَسْوِسُ فِى صُدُورِ النَّاسِ</p>\n<p>(Who whispers in the breasts of An-Nas.) Is this specific to the Children of Adam, as is apparent, or is it general, including both mankind and Jinns</p>\n<p>There are two views concerning this. This is because they (the Jinns) are also included in the usage of the word An-Nas (the people) in most cases.</p>\n<p>Ibn Jarir said, \"The phrase Rijalun min Al-Jinn (Men from the Jinns) has been used in reference to them, so it is not strange for the word An-Nas to be applied to them also.\" Then Allah says,</p>\n<p>مِنَ الْجِنَّةِ وَالنَّاسِ</p>\n<p>(Of Jinn and An-Nas.) Is this explanatory of Allah's statement,</p>\n<p>الَّذِى يُوَسْوِسُ فِى صُدُورِ النَّاسِ</p>\n<p>(Who whispers in the breasts of An-Nas.) Then, Allah explains this by saying,</p>\n<p>مِنَ الْجِنَّةِ وَالنَّاسِ</p>\n<p>(Of Jinn and An-Nas.) This is supportive of the second view. It has also been said that Allah's saying,</p>\n<p>مِنَ الْجِنَّةِ وَالنَّاسِ</p>\n<p>(Of Jinn and An-Nas) is an explanation of who it is that whispers into the breasts of mankind from the devils of mankind and Jinns. This is similar to Allah's saying,</p>\n<p>وَكَذَلِكَ جَعَلْنَا لِكُلِّ نِبِىٍّ عَدُوّاً شَيَـطِينَ الإِنْسِ وَالْجِنِّ يُوحِى بَعْضُهُمْ إِلَى بَعْضٍ زُخْرُفَ الْقَوْلِ غُرُوراً</p>\n<p>(And so We have appointed for every prophet enemies—Shayatin among mankind and Jinn, inspiring one another with adorned speech as a delusion.) (6:112) Imam Ahmad recorded that Ibn `Abbas said, \"A man came to the Prophet and said, `O Messenger of Allah! Sometimes I say things to myself that I would rather fall from the sky than say (aloud openly). ' The Prophet said,</p>\n<p>«اللهُ أَكْبَرُ، اللهُ أَكْبَرٌ الْحَمْدُ للهِ الَّذِي رَدَّ كَيْدَهُ إِلَى الْوَسْوَسَةِ»</p>\n<p>(Allah is Most Great! Allah is Most Great! All praise is due to Allah Who sent his (Shaytan's) plot back as only a whisper.)\" Abu Dawud and An-Nasa'i also recorded this Hadith.</p>"
+}

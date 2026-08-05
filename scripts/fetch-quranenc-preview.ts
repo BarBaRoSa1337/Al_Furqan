@@ -33,6 +33,7 @@ const INPUT_ROOT = join(process.cwd(), 'packages/content-preview/source-inputs')
 const QURANENC_ROOT = join(INPUT_ROOT, 'quranenc');
 const TANZIL_ROOT = join(INPUT_ROOT, 'tanzil');
 const MP3QURAN_ROOT = join(INPUT_ROOT, 'mp3quran/husary-118');
+const QURAN_FOUNDATION_ROOT = join(INPUT_ROOT, 'quranfoundation');
 const TIMEOUT_MS = 20_000;
 const EXPECTED_QURAN_AYAH_COUNT = 6_236;
 
@@ -43,7 +44,10 @@ async function main(): Promise<void> {
     await fetchTanzilInputs();
   }
   await fetchQuranEncInputs();
-  if (!quranEncOnly) await fetchMp3QuranInputs();
+  await fetchQuranFoundationInputs();
+  if (!quranEncOnly) {
+    await fetchMp3QuranInputs();
+  }
 }
 
 async function fetchMp3QuranInputs(): Promise<void> {
@@ -63,6 +67,51 @@ async function fetchMp3QuranInputs(): Promise<void> {
   };
   await writeRaw(join(MP3QURAN_ROOT, 'streams.json'), `${JSON.stringify(payload, null, 2)}\n`);
   console.log('Fetched MP3Quran Al-Husary Hafs stream metadata: Surahs 105-114, 48 ayah segments, no audio persisted.');
+}
+
+async function fetchQuranFoundationInputs(): Promise<void> {
+  const pending = new Map<string, { url: string; body: Buffer }>();
+
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    // 1. Fetch word meanings for all verses in the surah
+    const expectedAyahs = EXPECTED_AYAH_COUNTS[surah];
+    for (let ayah = 1; ayah <= expectedAyahs; ayah += 1) {
+      const verseKey = `${surah}:${ayah}`;
+      const url = `https://api.quran.com/api/v4/verses/by_key/${verseKey}?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name`;
+      const body = await fetchBytes(url, 'application/json');
+      // Validate parse
+      decodeUtf8(body, `Word meanings for ${verseKey}`);
+      pending.set(`word-meanings/${verseKey}.json`, { url, body });
+    }
+
+    // 2. Fetch Tafsir Ibn Kathir for the surah from website Next.js data
+    const tafsirUrl = `https://quran.com/${surah}:1/tafsirs/en-tafisr-ibn-kathir`;
+    const htmlBody = await fetchBytes(tafsirUrl, 'text/html');
+    const html = decodeUtf8(htmlBody, `Tafsir page for ${surah}:1`);
+    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+    if (!match) throw new Error(`Could not find __NEXT_DATA__ for ${tafsirUrl}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = parseJson(match[1], `NextJS data for ${surah}:1`) as any;
+    const tafsir = data?.props?.pageProps?.tafsirData?.tafsir;
+    if (!tafsir || !tafsir.text) throw new Error(`Could not extract Tafsir text for ${surah}`);
+
+    pending.set(`tafsirs/169/${surah}.json`, { url: tafsirUrl, body: Buffer.from(JSON.stringify(tafsir, null, 2) + '\n') });
+  }
+
+  const evidence: SourceRetrievalEvidence = {
+    resourceKey: 'quranfoundation',
+    registryUrl: 'https://api.quran.com',
+    version: '4.0',
+    lastUpdate: new Date().toISOString(),
+    retrievedAt: new Date().toISOString(),
+    files: Object.fromEntries([...pending].map(([path, item]) => [path, { url: item.url, sha256: sha256(item.body) }])),
+  };
+
+  await Promise.all([
+    ...[...pending].map(([path, item]) => writeRaw(join(QURAN_FOUNDATION_ROOT, path), item.body)),
+    writeRaw(join(QURAN_FOUNDATION_ROOT, 'retrieval.json'), `${JSON.stringify(evidence, null, 2)}\n`),
+  ]);
+  console.log('Fetched Quran Foundation word meanings and tafsirs for Surahs 105-114.');
 }
 
 async function fetchTanzilInputs(): Promise<void> {

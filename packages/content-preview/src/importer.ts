@@ -10,7 +10,9 @@ import type {
   LearningPath,
   QuranEdition,
   SurahRecord,
+  TafsirEntry,
   TranslationEntry,
+  WordMeaning,
   WordToken,
 } from '../../../src/types/content';
 import type { RecitationTrack, Reciter } from '../../../src/types/media';
@@ -164,6 +166,40 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
         wordTokens.push({ id, editionId: EDITION_ID, ayahRef: ref, position: index + 1, arabicText, sourceId: TANZIL_SOURCE_ID, sourceVersion: inputs.tanzilMetadata.textVersion });
         return id;
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawWordMeanings = inputs.wordMeanings[key] as any;
+      const wordMeanings: WordMeaning[] = rawWordMeanings?.verse?.words ? tokenIds.map((tokenId, index) => {
+        const word = rawWordMeanings.verse.words[index];
+        const meaning = word?.translation?.text;
+        if (!meaning) return undefined;
+        return {
+          id: `quran-foundation-word-meanings-v4:meaning:${key}:${index + 1}`,
+          wordTokenId: tokenId,
+          transliteration: word.transliteration?.text ?? '',
+          meaning,
+          sourceId: WORD_MEANING_SOURCE_ID,
+          reviewerStatus: 'draft' as const,
+        };
+      }).filter((w): w is WordMeaning => w !== undefined) : [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rawTafsirData = inputs.tafsirs[surah.surahNumber.toString()] as any;
+      let tafsirEntries: TafsirEntry[] = [];
+      if (rawTafsirData?.text && rawTafsirData.verses?.[key]) {
+        const plainText = rawTafsirData.text.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+        tafsirEntries = [{
+          id: `quran-foundation-tafsir-169:${key}`,
+          locale: 'en',
+          text: plainText,
+          providerText: rawTafsirData.text,
+          providerResourceId: '169',
+          contentHash: hashText(plainText),
+          sourceId: TAFSIR_SOURCE_ID,
+          reviewerStatus: 'draft' as const,
+          citation: { sourceId: TAFSIR_SOURCE_ID, locator: `resource 169, ayah ${key}` }
+        }];
+      }
+
       ayat.push({
         id: key,
         editionId: EDITION_ID,
@@ -174,7 +210,8 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
         sourceVersion: inputs.tanzilMetadata.textVersion,
         checksum: hashText(arabicText),
         translations: [translationFor(en, 'en', ENGLISH_SOURCE_ID, english), translationFor(fr, 'fr', FRENCH_SOURCE_ID, french)],
-        tafsirEntries: [],
+        tafsirEntries,
+        wordMeanings,
       });
     }
   });
@@ -285,8 +322,12 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
         steps: [
           { id: `${id}-read`, kind: 'read', title: 'Listen and read', blocks: [{ id: passageId, type: 'quran_passage', ayahRefs: [ayah.ref], showTransliteration: false }, { id: `${id}-audio`, type: 'audio', ayahRefs: [ayah.ref], reciterId: MP3QURAN_RECITER_ID }] },
           { id: `${id}-translation`, kind: 'translation', title: 'Translation', blocks: [{ id: `${id}-translation-block`, type: 'translation', ayahRefs: [ayah.ref], locale, translationEntryIds: [requireTranslation(ayah, locale).id] }] },
-          { id: `${id}-word-meaning`, kind: 'word_meaning', title: 'Word meanings', required: false, blocks: [{ id: `${id}-word-meaning-locked`, type: 'source_locked', capability: 'word_meaning', sourceId: WORD_MEANING_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
-          { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', required: false, blocks: [{ id: `${id}-tafsir-locked`, type: 'source_locked', capability: 'tafsir', sourceId: TAFSIR_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
+          ayah.wordMeanings && ayah.wordMeanings.length === tokenIds.length
+            ? { id: `${id}-word-meaning`, kind: 'word_meaning', title: 'Word meanings', blocks: [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] }] }
+            : { id: `${id}-word-meaning`, kind: 'word_meaning', title: 'Word meanings', required: false, blocks: [{ id: `${id}-word-meaning-locked`, type: 'source_locked', capability: 'word_meaning', sourceId: WORD_MEANING_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
+          ayah.tafsirEntries && ayah.tafsirEntries.length > 0
+            ? { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', blocks: [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id }] }
+            : { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', required: false, blocks: [{ id: `${id}-tafsir-locked`, type: 'source_locked', capability: 'tafsir', sourceId: TAFSIR_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
           { id: `${id}-memory`, kind: 'memory_practice', title: 'Build the ayah', blocks: [{ id: orderId, type: 'activity', activity: { id: orderId, kind: 'order_tokens', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Order the exact Quran words.', required: true, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { itemIds: [...tokenIds].reverse(), correctOrderIds: tokenIds } } }] },
           { id: understandingStepId, kind: 'understanding_practice', title: 'Match the translation', blocks: [{ id: matchId, type: 'activity', activity: { id: matchId, kind: 'multiple_choice', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the unchanged translation for this ayah.', required: true, difficulty: 2, knowledgeRefs: [passageId, `${id}-translation-block`], sourceIds: [translationSourceId], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { options: translationOptions, correctOptionId: requireTranslation(ayah, locale).id } } }] },
           { id: `${id}-extra-gap-step`, kind: 'memory_practice', title: 'Extra: Complete the ayah', required: false, blocks: [{ id: `${id}-extra-gap`, type: 'activity', activity: { id: `${id}-extra-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the missing ending token.', required: false, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { tokenBankIds: [...tokenIds].reverse(), correctTokenIds: [tokenIds.at(-1)!] } } }] },

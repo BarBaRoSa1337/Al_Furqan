@@ -75,6 +75,9 @@ export interface PreviewSourceInputs {
   frenchMetadata: unknown;
   frenchSurahs: Record<number, unknown>;
   audio: PreviewAudioInputs;
+  quranFoundationRetrieval: SourceRetrievalEvidence;
+  wordMeanings: Record<string, unknown>;
+  tafsirs: Record<string, unknown>;
   sourceFileHashes?: Record<string, string>;
   englishRetrieval: SourceRetrievalEvidence;
   frenchRetrieval: SourceRetrievalEvidence;

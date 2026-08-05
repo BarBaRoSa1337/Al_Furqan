@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { PREVIEW_GENERATOR_VERSION, PREVIEW_PACKAGE_ID, PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES, TANZIL_LICENSE_URL, TANZIL_SOURCE_URL } from '../packages/content-preview/src/constants';
+import { EXPECTED_AYAH_COUNTS, PREVIEW_GENERATOR_VERSION, PREVIEW_PACKAGE_ID, PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES, TANZIL_LICENSE_URL, TANZIL_SOURCE_URL } from '../packages/content-preview/src/constants';
 import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
 import type { PreviewAudioInputs, PreviewSourceInputs, QuranEncResourceMetadata, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { getPackagePayloadHash, stableStringify } from '../src/lib/content/governance';
@@ -19,6 +19,19 @@ async function main(): Promise<void> {
   verifyTanzilHashes(files, tanzilMetadata);
   verifyRetrievalHashes(files, 'quranenc/english_rwwad', englishRetrieval);
   verifyRetrievalHashes(files, 'quranenc/french_rashid', frenchRetrieval);
+  const quranFoundationRetrieval = parseRetrieval(files.get('quranfoundation/retrieval.json')!, 'quranfoundation');
+  verifyRetrievalHashes(files, 'quranfoundation', quranFoundationRetrieval);
+
+  const wordMeanings: Record<string, unknown> = {};
+  const tafsirs: Record<string, unknown> = {};
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    tafsirs[surah.toString()] = parseJson(files.get(`quranfoundation/tafsirs/169/${surah}.json`)!, `Tafsir ${surah}`);
+    for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
+      const key = `${surah}:${ayah}`;
+      wordMeanings[key] = parseJson(files.get(`quranfoundation/word-meanings/${key}.json`)!, `Word meanings ${key}`);
+    }
+  }
+
   const inputs: PreviewSourceInputs = {
     tanzilText: files.get('tanzil/quran-uthmani.txt')!,
     tanzilLicense: files.get('tanzil/LICENSE.txt')!,
@@ -28,6 +41,9 @@ async function main(): Promise<void> {
     frenchMetadata: parseJson(files.get('quranenc/french_rashid/metadata.json')!, 'french_rashid metadata'),
     frenchSurahs: readSurahInputs(files, 'french_rashid'),
     audio: parseAudioInputs(files.get('mp3quran/husary-118/streams.json')!),
+    quranFoundationRetrieval,
+    wordMeanings,
+    tafsirs,
     englishRetrieval,
     frenchRetrieval,
     sourceFileHashes: Object.fromEntries([...files].map(([path, content]) => [path, sha256(content)])),
@@ -65,6 +81,7 @@ async function main(): Promise<void> {
       { provider: inputs.tanzilMetadata.provider, sourceUrl: TANZIL_SOURCE_URL, downloadUrl: inputs.tanzilMetadata.downloadUrl, licenseUrl: TANZIL_LICENSE_URL, resourceKey: 'quran-uthmani.txt', version: inputs.tanzilMetadata.textVersion, textType: inputs.tanzilMetadata.textType, retrievalDate: inputs.tanzilMetadata.retrievedAt, attributionText: inputs.tanzilMetadata.attributionText, licenseIdentifier: 'CC BY 3.0', modificationAllowed: inputs.tanzilMetadata.modificationAllowed, inputFileSha256: { text: inputs.sourceFileHashes!['tanzil/quran-uthmani.txt'], license: inputs.sourceFileHashes!['tanzil/LICENSE.txt'], metadata: inputs.sourceFileHashes!['tanzil/metadata.json'] } },
       quranEncManifestSource(result.sourceMetadata.english, englishRetrieval, inputs.sourceFileHashes!),
       quranEncManifestSource(result.sourceMetadata.french, frenchRetrieval, inputs.sourceFileHashes!),
+      { provider: 'quranfoundation', sourceUrl: 'https://api.quran.com', resourceKey: 'quranfoundation', version: '4.0', retrievalDate: quranFoundationRetrieval.retrievedAt, lastUpdate: quranFoundationRetrieval.lastUpdate, title: 'Quran Foundation Content API', transcriptInfo: 'Includes word-by-word meanings and Ibn Kathir Tafsir.', publisher: 'Quran Foundation', attributionText: 'Provided by Quran Foundation.', licenseIdentifier: 'Proprietary Terms of Service', inputFileSha256: Object.fromEntries(Object.keys(quranFoundationRetrieval.files).map(path => [path, inputs.sourceFileHashes![`quranfoundation/${path}`]])) },
       { provider: 'MP3Quran.net', sourceUrl: 'https://www.mp3quran.net/api/v3', resourceKey: 'reciter-118:mushaf-118:riwayah-1', version: 'api-v3', retrievalDate: inputs.audio.retrievedAt, attributionText: 'Recitation streamed directly from MP3Quran.net.', licenseIdentifier: 'Published permission evidence; direct streaming only', evidenceReference: inputs.audio.streams[0]?.permissionEvidenceUrl, inputFileSha256: inputs.sourceFileHashes!['mp3quran/husary-118/streams.json'] },
     ],
     sourceInputFileSha256: inputs.sourceFileHashes,
@@ -83,6 +100,12 @@ async function readSourceFiles(): Promise<Map<string, string>> {
   const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', 'tanzil/metadata.json', 'mp3quran/husary-118/streams.json', ...(['en', 'fr'] as const).flatMap(locale => {
     const key = QURANENC_RESOURCES[locale].key;
     return [`quranenc/${key}/metadata.json`, `quranenc/${key}/retrieval.json`, ...PREVIEW_SURAH_NUMBERS.map(surah => `quranenc/${key}/surahs/${surah}.json`)];
+  }), 'quranfoundation/retrieval.json', ...PREVIEW_SURAH_NUMBERS.flatMap(surah => {
+    const subPaths = [`quranfoundation/tafsirs/169/${surah}.json`];
+    for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
+      subPaths.push(`quranfoundation/word-meanings/${surah}:${ayah}.json`);
+    }
+    return subPaths;
   })];
   const files = new Map<string, string>();
   for (const path of paths) files.set(path, await readRequired(join(INPUT_ROOT, path)));

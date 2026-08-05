@@ -1,0 +1,241 @@
+{
+  "resourceKey": "quranfoundation",
+  "registryUrl": "https://api.quran.com",
+  "version": "4.0",
+  "lastUpdate": "2026-08-04T22:05:09.025Z",
+  "retrievedAt": "2026-08-04T22:05:09.025Z",
+  "files": {
+    "word-meanings/105:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/105:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "dbb4866c34ba11795856e18d2875b355850824b950b52401ef8a07dc4e12fed4"
+    },
+    "word-meanings/105:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/105:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "23414352fa413714a8241233cfa8500ee3208d7ba665f04b8ee2889c3e1896d5"
+    },
+    "word-meanings/105:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/105:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "406e5e9f4f3c0aacd2be05584343a029f7e802054f3317708f821824d2358e22"
+    },
+    "word-meanings/105:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/105:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "2dd158cef33b7708e9cefb0e90bec07bf857b24c93bca1bcd688e028eed0b7ca"
+    },
+    "word-meanings/105:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/105:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "543c1936d6e36b30b27f7ae77f76f16ac852c99ac8d3a2caf87729628ad03c89"
+    },
+    "tafsirs/169/105.json": {
+      "url": "https://quran.com/105:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "a9e225099e704cc23223edf2824796893201ddafd98758e8b0ae54d1f932b92a"
+    },
+    "word-meanings/106:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/106:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "cdd4917bca25eaf675339a6cb8196bf4c319c148349f771aec634b0a593d2797"
+    },
+    "word-meanings/106:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/106:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "654366c036c489f308721aecc7fc4bbf5617189d992fcfde5b5d1bd47c5dd834"
+    },
+    "word-meanings/106:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/106:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e274c7c8339c18ff489a66028690bf220a2f3881243b7ce8f9fca61af4e423b0"
+    },
+    "word-meanings/106:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/106:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "429fe6673feecb4df3708c72a1f6926673714670285e7468f9a84d56d33b1bb1"
+    },
+    "tafsirs/169/106.json": {
+      "url": "https://quran.com/106:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "235740c6d0eafa6ada9d5236a149f45c93c725709025f68a740535f945f2a132"
+    },
+    "word-meanings/107:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8a48d6115a5e3dee90f3ee8b8234e56c36ff87ffa2ed5c76ef4a74fa13c42597"
+    },
+    "word-meanings/107:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7efdcc83c380c50ba41571dad40bbce7abb76e4da68ff715e35d5076741d82b0"
+    },
+    "word-meanings/107:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "55c81045902e90557a7aa67a4f111289d3d12633cc454548299beeda9326a0b1"
+    },
+    "word-meanings/107:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "a14d447b78a25dfcb31b88aeaa54e94765833df4fafceffdefbfedb1718961e0"
+    },
+    "word-meanings/107:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d763e3ee737b3db217f741f531ba60fae62b19430a4aaf9b62720bf8c09bece6"
+    },
+    "word-meanings/107:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "3fe3c10cb75b774e99bb0b9dfa4fd9095094f20a97203227be702942c61b7c80"
+    },
+    "word-meanings/107:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/107:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "0f02d73a4fa9564aead5fab2506b4d41c3effddedd845ee878f31c2b89baa7ad"
+    },
+    "tafsirs/169/107.json": {
+      "url": "https://quran.com/107:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "acfb97f7b3a4aa3aa6c91dc286c1e3f9ccc178f37ef0d549eb73e82625dd5d3d"
+    },
+    "word-meanings/108:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/108:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "87fec18d0b9236f129fc5d4b2e99e15782083ac49874cee7a81f6724d90f5a3e"
+    },
+    "word-meanings/108:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/108:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8e6608bc18800b51b623c20dbd0dfe009489ab89b35efe450ed5118e8d0d144b"
+    },
+    "word-meanings/108:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/108:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d52a4b7a0a556d1ee741aca447a3d54afb909fe1c1bcdd5834209b8368183eea"
+    },
+    "tafsirs/169/108.json": {
+      "url": "https://quran.com/108:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "f52421af2b02192b7c35535180edb51ac1c2ffff3314b41272614ce07e953cd7"
+    },
+    "word-meanings/109:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "fc1146a5f142aef39e5c2e6b740400305cf3c9c009c564fe66b6f9736b7ec9ab"
+    },
+    "word-meanings/109:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "b5b734de5dcc2dc377a45a49676392649f5c9cc0b1f594c7d3c1ec9963dd5028"
+    },
+    "word-meanings/109:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7a0378554cf09a941611916dcb5afe94655a4012c65bdbba6754b77303882352"
+    },
+    "word-meanings/109:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "74edb3e54e3d22f21aea2c6b1bbbaa3ba2b2c63db0925ad074d0a35577714fc7"
+    },
+    "word-meanings/109:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7e870b17ad53c518b04b6df20691d13d748fc1cf3018bb8b39ec18323026669c"
+    },
+    "word-meanings/109:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/109:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "6ee08e5af06bb86845f75b544b0cbf8284a1499914c7dd918fd4920c3a684555"
+    },
+    "tafsirs/169/109.json": {
+      "url": "https://quran.com/109:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "1a92bbf46a24039e15c5e44bdc063dc2640a2a4d2e4aada6b853f61c0c0db365"
+    },
+    "word-meanings/110:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/110:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "79f82dab30bb89bd2e8c619bae9d4179c3abab42ecf0679a4e7dbcb7a31184eb"
+    },
+    "word-meanings/110:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/110:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5811b84531ae2bb4bcbddcd7d234fea113dae533ded204e2247262506a9660d6"
+    },
+    "word-meanings/110:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/110:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8a9f621de3405d5fee24b3b58dc4c831b698ac0a77db3ecfdb83bd5fe80955b8"
+    },
+    "tafsirs/169/110.json": {
+      "url": "https://quran.com/110:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "2933e05ccb385616ddf81f36973ed21d6788307b5c25bce95a1ed07ca188da36"
+    },
+    "word-meanings/111:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/111:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8dc8f84f6be747b132c6b0e87e13401a3245f38e3708e1c20bb39b4fb7c311ef"
+    },
+    "word-meanings/111:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/111:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d809e2e024b9ab805cc45eaa7950569e090725309ab5d54a051ec06c7a55cc03"
+    },
+    "word-meanings/111:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/111:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "f1a4782b5788de736d3f6efd76f7dd43452db354f404da880e7ccd06e9ea8129"
+    },
+    "word-meanings/111:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/111:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "06d13b8669631f7b149a3195f96e542a6a077903c08be97ef54a9df31feb8a49"
+    },
+    "word-meanings/111:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/111:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "037dc5cb8c09352d56093eaf2816563ca4e6a449eb31c0d1c99bf053d9b06e4f"
+    },
+    "tafsirs/169/111.json": {
+      "url": "https://quran.com/111:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "a25b338dbc1c4bc8af4267a6408ca4db2553fd41d39127bbc0287b65830dda90"
+    },
+    "word-meanings/112:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/112:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4791dc1de0d371c777c002c0578ad7dbdc13efa7204963877353efe107483411"
+    },
+    "word-meanings/112:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/112:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "9b77e753ddb47bbc7895d087f23a09420a62438cfc9deb30c6530dc2fdf3838e"
+    },
+    "word-meanings/112:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/112:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "00cac685484e527debeef3a18f635be524e557676240cc6df16d0144a2166f4b"
+    },
+    "word-meanings/112:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/112:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "3047974f7693490eed605af2f09c4c2ba598eb426ed6be659b5472c9fd0e30c9"
+    },
+    "tafsirs/169/112.json": {
+      "url": "https://quran.com/112:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "11b184bd6e37579656cc86d437c315ae1dea939298e8bc4166e384873d9ec213"
+    },
+    "word-meanings/113:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/113:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "21dea81a7a7e2a67aa44ec94de0e64906eee9a4576a089f25e6add9f76325ead"
+    },
+    "word-meanings/113:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/113:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ae2a8eed470aa1e852fbbdab4ee8591612d7955d73fd7e35e93779abf468257d"
+    },
+    "word-meanings/113:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/113:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "42ed218ab37e6806e2a259f91ba59d9861664221c51120d2b99452607e0e61e5"
+    },
+    "word-meanings/113:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/113:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "27d3b71830c204e29563dbad7fc0a5aa93b12df5c539815afb2dd012a6e01b0a"
+    },
+    "word-meanings/113:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/113:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "bb85b4829fbc3c39be8f1a5b9db8996898f83af302ab91a3afa313e15490afa3"
+    },
+    "tafsirs/169/113.json": {
+      "url": "https://quran.com/113:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "52eded41c5a7d7094e05f608b8d856fc0752e10b896c0d910509157fcf9fd70a"
+    },
+    "word-meanings/114:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "015fa885e99e816c4a3b9e9f9deb3235a184dcd0bded7044476b58536fd1cd89"
+    },
+    "word-meanings/114:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8b0ffd71c59807a606609e44cd85b6eae70dd095629484d3eb0086419af69591"
+    },
+    "word-meanings/114:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "bbb0f5b37ac56efb943005c0c957287057bca25873fc16b06b3189af554b3d1a"
+    },
+    "word-meanings/114:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "0167171651a3d19a6bca87552282d3b5646b5f5afb282957ee9f4248d548b9a2"
+    },
+    "word-meanings/114:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "fc4b8e3ba901cab94d680a18570997bd9a345308a612bac039f943bb7df6428b"
+    },
+    "word-meanings/114:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/114:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "a193fd03eabefed716b058a1930fd6283d4dd56941a5d81d50f7723f00cba928"
+    },
+    "tafsirs/169/114.json": {
+      "url": "https://quran.com/114:1/tafsirs/en-tafisr-ibn-kathir",
+      "sha256": "55541dbf54d478b714b1575682aa9d7b830d9244b9bd7ee343f3c54157acfc56"
+    }
+  }
+}
