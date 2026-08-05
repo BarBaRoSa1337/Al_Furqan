@@ -178,8 +178,8 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
           transliteration: word.transliteration?.text ?? '',
           meaning,
           sourceId: WORD_MEANING_SOURCE_ID,
-          reviewerStatus: 'draft' as const,
-        };
+          reviewerStatus: 'draft',
+        } as WordMeaning;
       }).filter((w): w is WordMeaning => w !== undefined) : [];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

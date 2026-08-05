@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES } from '../packages/content-preview/src/constants';
+import { EXPECTED_AYAH_COUNTS, PREVIEW_SURAH_NUMBERS, QURANENC_RESOURCES } from '../packages/content-preview/src/constants';
 import { buildPreviewPackages, parseTanzilMetadata } from '../packages/content-preview/src/importer';
 import type { PreviewAudioInputs, PreviewSourceInputs, SourceRetrievalEvidence, TanzilSourceMetadata } from '../packages/content-preview/src/types';
 import { validatePackage } from '../src/lib/content/packageValidator';
@@ -14,6 +14,17 @@ async function main(): Promise<void> {
   const englishRetrieval = parseRetrieval(await read('quranenc/english_rwwad/retrieval.json'), 'english_rwwad');
   const frenchRetrieval = parseRetrieval(await read('quranenc/french_rashid/retrieval.json'), 'french_rashid');
   const tanzilMetadata = parseTanzilMetadata(JSON.parse(await read('tanzil/metadata.json')));
+  const quranFoundationRetrieval = parseRetrieval(await read('quranfoundation/retrieval.json'), 'quranfoundation');
+  const wordMeanings: Record<string, unknown> = {};
+  const tafsirs: Record<string, unknown> = {};
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    tafsirs[surah.toString()] = JSON.parse(await read(`quranfoundation/tafsirs/169/${surah}.json`));
+    for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
+      const key = `${surah}:${ayah}`;
+      wordMeanings[key] = JSON.parse(await read(`quranfoundation/word-meanings/${key}.json`));
+    }
+  }
+
   const inputs: PreviewSourceInputs = {
     tanzilText: await read('tanzil/quran-uthmani.txt'),
     tanzilLicense: await read('tanzil/LICENSE.txt'),
@@ -25,6 +36,9 @@ async function main(): Promise<void> {
     audio: JSON.parse(await read('mp3quran/husary-118/streams.json')) as PreviewAudioInputs,
     englishRetrieval,
     frenchRetrieval,
+    quranFoundationRetrieval,
+    wordMeanings,
+    tafsirs,
   };
   await verifyTanzilEvidence(read, tanzilMetadata);
   await verifyEvidence(read, englishRetrieval, 'quranenc/english_rwwad');
