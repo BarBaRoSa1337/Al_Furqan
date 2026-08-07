@@ -6,5 +6,8 @@
     "dev": "node --env-file-if-exists=.env --import tsx src/index.ts",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@quranjs/api": "^3.4.0"
   }
 }

@@ -2,12 +2,12 @@ import type { ApiErrorResponse, ContentMode, SourceAttribution, SupportedLocale 
 import { isSupportedLocale } from '../../../packages/api-contracts/src';
 import type { ContentPackage } from '../../../src/types/content';
 import { validatePackage } from '../../../src/lib/content/packageValidator';
-import type { QuranFoundationClient } from './quranFoundation';
+import type { QuranContentProvider } from './quranContentProvider';
 import type { QuranEncClient } from './quranEnc';
 import type { Mp3QuranClient } from './mp3Quran';
 
 export interface ServerDependencies {
-  quranFoundation: QuranFoundationClient;
+  quranFoundation: QuranContentProvider;
   quranEnc: QuranEncClient;
   mp3Quran: Mp3QuranClient;
   allowedOrigins: string[];
@@ -36,30 +36,28 @@ export function createApp(dependencies: ServerDependencies): (request: Request) 
       if (url.pathname === '/health') return json({ status: 'ok' }, 200, origin);
       if (url.pathname === '/v1/quran/chapters') {
         const language = locale(url.searchParams.get('language'));
-        const result = await dependencies.quranFoundation.get('/chapters', new URLSearchParams({ language }));
-        return json(result, 200, origin, 'no-store');
+        const result = await dependencies.quranFoundation.listChapters(language);
+        return json({ ...result, data: { chapters: result.data } }, 200, origin, 'no-store');
       }
       const verse = url.pathname.match(/^\/v1\/quran\/verses\/(\d{1,3})\/(\d{1,3})$/);
       if (verse) {
         const [surah, ayah] = [bounded(verse[1], 114), bounded(verse[2], 300)];
-        const query = new URLSearchParams({ fields: 'text_uthmani,verse_key,juz_number,hizb_number,rub_el_hizb_number,page_number', words: 'true', word_fields: 'text_uthmani,position,transliteration' });
-        const result = await dependencies.quranFoundation.get(`/verses/by_key/${surah}:${ayah}`, query);
-        return json(result, 200, origin, 'no-store');
+        const result = await dependencies.quranFoundation.getVerse(surah, ayah, 'ar');
+        return json({ ...result, data: { verse: result.data } }, 200, origin, 'no-store');
       }
       const structure = url.pathname.match(/^\/v1\/quran\/structure\/(\d{1,3})$/);
       if (structure) {
         const surah = bounded(structure[1], 114);
-        const query = new URLSearchParams({ fields: 'verse_key,juz_number,hizb_number,rub_el_hizb_number,page_number', per_page: '50' });
-        const result = await dependencies.quranFoundation.get(`/verses/by_chapter/${surah}`, query);
-        return json(result, 200, origin, 'no-store');
+        const result = await dependencies.quranFoundation.getChapterVerses(surah, 'ar');
+        return json({ ...result, data: { verses: result.data } }, 200, origin, 'no-store');
       }
       const tafsir = url.pathname.match(/^\/v1\/tafsir\/quran-foundation\/(\d+)\/(\d{1,3})\/(\d{1,3})$/);
       if (tafsir) {
         const tafsirId = tafsir[1];
         if (!dependencies.approvedQuranFoundationTafsirIds?.includes(tafsirId)) throw new Error('QF tafsir resource is not approved');
         const [surah, ayah] = [bounded(tafsir[2], 114), bounded(tafsir[3], 300)];
-        const result = await dependencies.quranFoundation.get(`/quran/tafsirs/${tafsirId}/by_ayah/${surah}:${ayah}`, new URLSearchParams());
-        return json(result, 200, origin, 'no-store');
+        const result = await dependencies.quranFoundation.getTafsir(surah, ayah, Number(tafsirId));
+        return json({ ...result, data: { tafsir: result.data } }, 200, origin, 'no-store');
       }
       const translation = url.pathname.match(/^\/v1\/translations\/quranenc\/([a-z0-9-]+)\/(\d{1,3})$/);
       if (translation) return json(await dependencies.quranEnc.getSurah(translation[1], bounded(translation[2], 114)), 200, origin, 'no-store');

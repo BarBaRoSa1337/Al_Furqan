@@ -29,7 +29,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Overview</Text>
           <Text style={styles.body}>
-            The Quran Habit App ("Furqan") is a Quran learning application that
+            The Quran Habit App (&quot;Furqan&quot;) is a Quran learning application that
             helps users build daily Quran habits, memorize passages, and
             understand translations and tafsir.
           </Text>
@@ -57,7 +57,7 @@ export default function PrivacyPolicyScreen() {
             • MP3Quran (mp3quran.net) — for audio recitation streaming. Audio is
             streamed directly and is not downloaded or cached.{"\n\n"}
             These services may log standard HTTP request information (IP address,
-            user agent). Please review each provider's privacy policy for
+            user agent). Please review each provider&apos;s privacy policy for
             details.
           </Text>
         </View>
@@ -72,7 +72,7 @@ export default function PrivacyPolicyScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Children's Privacy</Text>
+          <Text style={styles.sectionTitle}>Children&apos;s Privacy</Text>
           <Text style={styles.body}>
             This app is designed for users aged 12 and above. We do not
             knowingly collect personal information from children under 13.
@@ -83,7 +83,7 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.sectionTitle}>Changes to This Policy</Text>
           <Text style={styles.body}>
             We may update this privacy policy from time to time. Any changes
-            will be reflected in the app with an updated "Last updated" date.
+            will be reflected in the app with an updated &quot;Last updated&quot; date.
           </Text>
         </View>
 

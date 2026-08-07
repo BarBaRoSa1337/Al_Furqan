@@ -19,7 +19,7 @@
 - [ ] Record editorial, shaykh, technical, and legal reviewer attestations.
 - [ ] Add exact edition/page/entry citations for authored tafsir summaries.
 - [ ] Supply application Privacy Policy and Terms before provider-backed release.
-- [ ] Enroll in Quran Foundation developer program.
+- [x] Enroll in Quran Foundation developer program.
 
 
 ## Phase 0 — Inventory and baseline

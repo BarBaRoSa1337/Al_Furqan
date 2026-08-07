@@ -4,26 +4,36 @@ This workspace is the only production boundary for Quran Foundation credentials
 and provider normalization. The Expo application must never call Quran
 Foundation directly or persist its responses.
 
-## Providers
+## Quran.Foundation SDK boundary
 
-- Quran Foundation Content API v4: canonical Hafs text, words, structure and
-  approved tafsir. Server cache entries honor `no-store` and upstream expiry,
-  and are capped at seven days. Expired data is deleted; stale fallback is not
-  served.
-- QuranEnc: exact pinned Rowwad English (`1.0.19`) and Rashid French (`1.0.3`)
-  payloads. A provider version change fails closed until reviewed.
-- MP3Quran: Al-Husary, reciter `118`, mushaf `118`, riwayah `1`. The server
-  validates catalog identity, HTTPS host, timings, response type and size. The
-  returned URL is stream-only.
-- Mafateeh: disabled. The adapter exposes only a permission record until written
-  rights exist.
+`QuranFoundationProvider` implements the generic `QuranContentProvider`
+contract using `@quranjs/api/server`. The assessment runtime maps Content API
+v4 chapter metadata, Uthmani Hafs verses, words, translation footnotes, tafsir,
+chapter information, and verse recitation into the existing Furqan package
+schema. QuranEnc and MP3Quran adapters remain available to their narrow legacy
+routes, but they are not mixed into this runtime course.
+
+Cache entries honor upstream `no-store` and lower expiry values and are always
+capped at seven days. Expired content is deleted; stale content is never served.
+Mobile responses are `no-store` and Quran.Foundation responses are not written
+into downloadable packages or mobile persistence.
 
 ## Operations
 
-Copy `.env.example` to `.env` before starting the local server. Never use
-`EXPO_PUBLIC_` for Quran Foundation credentials. `MemoryServerCache` is
+Copy `.env.example` to the ignored `apps/server/.env` file before starting the
+local server. Never use `EXPO_PUBLIC_` for Quran.Foundation credentials. Use
+separate secret-manager values for PRELIVE and production. `MemoryServerCache` is
 suitable for tests and local development only; production must provide an
 expiry-reliable cache implementing `ServerCache`.
+
+`QF_ENV` must be exactly `prelive` or `production`; Expo cannot select it.
+`QF_TRANSLATION_RESOURCE_ID` is required. Tafsir, chapter-information, and
+recitation IDs are optional and must be selected explicitly from the account's
+available resources. List safe resource metadata with:
+
+```sh
+npm run server:qf:resources
+```
 
 The HTTP boundary permits only narrow GET routes, checks CORS origins, limits
 URL size, applies a fixed-window rate limit, returns `nosniff`, and sends mobile
@@ -55,13 +65,20 @@ production source, license, approval, hash, and locale-publication gates.
 ## Draft short-Surah runtime course
 
 Development can assemble the English Al-Fil-to-An-Nas practice course in
-memory from Quran Foundation, pinned QuranEnc Rowwad `1.0.19`, and MP3Quran
-Al-Husary streams. Set `FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server,
+memory from the official Quran.Foundation SDK. Set
+`FURQAN_ENABLE_DRAFT_RUNTIME=true` on the server,
 `EXPO_PUBLIC_FURQAN_CONTENT_MODE=preview`, and
 `EXPO_PUBLIC_INITIAL_PACKAGE_ID=surah-al-fil-v1` in Expo.
 
 The endpoint returns `no-store`; Expo registers the package in memory and does
-not persist Quran Foundation payloads. Arabic and French course publications
+not persist Quran.Foundation payloads. Arabic and French course publications
 remain explicitly unavailable until complete reviewed package catalogs exist.
 The response is labeled `contentMode: preview`; its locale publication remains
 `draft` and is never rewritten as published.
+
+Automated tests inject mocked SDK responses and require no credentials. If
+credentials or the required translation resource are absent at runtime, server
+startup fails with a technical configuration error instead of fabricating
+content. PRELIVE resource availability is account-dependent and must be checked
+with `server:qf:resources`; production Search and user authentication remain out
+of scope until their additional scopes are granted.

@@ -162,6 +162,9 @@ export interface TranslationEntry {
   sourceId: string;
   reviewerStatus: ReviewerStatus;
   /** Provider text is immutable; updates create a new reviewed resource version. */
+  providerText?: string;
+  /** Exact provider footnote map, retained separately from display formatting. */
+  providerFootnotes?: Record<string, string>;
   providerResourceId?: string;
   resourceVersion?: string;
   publisher?: string;
@@ -318,7 +321,7 @@ export interface DiscoverySearchResult {
   diagnostics: DiscoveryDiagnostic[];
 }
 
-export type ContextKind = 'historical_context' | 'occasion_of_revelation' | 'tafsir_summary';
+export type ContextKind = 'historical_context' | 'occasion_of_revelation' | 'tafsir_summary' | 'chapter_information';
 export type LevelStepKind =
   | 'surah_introduction'
   | 'context'

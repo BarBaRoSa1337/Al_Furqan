@@ -1,5 +1,32 @@
 # Implementation Log
 
+## 2026-08-07 - Official Quran.Foundation SDK provider
+
+### Delivered
+
+- Replaced the custom Quran.Foundation OAuth/content client used by the runtime
+  course with `@quranjs/api/server` behind the generic
+  `QuranContentProvider` contract. React Native imports no SDK server code and
+  cannot select PRELIVE or production.
+- Added strict server-only environment parsing and explicit translation,
+  tafsir, chapter-information, and recitation resource IDs. Missing required
+  credentials or translation configuration fails at server startup.
+- Mapped Quran.Foundation chapters 105-114, Uthmani Hafs verses, word data,
+  translations and footnotes, optional tafsir, optional chapter information,
+  and optional verse recitation into the existing immutable package schema.
+  Provider wording is retained separately from display-safe rendering.
+- Added upstream-aware cache policy with a hard seven-day maximum, expiry
+  deletion, no stale fallback, typed operation allowlisting, resource discovery,
+  and mocked SDK tests. Mobile package responses remain `no-store`.
+
+### Compatibility and release status
+
+No progress migration, route change, lesson sequencing rewrite, approval, or
+publication was introduced. Existing stable package, level, activity, and
+review IDs remain. Runtime content remains draft preview content. Production
+approval gates are unchanged; live resource availability must be checked after
+rotated credentials are installed in the server secret manager.
+
 ## 2026-08-04 - Responsive Surah roadmap Home
 
 ### Delivered

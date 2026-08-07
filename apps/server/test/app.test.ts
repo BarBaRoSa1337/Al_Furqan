@@ -3,8 +3,25 @@ import test from 'node:test';
 import surahAlFilPackage from '../../../src/content/packages/surah-al-fil/v1';
 import { createApp } from '../src/app';
 
+const result = <T>(data: T) => ({
+  data,
+  fetchedAt: '2026-01-01T00:00:00.000Z',
+  expiresAt: '2026-01-08T00:00:00.000Z',
+  provider: 'quran-foundation' as const,
+  sourceVersion: 'content-api-v4' as const,
+  cacheStatus: 'miss' as const,
+});
+
 const dependencies = {
-  quranFoundation: { get: async () => ({ data: {}, fetchedAt: '2026-01-01T00:00:00.000Z', provider: 'quran-foundation' as const, sourceVersion: 'content-api-v4' as const, cacheStatus: 'no-store' as const }) },
+  quranFoundation: {
+    listChapters: async () => result([]),
+    getVerse: async () => result({ id: 1, verseNumber: 1, verseKey: '105:1' }),
+    getChapterVerses: async () => result([]),
+    getChapterInfo: async () => result(undefined),
+    getChapterRecitation: async () => result([]),
+    getTafsir: async () => result(undefined),
+    listResources: async () => result({ translations: [], tafsirs: [], chapterInfos: [], recitations: [] }),
+  },
   quranEnc: { getSurah: async () => ({}) },
   mp3Quran: { resolveHusaryHafs: async () => ({}) },
   allowedOrigins: ['https://app.furqan.example'],
@@ -23,19 +40,13 @@ test('runtime package endpoint returns explicit unavailable state', async () => 
 });
 
 test('production requests cannot consume the preview package provider', async () => {
-  const app = createApp({
-    ...dependencies,
-    previewPackage: async () => ({ package: {}, attributions: [] }),
-  } as never);
+  const app = createApp({ ...dependencies, previewPackage: async () => ({ package: {}, attributions: [] }) } as never);
   const response = await app(new Request('https://server.test/v1/content/packages/surah-al-fil-v1?locale=en&contentMode=production'));
   assert.equal(response.status, 404);
 });
 
 test('preview responses are explicitly labeled and retain draft package state', async () => {
-  const app = createApp({
-    ...dependencies,
-    previewPackage: async () => ({ package: surahAlFilPackage, attributions: [] }),
-  } as never);
+  const app = createApp({ ...dependencies, previewPackage: async () => ({ package: surahAlFilPackage, attributions: [] }) } as never);
   const response = await app(new Request('https://server.test/v1/content/packages/surah-al-fil-v1?locale=en&contentMode=preview'));
   const body = await response.json() as { contentMode: string; package: typeof surahAlFilPackage };
   assert.equal(response.status, 200);
@@ -44,10 +55,7 @@ test('preview responses are explicitly labeled and retain draft package state', 
 });
 
 test('production responses fail closed when a provider returns a draft package', async () => {
-  const app = createApp({
-    ...dependencies,
-    publishedPackage: async () => ({ package: surahAlFilPackage, attributions: [] }),
-  } as never);
+  const app = createApp({ ...dependencies, publishedPackage: async () => ({ package: surahAlFilPackage, attributions: [] }) } as never);
   const response = await app(new Request('https://server.test/v1/content/packages/surah-al-fil-v1?locale=en&contentMode=production'));
   assert.equal(response.status, 503);
 });

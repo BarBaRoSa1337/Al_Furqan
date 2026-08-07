@@ -371,10 +371,17 @@ applied migration IDs are persisted by Progress V5.
 
 ## Provider runtime boundary
 
-The built-in package keeps the development Al-Fil slice available without a
-network. An optional backend assembler builds the English Al-Fil-to-An-Nas
-canonical-practice course from Quran Foundation, pinned QuranEnc, and MP3Quran
-provider responses. Mobile responses are `no-store` and register only in
-memory. Draft runtime assembly is disabled unless explicitly enabled; the
-production package gate still requires source, legal, technical, editorial,
-and Islamic approvals.
+The Expo client never calls Quran.Foundation. It requests only allowlisted
+Furqan endpoints from the TypeScript server. `QuranFoundationProvider`
+implements the generic `QuranContentProvider` interface through the official
+server SDK and maps chapter metadata, Uthmani Hafs verses, words, translations
+and footnotes, tafsir, chapter information, and recitation into the existing
+package model. Explicit server-side resource IDs control each optional slice.
+
+SDK responses are cached server-side for no longer than seven days and honor
+stricter upstream cache directives. Expired entries are deleted and mobile
+responses are `no-store`. The provider has no arbitrary proxy operation.
+PRELIVE and production are server deployment choices; Expo cannot select an
+environment. Draft runtime assembly remains explicit, and the production
+package gate still requires source, legal, technical, editorial, and Islamic
+approvals.

@@ -34,18 +34,19 @@ production release.
   - Content integrity must be preserved
   - Credentials are confidential
 - **Compliance status**: ⚠️ Partially compliant
+  - ✅ Official developer access received for PRELIVE and production
+  - ✅ Official `@quranjs/api` server SDK used behind a provider abstraction
   - ✅ OAuth credentials server-side only (`QF_CLIENT_ID`, `QF_CLIENT_SECRET`)
-  - ✅ `no-store` cache policy; mobile never persists payloads
-  - ✅ Allowlisted API paths
+  - ✅ Upstream-aware server cache capped at seven days; mobile never persists payloads
+  - ✅ Allowlisted typed operations; no arbitrary proxy endpoint
   - ✅ Structure snapshot remains `draft` review state
   - ❌ App Privacy Policy not yet published
   - ❌ App Terms of Use not yet published
-  - ❌ Developer program enrollment not yet confirmed
   - ❌ No `LicenseGrant` attestation in governance envelope
 - **Remaining actions**:
   1. Publish app Privacy Policy and Terms of Use
-  2. Enroll in Quran Foundation developer program
-  3. Add `LicenseGrant` after enrollment confirmation
+  2. Rotate any credential exposed outside the deployment secret manager
+  3. Add a verified `LicenseGrant` evidence record before production release
 - **API endpoints**: `apps/server/src/quranFoundation.ts`
 - **CLI importer**: `scripts/import-quran-foundation-structure.ts`
 
@@ -133,7 +134,7 @@ No npm dependency terms-of-use issues exist.
 
 - [ ] Publish app Privacy Policy
 - [ ] Publish app Terms of Use
-- [ ] Enroll in Quran Foundation developer program
+- [x] Enroll in Quran Foundation developer program
 - [ ] Obtain written permission from MP3Quran
 - [ ] Add user-facing attribution screen with all source credits
 - [ ] Add `LicenseGrant` attestations for all sources

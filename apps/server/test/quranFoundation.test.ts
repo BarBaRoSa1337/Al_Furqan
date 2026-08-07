@@ -1,40 +1,101 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MemoryServerCache } from '../src/cache';
-import { QuranFoundationClient } from '../src/quranFoundation';
+import { MemoryServerCache, QF_MAX_CACHE_SECONDS } from '../src/cache';
+import type { QuranProviderVerse } from '../src/quranContentProvider';
+import { QuranFoundationProvider } from '../src/quranFoundation';
 
-test('QF client caches eligible responses and never exposes credentials in result', async () => {
-  const requests: Array<{ url: string; init?: RequestInit }> = [];
-  const fetcher = async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input);
-    requests.push({ url, init });
-    if (url.includes('/oauth2/token')) return Response.json({ access_token: 'secret-token', expires_in: 3600 });
-    return Response.json({ chapters: [{ id: 1 }] }, { headers: { 'cache-control': 'public, max-age=120' } });
+function sdk(chapterCalls: { count: number }) {
+  return {
+    content: { v4: {
+      chapters: {
+        list: async () => {
+          chapterCalls.count += 1;
+          return [{ id: 105, versesCount: 5, nameArabic: 'الفيل' }];
+        },
+        getInfoResponse: async () => ({ chapterInfo: undefined }),
+      },
+      verses: {
+        byKey: async () => ({ id: 1, verseNumber: 1, verseKey: '105:1' }),
+        byChapter: async (): Promise<QuranProviderVerse[]> => [],
+      },
+      audio: { verseRecitation: { byChapter: async () => ({ audioFiles: [] }) } },
+      resources: {
+        translations: { list: async () => [] },
+        tafsirs: { list: async () => [] },
+        chapterInfos: { list: async () => [] },
+        recitations: { list: async () => [] },
+      },
+      raw: { getFootNote: async ({ path }: { path: { id: string } }) => ({ footNote: { id: Number(path.id), text: `Exact footnote ${path.id}.` } }) },
+    } },
   };
-  const client = new QuranFoundationClient({ environment: 'prelive', clientId: 'client', clientSecret: 'secret' }, new MemoryServerCache(), fetcher, () => new Date('2026-01-01T00:00:00.000Z'));
-  const first = await client.get<{ chapters: unknown[] }>('/chapters', new URLSearchParams({ language: 'en' }));
-  const second = await client.get<{ chapters: unknown[] }>('/chapters', new URLSearchParams({ language: 'en' }));
+}
+
+test('QF provider caches an allowlisted SDK operation for no more than seven days', async () => {
+  const calls = { count: 0 };
+  const now = new Date('2026-01-01T00:00:00.000Z');
+  const provider = new QuranFoundationProvider(
+    { environment: 'prelive', clientId: 'client', clientSecret: 'secret' },
+    new MemoryServerCache(),
+    fetch,
+    () => now,
+    sdk(calls) as never,
+  );
+
+  const first = await provider.listChapters('en');
+  const second = await provider.listChapters('en');
   assert.equal(first.cacheStatus, 'miss');
   assert.equal(second.cacheStatus, 'hit');
-  assert.equal(requests.length, 2);
+  assert.equal(calls.count, 1);
+  assert.equal(Date.parse(first.expiresAt!) - Date.parse(first.fetchedAt), QF_MAX_CACHE_SECONDS * 1000);
   assert.equal(JSON.stringify(first).includes('secret'), false);
 });
 
-test('QF no-store response is requested again', async () => {
-  let calls = 0;
-  const fetcher = async (input: string | URL | Request) => {
-    calls += 1;
-    if (String(input).includes('/oauth2/token')) return Response.json({ access_token: 'token', expires_in: 3600 });
-    return Response.json({ verse: {} }, { headers: { 'cache-control': 'no-store' } });
-  };
-  const client = new QuranFoundationClient({ environment: 'production', clientId: 'id', clientSecret: 'secret' }, new MemoryServerCache(), fetcher);
-  const path = '/verses/by_key/105:1';
-  await client.get(path, new URLSearchParams());
-  await client.get(path, new URLSearchParams());
-  assert.equal(calls, 3);
+test('QF provider deletes expired content and refreshes it', async () => {
+  const calls = { count: 0 };
+  let now = new Date('2026-01-01T00:00:00.000Z');
+  const provider = new QuranFoundationProvider(
+    { environment: 'production', clientId: 'client', clientSecret: 'secret' },
+    new MemoryServerCache(),
+    fetch,
+    () => now,
+    sdk(calls) as never,
+  );
+  await provider.listChapters('en');
+  now = new Date('2026-01-08T00:00:00.001Z');
+  const refreshed = await provider.listChapters('en');
+  assert.equal(refreshed.cacheStatus, 'miss');
+  assert.equal(calls.count, 2);
 });
 
-test('QF client rejects a generic proxy path', async () => {
-  const client = new QuranFoundationClient({ environment: 'prelive', clientId: 'id', clientSecret: 'secret' }, new MemoryServerCache(), fetch);
-  await assert.rejects(client.get('/https://example.com', new URLSearchParams()), /allowlisted/);
+test('QF provider rejects malformed identifiers and exposes no generic proxy method', async () => {
+  const provider = new QuranFoundationProvider(
+    { environment: 'prelive', clientId: 'client', clientSecret: 'secret' },
+    new MemoryServerCache(),
+    fetch,
+    undefined,
+    sdk({ count: 0 }) as never,
+  );
+  assert.throws(() => provider.getVerse(115, 1, 'en'), /chapter identifier/);
+  assert.throws(() => provider.getTafsir(105, 1, 0), /resource identifier/);
+  assert.equal('get' in provider, false);
+});
+
+test('QF provider hydrates referenced translation footnotes without rewriting them', async () => {
+  const mock = sdk({ count: 0 });
+  mock.content.v4.verses.byChapter = async () => [{
+    id: 1,
+    verseNumber: 1,
+    verseKey: '105:1',
+    translations: [{ resourceId: 131, text: 'Provider text.<sup foot_note=42>1</sup>' }],
+  }];
+  const provider = new QuranFoundationProvider(
+    { environment: 'prelive', clientId: 'client', clientSecret: 'secret' },
+    new MemoryServerCache(),
+    fetch,
+    undefined,
+    mock as never,
+  );
+  const response = await provider.getChapterVerses(105, 'en', { translationId: 131 });
+  assert.equal(response.data[0].translations?.[0].text, 'Provider text.<sup foot_note=42>1</sup>');
+  assert.deepEqual(response.data[0].translations?.[0].footNotes, { '42': 'Exact footnote 42.' });
 });

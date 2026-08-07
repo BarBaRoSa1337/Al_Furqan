@@ -29,7 +29,7 @@ export default function TermsOfUseScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acceptance of Terms</Text>
           <Text style={styles.body}>
-            By using the Quran Habit App ("Furqan"), you agree to these Terms of
+            By using the Quran Habit App (&quot;Furqan&quot;), you agree to these Terms of
             Use. If you do not agree, please do not use the app.
           </Text>
         </View>
@@ -49,7 +49,7 @@ export default function TermsOfUseScreen() {
           <Text style={styles.body}>
             Quran text, translations, tafsir, and audio recitations are
             provided by third-party sources including the Tanzil Project,
-            Quran Foundation, QuranEnc, and MP3Quran.net. Each source's
+            Quran Foundation, QuranEnc, and MP3Quran.net. Each source&apos;s
             content is subject to its own license terms. See the Attributions
             page for details.{"\n\n"}
             The Arabic Quran text is canonical data provided verbatim from
@@ -63,7 +63,7 @@ export default function TermsOfUseScreen() {
             You may use this app for personal Quran learning and memorization.{"\n"}
             You may not:{"\n"}
             • Modify or redistribute the Quran text provided by this app{"\n"}
-            • Use the app's content for purposes that promote hate,
+            • Use the app&apos;s content for purposes that promote hate,
             misinformation, or extremism{"\n"}
             • Reverse engineer, decompile, or extract data from the app for
             commercial redistribution
@@ -73,7 +73,7 @@ export default function TermsOfUseScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Disclaimer</Text>
           <Text style={styles.body}>
-            This app is provided "as is" without warranty of any kind. The
+            This app is provided &quot;as is&quot; without warranty of any kind. The
             developers are not responsible for the accuracy of third-party
             content. For authoritative Islamic guidance, consult qualified
             scholars.

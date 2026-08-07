@@ -26,7 +26,8 @@
     "structure:import": "node --import tsx scripts/import-quran-foundation-structure.ts",
     "server:dev": "node --env-file-if-exists=apps/server/.env --import tsx apps/server/src/index.ts",
     "server:test": "node --import tsx --test apps/server/test/*.test.ts",
-    "server:typecheck": "tsc -p apps/server/tsconfig.json"
+    "server:typecheck": "tsc -p apps/server/tsconfig.json",
+    "server:qf:resources": "node --env-file-if-exists=apps/server/.env --import tsx apps/server/src/listQuranFoundationResources.ts"
   },
   "dependencies": {
     "@expo-google-fonts/noto-naskh-arabic": "^0.4.5",

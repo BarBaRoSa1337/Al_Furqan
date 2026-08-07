@@ -1,2 +1,7 @@
 node_modules/
 uii_EXAMPLE.png
+
+# Server credentials stay local. Keep committed templates readable.
+apps/server/.env
+apps/server/.env.*
+!apps/server/.env.example
