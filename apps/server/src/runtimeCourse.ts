@@ -21,13 +21,15 @@ import type {
   QuranProviderResource,
   QuranProviderResourceConfig,
   QuranProviderResourceCatalog,
+  QuranProviderResult,
   QuranProviderTafsir,
   QuranProviderVerse,
 } from './quranContentProvider';
+import type { QuranEncClient, QuranEncResult } from './quranEnc';
 
 const COURSE_SURAH_NUMBERS = Array.from({ length: 10 }, (_, index) => index + 105);
 const QURAN_SOURCE_ID = 'quran-foundation-hafs-uthmani-v4';
-const TRANSLATION_SOURCE_ID = 'quran-foundation-translation';
+const QF_TRANSLATION_SOURCE_ID = 'quran-foundation-translation';
 const AUDIO_SOURCE_ID = 'quran-foundation-recitation';
 const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
 const CHAPTER_INFO_SOURCE_ID = 'quran-foundation-chapter-info';
@@ -37,7 +39,25 @@ const QF_AUDIO_HOSTS = ['verses.quran.com', 'audio.qurancdn.com'] as const;
 
 export interface RuntimeCourseDependencies {
   quranFoundation: QuranContentProvider;
+  quranEnc?: QuranEncClient;
   resources: QuranProviderResourceConfig;
+}
+
+interface RuntimeTranslationSource {
+  contentSource: ContentSource;
+  attribution: SourceAttribution;
+}
+
+interface RuntimeTranslationValue {
+  text: string;
+  providerFootnotes?: Record<string, string>;
+  footnotes?: string;
+}
+
+interface RuntimeChapterContent {
+  verses: QuranProviderResult<QuranProviderVerse[]>;
+  translations: Map<string, RuntimeTranslationValue>;
+  translationSource: RuntimeTranslationSource;
 }
 
 export async function buildShortSurahRuntimeCourse(
@@ -50,7 +70,8 @@ export async function buildShortSurahRuntimeCourse(
     dependencies.quranFoundation.listChapters(locale),
     dependencies.quranFoundation.listResources(locale),
   ]);
-  validateResourceSelection(catalogResult.data, dependencies.resources);
+
+  validateResourceSelection(catalogResult.data, dependencies.resources, dependencies.quranEnc);
   const selectedChapters = COURSE_SURAH_NUMBERS.map(number => {
     const chapter = chapterResult.data.find(candidate => candidate.id === number);
     if (!chapter) throw new Error(`Quran Foundation chapter ${number} is unavailable`);
@@ -58,11 +79,14 @@ export async function buildShortSurahRuntimeCourse(
   });
   validateChapterCounts(selectedChapters);
 
-  const verseResults = await mapConcurrent(COURSE_SURAH_NUMBERS, 4, number => dependencies.quranFoundation.getChapterVerses(
+  const chapterContents = await mapConcurrent(COURSE_SURAH_NUMBERS, 4, number => getChapterContent(
     number,
     locale,
-    { translationId: dependencies.resources.translationId },
+    dependencies,
+    catalogResult.data,
   ));
+  const translationSource = requireConsistentTranslationSource(chapterContents);
+  const verseResults = chapterContents.map(content => content.verses);
   const chapterInfoResults = dependencies.resources.chapterInfoId
     ? await optionalProviderBatch(() => mapConcurrent(COURSE_SURAH_NUMBERS, 4, number => dependencies.quranFoundation.getChapterInfo(
       number,
@@ -86,7 +110,15 @@ export async function buildShortSurahRuntimeCourse(
     }))
     : undefined;
   const wordTokens = verses.flatMap(normalizeTokens);
-  const ayat = verses.map((verse, index) => normalizeAyah(verse, wordTokens, dependencies.resources, tafsirResults?.[index].data));
+  const translationValues = new Map(chapterContents.flatMap(content => [...content.translations]));
+  const ayat = verses.map((verse, index) => normalizeAyah(
+    verse,
+    wordTokens,
+    translationValues.get(verse.verseKey),
+    translationSource.contentSource,
+    dependencies.resources,
+    tafsirResults?.[index].data,
+  ));
   const tracks = recitationResults?.flatMap((result, index) => normalizeTracks(
     COURSE_SURAH_NUMBERS[index],
     result.data,
@@ -98,13 +130,21 @@ export async function buildShortSurahRuntimeCourse(
   });
   const surahs = surahAlFilPackage.surahs.map(surah => {
     const chapter = selectedChapters.find(candidate => candidate.id === surah.surahNumber);
-    return chapter ? runtimeSurah(chapter, dependencies.resources) : surah;
+    return chapter ? runtimeSurah(chapter, dependencies.resources, translationSource.contentSource.id) : surah;
   });
-  const { path, levels } = buildCourseCurriculum(surahs, ayat, wordTokens, chapterInfos, dependencies.resources, tracks.length > 0);
+  const { path, levels } = buildCourseCurriculum(
+    surahs,
+    ayat,
+    wordTokens,
+    chapterInfos,
+    dependencies.resources,
+    tracks.length > 0,
+    translationSource.contentSource.id,
+  );
   const selectedRecitation = dependencies.resources.recitationId
     ? requireResource(catalogResult.data.recitations, dependencies.resources.recitationId, 'recitation')
     : undefined;
-  const sources = providerSources(dependencies.resources, catalogResult.data);
+  const sources = providerSources(dependencies.resources, catalogResult.data, translationSource.contentSource);
   const reciters = selectedRecitation ? [runtimeReciter(selectedRecitation, dependencies.resources.recitationId!)] : [];
   const contentPackage: ContentPackage = {
     ...surahAlFilPackage,
@@ -145,16 +185,20 @@ export async function buildShortSurahRuntimeCourse(
     },
   };
   const firstVerse = verseResults[0];
-  const attributions: SourceAttribution[] = sources.map(source => ({
-    provider: 'quran-foundation',
-    sourceId: source.id,
-    resourceId: source.resourceKey ?? source.id,
-    version: source.version,
-    publisher: source.publisher ?? 'Quran Foundation',
-    attributionText: source.notes ?? 'Content provided by Quran Foundation.',
-    fetchedAt: firstVerse.fetchedAt,
-    expiresAt: firstVerse.expiresAt,
-  }));
+  const attributions: SourceAttribution[] = sources.map(source => (
+    source.id === translationSource.contentSource.id
+      ? translationSource.attribution
+      : {
+          provider: 'quran-foundation' as const,
+          sourceId: source.id,
+          resourceId: source.resourceKey ?? source.id,
+          version: source.version,
+          publisher: source.publisher ?? 'Quran Foundation',
+          attributionText: source.notes ?? 'Content provided by Quran Foundation.',
+          fetchedAt: firstVerse.fetchedAt,
+          expiresAt: firstVerse.expiresAt,
+        }
+  ));
   return {
     package: contentPackage,
     attributions,
@@ -179,28 +223,34 @@ function normalizeTokens(verse: QuranProviderVerse): WordToken[] {
 function normalizeAyah(
   verse: QuranProviderVerse,
   tokens: WordToken[],
+  translation: RuntimeTranslationValue | undefined,
+  translationSource: ContentSource,
   resources: QuranProviderResourceConfig,
   tafsir?: QuranProviderTafsir,
 ): AyahRecord {
   const [surahNumber, ayahNumber] = verse.verseKey.split(':').map(Number);
   const verseTokens = tokens.filter(token => token.ayahRef.surahNumber === surahNumber && token.ayahRef.ayahNumber === ayahNumber);
-  const translation = verse.translations?.find(entry => entry.resourceId === resources.translationId);
-  if (!translation?.text.trim()) throw new Error(`Quran Foundation translation ${verse.verseKey} is unavailable`);
-  const providerFootnotes = translation.footNotes ?? {};
+  if (!translation?.text.trim()) throw new Error(`Translation ${verse.verseKey} is unavailable`);
+  const providerFootnotes = translation.providerFootnotes ?? {};
+  const providerResourceId = translationSource.resourceKey ?? String(resources.translationId);
   const translations: TranslationEntry[] = [{
-    id: `${TRANSLATION_SOURCE_ID}:${resources.translationId}:${verse.verseKey}`,
+    id: `${translationSource.id}:${providerResourceId}:${verse.verseKey}`,
     locale: 'en',
-    text: displayProviderText(translation.text),
+    text: translationSource.id === QF_TRANSLATION_SOURCE_ID ? displayProviderText(translation.text) : translation.text,
     providerText: translation.text,
-    providerFootnotes,
-    sourceId: TRANSLATION_SOURCE_ID,
+    ...(translation.providerFootnotes ? { providerFootnotes } : {}),
+    sourceId: translationSource.id,
     reviewerStatus: 'draft',
-    providerResourceId: String(resources.translationId),
-    resourceVersion: 'content-api-v4',
-    publisher: translation.resourceName ?? 'Quran Foundation',
-    attributionText: 'Translation provided by Quran Foundation. Provider text and footnotes are retained.',
-    footnotes: Object.values(providerFootnotes).join('\n\n'),
-    contentHash: createHash('sha256').update(JSON.stringify({ text: translation.text, footnotes: providerFootnotes })).digest('hex'),
+    providerResourceId,
+    resourceVersion: translationSource.version,
+    publisher: translationSource.author ?? translationSource.publisher,
+    attributionText: translationSource.attributionText,
+    transcriptInfo: translationSource.transcriptInfo,
+    footnotes: translation.footnotes ?? Object.values(providerFootnotes).join('\n\n'),
+    contentHash: createHash('sha256').update(JSON.stringify({
+      text: translation.text,
+      footnotes: translation.footnotes ?? providerFootnotes,
+    })).digest('hex'),
   }];
   const providerWords = verse.words?.filter(word => word.charTypeName !== 'end' && word.textUthmani?.trim()) ?? [];
   const wordMeanings = providerWords.flatMap((word, index) => {
@@ -244,7 +294,17 @@ function displayProviderText(value: string): string {
 }
 
 async function optionalProviderBatch<T>(operation: () => Promise<T>): Promise<T | undefined> {
-  try { return await operation(); } catch { return undefined; }
+  try {
+    return await operation();
+  } catch (error) {
+    if (isOptionalResourceUnavailable(error)) return undefined;
+    throw error;
+  }
+}
+
+function isOptionalResourceUnavailable(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /^resource unavailable$/i.test(error.message.trim()) || /(?:^|\s)(?:404|not found)(?:\s|$)/i.test(error.message);
 }
 
 function normalizeTracks(surahNumber: number, recitations: QuranProviderRecitation[], recitationId: number): RecitationTrack[] {
@@ -274,6 +334,7 @@ function buildCourseCurriculum(
   chapterInfos: Map<number, QuranProviderChapterInfo>,
   resources: QuranProviderResourceConfig,
   audioAvailable: boolean,
+  translationSourceId: string,
 ): { path: LearningPath; levels: Level[] } {
   const pathId = 'surah-al-fil-path-v1';
   const selected = surahs.filter(surah => COURSE_SURAH_NUMBERS.includes(surah.surahNumber));
@@ -288,12 +349,12 @@ function buildCourseCurriculum(
     const lessonIds: string[] = [introId];
     previousLevelId = introId;
     for (let ayahNumber = 1; ayahNumber <= surah.ayahCount; ayahNumber += 1) {
-      const level = ayahLevel(pathId, surah, courseLevelId(surah.surahNumber, 'ayah', ayahNumber), ayahNumber, previousLevelId, ayat, tokens, audioAvailable);
+      const level = ayahLevel(pathId, surah, courseLevelId(surah.surahNumber, 'ayah', ayahNumber), ayahNumber, previousLevelId, ayat, tokens, audioAvailable, translationSourceId);
       levels.push(level);
       lessonIds.push(level.id);
       previousLevelId = level.id;
     }
-    const review = reviewLevel(pathId, surah, courseLevelId(surah.surahNumber, 'review'), previousLevelId, tokens);
+    const review = reviewLevel(pathId, surah, courseLevelId(surah.surahNumber, 'review'), previousLevelId, tokens, translationSourceId);
     levels.push(review);
     lessonIds.push(review.id);
     previousLevelId = review.id;
@@ -322,7 +383,7 @@ function buildCourseCurriculum(
     levelIds: levels.map(level => level.id),
     surahCurricula: curricula,
     discovery: { alignment: { type: 'custom_ranges', ranges: selected.map(surah => ({ start: { surahNumber: surah.surahNumber, ayahNumber: 1 }, end: { surahNumber: surah.surahNumber, ayahNumber: surah.ayahCount } })) }, themeIds: [], contentTypes: ['surah_course'], studyLocales: ['en'], audiences: ['teen', 'adult', 'family'] },
-    sourceMetadata: { reviewerStatus: 'draft', sourceIds: [QURAN_SOURCE_ID, TRANSLATION_SOURCE_ID, ...(resources.tafsirId ? [TAFSIR_SOURCE_ID] : [])], notes: 'Provider-verbatim canonical practice with capability locks when protected resources are unavailable.' },
+    sourceMetadata: { reviewerStatus: 'draft', sourceIds: [QURAN_SOURCE_ID, translationSourceId, ...(resources.tafsirId ? [TAFSIR_SOURCE_ID] : [])], notes: 'Provider-verbatim canonical practice with capability locks when protected resources are unavailable.' },
   };
   return { path, levels };
 }
@@ -348,7 +409,17 @@ function introductionLevel(
   };
 }
 
-function ayahLevel(pathId: string, surah: SurahRecord, id: string, ayahNumber: number, previousLevelId: string, ayat: AyahRecord[], tokens: WordToken[], audioAvailable: boolean): Level {
+function ayahLevel(
+  pathId: string,
+  surah: SurahRecord,
+  id: string,
+  ayahNumber: number,
+  previousLevelId: string,
+  ayat: AyahRecord[],
+  tokens: WordToken[],
+  audioAvailable: boolean,
+  translationSourceId: string,
+): Level {
   const ref = { surahNumber: surah.surahNumber, ayahNumber };
   const passageId = `${id}-passage`;
   const tokenIds = tokens.filter(token => token.ayahRef.surahNumber === surah.surahNumber && token.ayahRef.ayahNumber === ayahNumber).map(token => token.id);
@@ -375,7 +446,7 @@ function ayahLevel(pathId: string, surah: SurahRecord, id: string, ayahNumber: n
         ? { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', blocks: [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ref, tafsirEntryId: ayah.tafsirEntries[0].id }] }
         : { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', required: false, blocks: [{ id: `${id}-tafsir-locked`, type: 'source_locked', capability: 'tafsir', sourceId: TAFSIR_SOURCE_ID, reason: 'provider_unavailable', alternativeStepId: understandingStepId, locale: 'en' }] },
       { id: `${id}-memorize`, kind: 'memorize', title: 'Build the Ayah', blocks: [{ id: `${id}-order`, type: 'activity', activity: { id: `${id}-order`, kind: 'order_tokens', placement: 'lesson', ayahRefs: [ref], instruction: `Build Ayah ${ayahNumber} from the word bank.`, required: true, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { itemIds: [...tokenIds].reverse(), correctOrderIds: tokenIds } } }] },
-      { id: understandingStepId, kind: 'understanding_practice', title: 'Match the Translation', blocks: [{ id: `${id}-translation-match`, type: 'activity', activity: { id: `${id}-translation-match`, kind: 'multiple_choice', placement: 'lesson', ayahRefs: [ref], instruction: 'Choose the unchanged translation for this ayah.', required: true, difficulty: 2, knowledgeRefs: [passageId, `${id}-translation`], sourceIds: [TRANSLATION_SOURCE_ID], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { options: translationOptions, correctOptionId: translationId } } }] },
+      { id: understandingStepId, kind: 'understanding_practice', title: 'Match the Translation', blocks: [{ id: `${id}-translation-match`, type: 'activity', activity: { id: `${id}-translation-match`, kind: 'multiple_choice', placement: 'lesson', ayahRefs: [ref], instruction: 'Choose the unchanged translation for this ayah.', required: true, difficulty: 2, knowledgeRefs: [passageId, `${id}-translation`], sourceIds: [translationSourceId], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { options: translationOptions, correctOptionId: translationId } } }] },
       { id: `${id}-extra-gap-step`, kind: 'memory_practice', title: 'Extra: Complete the Ayah', required: false, blocks: [{ id: `${id}-gap`, type: 'activity', activity: { id: `${id}-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ref], instruction: `Choose the missing ending token from Ayah ${ayahNumber}.`, required: false, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { tokenBankIds: [...tokenIds].reverse(), correctTokenIds: [tokenIds.at(-1)!] } } }] },
       { id: `${id}-extra-type-step`, kind: 'memory_practice', title: 'Extra: Write from Memory', required: false, blocks: [{ id: `${id}-extra-type`, type: 'activity', activity: { id: `${id}-extra-type`, kind: 'type_missing_text', placement: 'lesson', ayahRefs: [ref], instruction: 'Write the ayah from memory. Harakat are optional.', required: false, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { target: { kind: 'ayah', ayahRef: ref }, comparisonMode: 'letters_and_order', ignoreHarakat: true } } }] },
       ...(ayah.wordMeanings?.length === tokenIds.length ? [{ id: `${id}-extra-meaning-step`, kind: 'understanding_practice' as const, title: 'Extra: Vocabulary Practice', required: false, blocks: [{ id: `${id}-extra-meaning`, type: 'activity' as const, activity: { id: `${id}-extra-meaning`, kind: 'match_word_meaning' as const, placement: 'lesson' as const, ayahRefs: [ref], instruction: 'Match each Quran word to its source meaning.', required: false, difficulty: 2 as const, knowledgeRefs: [`${id}-word-explorer`], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft' as const, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { pairs: ayah.wordMeanings.flatMap(meaning => meaning.wordTokenId ? [{ promptTokenId: meaning.wordTokenId, meaningId: meaning.id }] : []) } } }] }] : []),
@@ -383,7 +454,14 @@ function ayahLevel(pathId: string, surah: SurahRecord, id: string, ayahNumber: n
   };
 }
 
-function reviewLevel(pathId: string, surah: SurahRecord, id: string, previousLevelId: string, tokens: WordToken[]): Level {
+function reviewLevel(
+  pathId: string,
+  surah: SurahRecord,
+  id: string,
+  previousLevelId: string,
+  tokens: WordToken[],
+  translationSourceId: string,
+): Level {
   const refs = Array.from({ length: surah.ayahCount }, (_, index) => ({ surahNumber: surah.surahNumber, ayahNumber: index + 1 }));
   const finalTokens = tokens.filter(token => token.ayahRef.surahNumber === surah.surahNumber && token.ayahRef.ayahNumber === surah.ayahCount).map(token => token.id);
   return {
@@ -394,7 +472,7 @@ function reviewLevel(pathId: string, surah: SurahRecord, id: string, previousLev
       { id: `${id}-read`, kind: 'read', title: 'Review the Surah', blocks: [{ id: `${id}-passage`, type: 'quran_passage', ayahRefs: refs, showTransliteration: false }] },
       { id: `${id}-order-step`, kind: 'memory_practice', title: 'Order the Ayat', blocks: [{ id: `${id}-order`, type: 'activity', activity: { id: `${id}-order`, kind: 'order_ayat', placement: 'surah_review', ayahRefs: refs, instruction: `Put all ayat of ${surah.transliteratedName} in Quran order.`, required: true, difficulty: 3, knowledgeRefs: [`${id}-passage`], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { correctOrderRefs: refs } } }] },
       { id: `${id}-checkpoint`, kind: 'understanding_practice', title: 'Final Checkpoint', blocks: [{ id: `${id}-continue`, type: 'activity', activity: { id: `${id}-continue`, kind: 'choose_continuation', placement: 'surah_review', ayahRefs: refs, instruction: 'Choose the correct continuation of the final ayah.', required: true, difficulty: 3, knowledgeRefs: [`${id}-passage`], sourceIds: [QURAN_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { promptTokenIds: [finalTokens[0]], optionIds: [`${id}-correct`, `${id}-reversed`], correctOptionId: `${id}-correct`, segments: [{ id: `${id}-correct`, tokenIds: finalTokens.slice(1) }, { id: `${id}-reversed`, tokenIds: finalTokens.slice(1).reverse() }] } } }] },
-      { id: `${id}-recap-step`, kind: 'summary', title: 'Verified Recap', required: false, blocks: [{ id: `${id}-recap-locked`, type: 'source_locked', capability: 'verified_recap', sourceId: TRANSLATION_SOURCE_ID, reason: 'license_restricted', alternativeStepId: `${id}-checkpoint`, locale: 'en' }] },
+      { id: `${id}-recap-step`, kind: 'summary', title: 'Verified Recap', required: false, blocks: [{ id: `${id}-recap-locked`, type: 'source_locked', capability: 'verified_recap', sourceId: translationSourceId, reason: 'license_restricted', alternativeStepId: `${id}-checkpoint`, locale: 'en' }] },
     ],
   };
 }
@@ -412,7 +490,7 @@ function courseLevelId(surahNumber: number, kind: 'introduction' | 'ayah' | 'rev
   return `surah-${surahNumber}-ayah-${ayahNumber}`;
 }
 
-function runtimeSurah(chapter: QuranProviderChapter, resources: QuranProviderResourceConfig): SurahRecord {
+function runtimeSurah(chapter: QuranProviderChapter, resources: QuranProviderResourceConfig, translationSourceId: string): SurahRecord {
   const revelationPlace = chapter.revelationPlace?.toLowerCase();
   if (revelationPlace !== 'makkah' && revelationPlace !== 'madinah') throw new Error(`Quran Foundation chapter ${chapter.id} revelation place is invalid`);
   if (!chapter.nameArabic.trim() || !chapter.nameSimple?.trim() || !chapter.translatedName?.name?.trim()) throw new Error(`Quran Foundation chapter ${chapter.id} metadata is incomplete`);
@@ -428,10 +506,10 @@ function runtimeSurah(chapter: QuranProviderChapter, resources: QuranProviderRes
     revelationPlace,
     sourceMetadata: {
       quranTextSourceId: QURAN_SOURCE_ID,
-      translationSourceIds: [TRANSLATION_SOURCE_ID],
+      translationSourceIds: [translationSourceId],
       tafsirSourceIds: resources.tafsirId ? [TAFSIR_SOURCE_ID] : [],
       reviewerStatus: 'draft',
-      notes: 'Canonical runtime content fetched through the Furqan backend using the official Quran.Foundation SDK.',
+      notes: 'Canonical Quran content is fetched through the Furqan backend; translation provenance is recorded separately.',
     },
   };
 }
@@ -449,8 +527,11 @@ function runtimeReciter(resource: QuranProviderResource, resourceId: number): Re
   };
 }
 
-function providerSources(resources: QuranProviderResourceConfig, catalog: QuranProviderResourceCatalog): ContentSource[] {
-  const translation = requireResource(catalog.translations, resources.translationId, 'translation');
+function providerSources(
+  resources: QuranProviderResourceConfig,
+  catalog: QuranProviderResourceCatalog,
+  translationSource: ContentSource,
+): ContentSource[] {
   const sources: ContentSource[] = [
     {
       id: QURAN_SOURCE_ID,
@@ -474,7 +555,7 @@ function providerSources(resources: QuranProviderResourceConfig, catalog: QuranP
       sourceUrl: 'https://api-docs.quran.foundation/docs/category/content-apis/',
       notes: 'Chapter names, verse counts, revelation order, and revelation place provided by Quran Foundation.',
     },
-    providerResourceSource(TRANSLATION_SOURCE_ID, 'translation', translation, resources.translationId),
+    translationSource,
   ];
   sources.push(resources.tafsirId
     ? providerResourceSource(TAFSIR_SOURCE_ID, 'tafsir', requireResource(catalog.tafsirs, resources.tafsirId, 'tafsir'), resources.tafsirId)
@@ -518,11 +599,27 @@ function unavailableProviderSource(id: string, kind: string): ContentSource {
   };
 }
 
-function validateResourceSelection(catalog: QuranProviderResourceCatalog, resources: QuranProviderResourceConfig): void {
-  requireResource(catalog.translations, resources.translationId, 'translation');
-  if (resources.tafsirId) requireResource(catalog.tafsirs, resources.tafsirId, 'tafsir');
-  if (resources.chapterInfoId) requireResource(catalog.chapterInfos, resources.chapterInfoId, 'chapter information');
+function validateResourceSelection(
+  catalog: QuranProviderResourceCatalog,
+  resources: QuranProviderResourceConfig,
+  quranEnc?: QuranEncClient
+): void {
+  const hasTranslation = catalog.translations.some(c => c.id === resources.translationId);
+  if (!hasTranslation && !quranEnc) {
+    throw new Error(`Configured Quran Foundation translation resource ${resources.translationId} is unavailable`);
+  }
+  if (hasTranslation) requireEnglishResource(catalog.translations, resources.translationId, 'translation');
+  if (resources.tafsirId) requireEnglishResource(catalog.tafsirs, resources.tafsirId, 'tafsir');
+  if (resources.chapterInfoId) requireEnglishResource(catalog.chapterInfos, resources.chapterInfoId, 'chapter information');
   if (resources.recitationId) requireResource(catalog.recitations, resources.recitationId, 'recitation');
+}
+
+function requireEnglishResource(resources: QuranProviderResource[], id: number, kind: string): QuranProviderResource {
+  const resource = requireResource(resources, id, kind);
+  if (resource.languageName?.toLowerCase() !== 'english') {
+    throw new Error(`Configured Quran Foundation ${kind} resource ${id} is not English`);
+  }
+  return resource;
 }
 
 function requireResource(resources: QuranProviderResource[], id: number, kind: string): QuranProviderResource {
@@ -569,4 +666,110 @@ async function mapConcurrent<T, R>(items: T[], concurrency: number, mapper: (ite
     }
   }));
   return results;
+}
+
+async function getChapterContent(
+  surahNumber: number,
+  locale: SupportedLocale,
+  dependencies: RuntimeCourseDependencies,
+  catalog: QuranProviderResourceCatalog,
+): Promise<RuntimeChapterContent> {
+  const qfTranslation = catalog.translations.find(candidate => candidate.id === dependencies.resources.translationId);
+  if (!qfTranslation) return executeQuranEncFallback(surahNumber, locale, dependencies);
+
+  const verses = await dependencies.quranFoundation.getChapterVerses(surahNumber, locale, {
+    translationId: dependencies.resources.translationId,
+  });
+  const translations = new Map<string, RuntimeTranslationValue>();
+  for (const verse of verses.data) {
+    const translation = verse.translations?.find(entry => entry.resourceId === dependencies.resources.translationId);
+    if (!translation?.text.trim()) throw new Error(`Quran Foundation translation ${verse.verseKey} is unavailable`);
+    translations.set(verse.verseKey, {
+      text: translation.text,
+      providerFootnotes: translation.footNotes ?? {},
+    });
+  }
+  const source = providerResourceSource(QF_TRANSLATION_SOURCE_ID, 'translation', qfTranslation, dependencies.resources.translationId);
+  return {
+    verses,
+    translations,
+    translationSource: {
+      contentSource: source,
+      attribution: {
+        provider: 'quran-foundation',
+        sourceId: source.id,
+        resourceId: String(dependencies.resources.translationId),
+        version: source.version,
+        publisher: source.publisher ?? 'Quran Foundation',
+        attributionText: source.notes ?? 'Translation provided by Quran Foundation.',
+        fetchedAt: verses.fetchedAt,
+        expiresAt: verses.expiresAt,
+      },
+    },
+  };
+}
+
+async function executeQuranEncFallback(
+  surahNumber: number,
+  locale: SupportedLocale,
+  dependencies: RuntimeCourseDependencies,
+): Promise<RuntimeChapterContent> {
+  if (!dependencies.quranEnc) throw new Error(`Configured Quran Foundation translation resource ${dependencies.resources.translationId} is unavailable`);
+  const fallbackKey = locale === 'fr' ? 'quranenc-french-rashid' : 'quranenc-english-rowwad';
+  const [encResult, verses] = await Promise.all([
+    dependencies.quranEnc.getSurah(fallbackKey, surahNumber),
+    dependencies.quranFoundation.getChapterVerses(surahNumber, locale, {}),
+  ]);
+  const translations = new Map(encResult.data.map(row => [
+    `${surahNumber}:${Number(row.aya)}`,
+    { text: row.translation, footnotes: row.footnotes ?? '' },
+  ]));
+  const source = quranEncTranslationSource(encResult);
+  return {
+    verses,
+    translations,
+    translationSource: {
+      contentSource: source,
+      attribution: {
+        provider: 'quranenc',
+        sourceId: source.id,
+        resourceId: encResult.providerResourceId,
+        version: encResult.version,
+        publisher: encResult.publisher,
+        attributionText: encResult.attributionText,
+        fetchedAt: encResult.retrievedAt,
+      },
+    },
+  };
+}
+
+function quranEncTranslationSource(result: QuranEncResult): ContentSource {
+  return {
+    id: result.resourceId,
+    name: result.title,
+    author: result.publisher,
+    publisher: 'QuranEnc',
+    version: result.version,
+    language: result.locale,
+    reviewerStatus: 'draft',
+    license: 'QuranEnc published republication conditions',
+    sourceUrl: result.attributionUrl,
+    resourceKey: result.providerResourceId,
+    attributionText: result.attributionText,
+    transcriptInfo: result.description,
+    retrievedAt: result.retrievedAt,
+    lastUpdatedAt: result.lastUpdatedAt,
+    evidenceReference: 'https://quranenc.com/nqo/home/api',
+    notes: 'Provider translation and footnotes are preserved unchanged.',
+  };
+}
+
+function requireConsistentTranslationSource(contents: RuntimeChapterContent[]): RuntimeTranslationSource {
+  const first = contents[0]?.translationSource;
+  if (!first) throw new Error('Runtime translation source is unavailable');
+  if (contents.some(content => content.translationSource.contentSource.id !== first.contentSource.id
+    || content.translationSource.contentSource.version !== first.contentSource.version)) {
+    throw new Error('Runtime course cannot mix translation providers or versions');
+  }
+  return first;
 }

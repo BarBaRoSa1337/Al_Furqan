@@ -419,3 +419,42 @@ The runtime course is English-only and development-only. Arabic and French
 remain explicit unavailable states until complete reviewed locale catalogs are
 published. Existing provider licensing and named review blockers remain in
 force; no source or religious content was promoted.
+
+## 2026-08-13 - Quran provider runtime hardening
+
+### Delivered
+
+- Restored standards-compliant Node `fetch` for provider requests and removed
+  the invalid global Undici dispatcher and incomplete custom HTTPS response.
+- Added a validated QuranEnc translation fallback used only when the configured
+  Quran.Foundation translation is absent from the active resource catalog.
+- Preserved QuranEnc text, footnotes, resource key, version, update metadata,
+  transcript information, retrieval time, publisher, and attribution without
+  presenting fallback data as Quran.Foundation content.
+- Removed automatic tafsir selection. Optional tafsir and chapter-information
+  resources are explicit and language-validated; auth and schema failures now
+  propagate instead of appearing as ordinary unavailable resources.
+- Kept Quran.Foundation Quran text, word data, chapter metadata, tafsir,
+  chapter information, recitation, and seven-day cache policy unchanged.
+
+### Compatibility
+
+- No package schema, lesson hierarchy, content ID, progress storage, review
+  schedule, or production approval rule changed.
+- Direct Quran.Foundation translations retain existing IDs and attribution.
+  QuranEnc fallback translations use their existing stable source ID and pinned
+  resource version.
+- Preview content remains draft and runtime-only. Production validation remains
+  fail-closed.
+
+### Verification
+
+- Server TypeScript passes.
+- All six server test files pass, including fallback provenance, exact Surah
+  coverage, duplicate rejection, tafsir language selection, cache expiry, and
+  auth-failure propagation.
+- Live PRELIVE SDK checks returned complete Quran text, words, word meanings,
+  transliteration, translation, tafsir, chapter information, and recitation for
+  the available test chapter. Surahs 105-114 require a separate production
+  credential smoke test because PRELIVE currently exposes only limited Quran
+  data.

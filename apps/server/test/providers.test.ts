@@ -32,17 +32,43 @@ test('MP3Quran rejects mismatched stream origins', async () => {
 });
 
 test('QuranEnc preserves provider payload and blocks unreviewed version updates', async () => {
-  const translation = { result: [{ sura: '105', aya: '1', translation: 'Exact provider text.' }] };
+  const translation = { result: Array.from({ length: 5 }, (_, index) => ({
+    sura: '105',
+    aya: String(index + 1),
+    translation: `Exact provider text ${index + 1}.`,
+    footnotes: index === 0 ? 'Exact footnote.' : '',
+  })) };
+  const registry = { translations: [{
+    key: 'english_rwwad',
+    version: '1.0.19',
+    last_update: '2026-03-12',
+    title: 'The Clear Quran Translation',
+    description: 'Exact transcript information.',
+  }] };
   const fetcher = async (input: string | URL | Request) => String(input).includes('/translations/list/')
-    ? Response.json([{ key: 'english_rwwad', version: '1.0.19' }])
+    ? Response.json(registry)
     : Response.json(translation);
-  assert.deepEqual(await new QuranEncClient(fetcher as typeof fetch).getSurah('quranenc-english-rowwad', 105), {
+  assert.deepEqual(await new QuranEncClient(fetcher as typeof fetch, () => new Date('2026-08-13T00:00:00.000Z')).getSurah('quranenc-english-rowwad', 105), {
     provider: 'quranenc', resourceId: 'quranenc-english-rowwad', providerResourceId: 'english_rwwad',
     version: '1.0.19', locale: 'en', publisher: 'Rowwad Translation Center',
+    title: 'The Clear Quran Translation', description: 'Exact transcript information.',
+    lastUpdatedAt: '2026-03-12', retrievedAt: '2026-08-13T00:00:00.000Z',
     attributionText: 'Rowwad Translation Center, provided by QuranEnc (quranenc.com). Version 1.0.19. Provider text is unmodified.',
-    attributionUrl: 'https://quranenc.com', data: translation,
+    attributionUrl: 'https://quranenc.com', data: translation.result,
   });
 
-  const updated = async () => Response.json([{ key: 'english_rwwad', version: '1.0.20' }]);
+  const updated = async () => Response.json({ translations: [{ ...registry.translations[0], version: '1.0.20' }] });
   await assert.rejects(new QuranEncClient(updated as typeof fetch).getSurah('quranenc-english-rowwad', 105), /requires review/);
+});
+
+test('QuranEnc rejects incomplete and duplicate Surah payloads', async () => {
+  const registry = { translations: [{
+    key: 'english_rwwad', version: '1.0.19', last_update: '2026-03-12',
+    title: 'Rowwad', description: 'Transcript',
+  }] };
+  const duplicate = { result: Array.from({ length: 5 }, () => ({ sura: '105', aya: '1', translation: 'Exact text.' })) };
+  const fetcher = async (input: string | URL | Request) => String(input).includes('/translations/list/')
+    ? Response.json(registry)
+    : Response.json(duplicate);
+  await assert.rejects(new QuranEncClient(fetcher as typeof fetch).getSurah('quranenc-english-rowwad', 105), /duplicate ayah/);
 });

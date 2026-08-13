@@ -10,8 +10,12 @@ Foundation directly or persist its responses.
 contract using `@quranjs/api/server`. The assessment runtime maps Content API
 v4 chapter metadata, Uthmani Hafs verses, words, translation footnotes, tafsir,
 chapter information, and verse recitation into the existing Furqan package
-schema. QuranEnc and MP3Quran adapters remain available to their narrow legacy
-routes, but they are not mixed into this runtime course.
+schema. When the configured Quran.Foundation translation resource is absent
+from the active environment's catalog, the draft runtime may use the pinned
+QuranEnc Rowwad translation. That fallback preserves QuranEnc text, footnotes,
+version, transcript metadata, and attribution; it never relabels the resource
+as Quran.Foundation. Quran text, words, word meanings, tafsir, chapter
+information, and recitation continue to come from Quran.Foundation.
 
 Cache entries honor upstream `no-store` and lower expiry values and are always
 capped at seven days. Expired content is deleted; stale content is never served.
@@ -29,7 +33,9 @@ expiry-reliable cache implementing `ServerCache`.
 `QF_ENV` must be exactly `prelive` or `production`; Expo cannot select it.
 `QF_TRANSLATION_RESOURCE_ID` is required. Tafsir, chapter-information, and
 recitation IDs are optional and must be selected explicitly from the account's
-available resources. List safe resource metadata with:
+available resources. Runtime never auto-selects tafsir. Configured tafsir and
+chapter-information resources must be English for the current English course.
+List safe resource metadata with:
 
 ```sh
 npm run server:qf:resources
@@ -76,9 +82,11 @@ remain explicitly unavailable until complete reviewed package catalogs exist.
 The response is labeled `contentMode: preview`; its locale publication remains
 `draft` and is never rewritten as published.
 
-Automated tests inject mocked SDK responses and require no credentials. If
-credentials or the required translation resource are absent at runtime, server
-startup fails with a technical configuration error instead of fabricating
-content. PRELIVE resource availability is account-dependent and must be checked
-with `server:qf:resources`; production Search and user authentication remain out
-of scope until their additional scopes are granted.
+Automated tests inject mocked SDK responses and require no credentials. Missing
+credentials fail at startup. A translation resource absent from the active
+Quran.Foundation catalog uses only the pinned QuranEnc fallback; malformed,
+incomplete, duplicate, or changed-version QuranEnc data fails closed. QF auth,
+schema, and transport failures are never hidden behind fallback. PRELIVE
+resource availability is account-dependent and must be checked with
+`server:qf:resources`; production Search and user authentication remain out of
+scope until their additional scopes are granted.

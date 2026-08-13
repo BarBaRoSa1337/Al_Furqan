@@ -3,6 +3,7 @@ import test from 'node:test';
 import surahAlFilPackage from '../../../src/content/packages/surah-al-fil/v1';
 import { validatePackage } from '../../../src/lib/content/packageValidator';
 import type { QuranContentProvider, QuranProviderResult } from '../src/quranContentProvider';
+import { QuranEncClient } from '../src/quranEnc';
 import { buildShortSurahRuntimeCourse } from '../src/runtimeCourse';
 
 const selected = surahAlFilPackage.surahs.filter(surah => surah.surahNumber >= 105);
@@ -134,4 +135,77 @@ test('locks unavailable optional QF resources without fabricating content', asyn
 test('fails closed for incomplete lesson locales', async () => {
   assert.equal(await buildShortSurahRuntimeCourse('fr', dependencies), undefined);
   assert.equal(await buildShortSurahRuntimeCourse('ar', dependencies), undefined);
+});
+
+test('uses QuranEnc fallback with exact provenance when configured QF translation is absent', async () => {
+  const fallbackProvider = provider({
+    listResources: async () => result({
+      translations: [],
+      tafsirs: [{ id: resources.tafsirId, name: 'Mock Tafsir', authorName: 'Mock Publisher', languageName: 'english' }],
+      chapterInfos: [{ id: resources.chapterInfoId, name: 'Mock Chapter Information', languageName: 'english' }],
+      recitations: [{ id: resources.recitationId, reciterName: 'Mahmoud Khalil Al-Husary', style: 'Hafs' }],
+    }),
+  });
+  const registry = { translations: [{
+    key: 'english_rwwad', version: '1.0.19', last_update: '2026-03-12',
+    title: 'Rowwad Translation', description: 'Exact transcript information.',
+  }] };
+  const fetcher = async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.includes('/translations/list/')) return Response.json(registry);
+    const surah = Number(url.split('/').at(-1));
+    return Response.json({ result: Array.from({ length: ayahCount(surah) }, (_, index) => ({
+      sura: String(surah), aya: String(index + 1),
+      translation: `  Exact QuranEnc ${surah}:${index + 1}.  `,
+      footnotes: index === 0 ? `Footnote ${surah}.` : '',
+    })) });
+  };
+  const built = await buildShortSurahRuntimeCourse('en', {
+    quranFoundation: fallbackProvider,
+    quranEnc: new QuranEncClient(fetcher as typeof fetch, () => new Date('2026-08-13T00:00:00.000Z')),
+    resources,
+  });
+  assert.ok(built);
+  const translation = built.package.ayat[0].translations[0];
+  assert.equal(translation.text, '  Exact QuranEnc 105:1.  ');
+  assert.equal(translation.footnotes, 'Footnote 105.');
+  assert.equal(translation.sourceId, 'quranenc-english-rowwad');
+  assert.equal(translation.providerResourceId, 'english_rwwad');
+  assert.equal(translation.resourceVersion, '1.0.19');
+  assert.equal(built.package.sources.some(source => source.id === 'quranenc-english-rowwad' && source.publisher === 'QuranEnc'), true);
+  assert.equal(built.attributions.some(item => item.provider === 'quranenc' && item.resourceId === 'english_rwwad'), true);
+  assert.equal(built.package.sources.some(source => source.id === 'quran-foundation-translation'), false);
+  assert.deepEqual(validatePackage(built.package, { mode: 'development' }).errors, []);
+});
+
+test('does not hide QF operational failures behind QuranEnc fallback', async () => {
+  const fetcher = async () => { throw new Error('QuranEnc must not be called'); };
+  await assert.rejects(buildShortSurahRuntimeCourse('en', {
+    quranFoundation: provider({
+      getChapterVerses: async () => { throw new Error('401 Unauthorized'); },
+    }),
+    quranEnc: new QuranEncClient(fetcher as typeof fetch),
+    resources,
+  }), /401 Unauthorized/);
+});
+
+test('requires explicit English tafsir selection and propagates auth failures', async () => {
+  await assert.rejects(buildShortSurahRuntimeCourse('en', {
+    quranFoundation: provider({
+      getTafsir: async () => { throw new Error('401 Unauthorized'); },
+    }),
+    resources,
+  }), /401 Unauthorized/);
+
+  await assert.rejects(buildShortSurahRuntimeCourse('en', {
+    quranFoundation: provider({
+      listResources: async () => result({
+        translations: [{ id: resources.translationId, name: 'Mock Translation', languageName: 'english' }],
+        tafsirs: [{ id: resources.tafsirId, name: 'Russian Tafsir', languageName: 'russian' }],
+        chapterInfos: [{ id: resources.chapterInfoId, name: 'Mock Chapter Information', languageName: 'english' }],
+        recitations: [{ id: resources.recitationId, reciterName: 'Mahmoud Khalil Al-Husary' }],
+      }),
+    }),
+    resources,
+  }), /not English/);
 });

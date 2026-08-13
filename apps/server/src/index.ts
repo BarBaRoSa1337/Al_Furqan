@@ -19,7 +19,7 @@ const app = createApp({
   approvedQuranFoundationTafsirIds: config.quranFoundationResources.tafsirId ? [String(config.quranFoundationResources.tafsirId)] : [],
   previewPackage: config.enableDraftRuntime
     ? (packageId, locale) => packageId === 'surah-al-fil-v1'
-      ? buildShortSurahRuntimeCourse(locale, { quranFoundation, resources: config.quranFoundationResources })
+      ? buildShortSurahRuntimeCourse(locale, { quranFoundation, quranEnc, resources: config.quranFoundationResources })
       : Promise.resolve(undefined)
     : undefined,
 });
