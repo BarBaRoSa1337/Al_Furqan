@@ -26,7 +26,7 @@ production release.
 ## Quran Foundation — Content API v4
 
 - **Usage**: Canonical text, word tokens, structure/divisions, word meanings,
-  tafsir (resource 169)
+  tafsir (Tafsir Al-Muyassar, resource 16)
 - **License**: Proprietary developer Terms of Service
 - **Key terms**:
   - Requires application Privacy Policy and Terms of Use

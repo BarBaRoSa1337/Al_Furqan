@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "105:3": {
+        "id": 6191
+      },
+      "105:4": {
+        "id": 6192
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "وبعث عليهم طيرًا في جماعات متتابعة، تقذفهم بحجارة من طين متحجِّر."
+  }
+}

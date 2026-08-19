@@ -1,0 +1,53 @@
+{
+  "surah": 110,
+  "tafsirs": {
+    "110:1": {
+      "verses": {
+        "110:1": {
+          "id": 6214
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إذا تمَّ لك -أيها الرسول- النصر على كفار قريش، وتم لك فتح «مكة» ."
+    },
+    "110:2": {
+      "verses": {
+        "110:2": {
+          "id": 6215
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ورأيت الكثير من الناس يدخلون في الإسلام جماعات جماعات."
+    },
+    "110:3": {
+      "verses": {
+        "110:3": {
+          "id": 6216
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إذا وقع ذلك فتهيأ للقاء ربك بالإكثار من التسبيح بحمده والإكثار من استغفاره، إنه كان كثير التوبة على المسبحين والمستغفرين، يتوب عليهم ويرحمهم ويقبل توبتهم."
+    }
+  }
+}

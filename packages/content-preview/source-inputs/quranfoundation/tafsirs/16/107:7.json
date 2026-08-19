@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "107:7": {
+        "id": 6204
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ويمنعون إعارة ما لا تضر إعارته من الآنية وغيرها، فلا هم أحسنوا عبادة ربهم، ولا هم أحسنوا إلى خلقه."
+  }
+}

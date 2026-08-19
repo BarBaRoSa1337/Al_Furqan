@@ -1,0 +1,53 @@
+{
+  "surah": 108,
+  "tafsirs": {
+    "108:1": {
+      "verses": {
+        "108:1": {
+          "id": 6205
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إنا أعطيناك -أيها النبي- الخير الكثير في الدنيا والآخرة، ومن ذلك نهر الكوثر في الجنة الذي حافتاه خيام اللؤلؤ المجوَّف، وطينه المسك."
+    },
+    "108:2": {
+      "verses": {
+        "108:2": {
+          "id": 6206
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "فأخلص لربك صلاتك كلها، واذبح ذبيحتك له وعلى اسمه وحده."
+    },
+    "108:3": {
+      "verses": {
+        "108:3": {
+          "id": 6207
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إن مبغضك ومبغض ما جئت به من الهدى والنور، هو المنقطع أثره، المقطوع من كل خير."
+    }
+  }
+}

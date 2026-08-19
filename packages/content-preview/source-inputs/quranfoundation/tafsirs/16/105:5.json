@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "105:5": {
+        "id": 6193
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فجعلهم به محطمين كأوراق الزرع اليابسة التي أكلتها البهائم ثم رمت بها."
+  }
+}

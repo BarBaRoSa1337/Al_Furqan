@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "105:2": {
+        "id": 6190
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ألم يجعل ما دبَّروه من شر في إبطال وتضييع؟"
+  }
+}

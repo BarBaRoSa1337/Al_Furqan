@@ -1,0 +1,101 @@
+{
+  "surah": 109,
+  "tafsirs": {
+    "109:1": {
+      "verses": {
+        "109:1": {
+          "id": 6208
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "قل -أيها الرسول- للذين كفروا بالله ورسوله: يا أيها الكافرون بالله."
+    },
+    "109:2": {
+      "verses": {
+        "109:2": {
+          "id": 6209
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "لا أعبد ما تعبدون من الأصنام والآلهة الزائفة."
+    },
+    "109:3": {
+      "verses": {
+        "109:3": {
+          "id": 6210
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ولا أنتم عابدون ما أعبد من إله واحد، هو الله رب العالمين المستحق وحده للعبادة."
+    },
+    "109:4": {
+      "verses": {
+        "109:4": {
+          "id": 6211
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ولا أنا عابد ما عبدتم من الأصنام والآلهة الباطلة."
+    },
+    "109:5": {
+      "verses": {
+        "109:5": {
+          "id": 6212
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ولا أنتم عابدون مستقبلا ما أعبد. وهذه الآية نزلت في أشخاص بأعيانهم من المشركين، قد علم الله أنهم لا يؤمنون أبدًا."
+    },
+    "109:6": {
+      "verses": {
+        "109:6": {
+          "id": 6213
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "لكم دينكم الذي أصررتم على اتباعه، ولي ديني الذي لا أبغي غيره."
+    }
+  }
+}

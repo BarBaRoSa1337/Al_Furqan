@@ -19,6 +19,11 @@ export const colors = {
   borderStrong: '#BFAF92',
   locked: '#9A978D',
   overlay: 'rgba(18, 63, 58, 0.08)',
+  mushafPaper: '#FAF6ED',
+  mushafBorder: '#D8CEB9',
+  mushafBorderInner: '#EFE7D5',
+  mushafGold: '#9B783E',
+  mushafGreen: '#184D42',
 } as const;
 
 export const fonts = {

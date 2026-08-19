@@ -59,3 +59,6 @@ export const MP3QURAN_PERMISSION_URL = 'https://www.mp3quran.net/en/page/about';
  * written permission has been obtained and stored as evidence.
  */
 export const MP3QURAN_PERMISSION_STATUS: 'pending' | 'verified' = 'pending';
+
+export const TAFSIR_MUYASSAR_ID = 16;
+export const TAFSIR_MUYASSAR_SOURCE_ID = 'quran-foundation-tafsir-muyassar';

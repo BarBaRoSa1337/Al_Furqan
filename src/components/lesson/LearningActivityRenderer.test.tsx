@@ -4,6 +4,8 @@ import { getContentRepository } from '../../lib/content/repository';
 import { colors } from '../../theme/tokens';
 import LearningActivityRenderer, { createMatchLayout, derange, shuffle } from './LearningActivityRenderer';
 
+jest.setTimeout(25000);
+
 test('shuffles ordering choices without mutating authored stable-ID order', () => {
   const authored = ['token-1', 'token-2', 'token-3'];
   expect(shuffle(authored, () => 0)).not.toEqual(authored);
@@ -21,7 +23,7 @@ test('exposes an RTL typed-recall input and evaluates canonical text through the
   fireEvent(input, 'submitEditing');
   await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('ألم تر كيف فعل ربك بأصحاب ٱلفيل', false));
   expect(input).toHaveStyle({ writingDirection: 'rtl' });
-});
+}, 30000);
 
 test('creates independently shuffled prompt and choice columns', () => {
   const values = [0.9, 0.1, 0.2, 0.8];

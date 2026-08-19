@@ -25,7 +25,10 @@ async function main(): Promise<void> {
   const wordMeanings: Record<string, unknown> = {};
   const tafsirs: Record<string, unknown> = {};
   for (const surah of PREVIEW_SURAH_NUMBERS) {
-    tafsirs[surah.toString()] = parseJson(files.get(`quranfoundation/tafsirs/169/${surah}.json`)!, `Tafsir ${surah}`);
+    const tafsirContent = files.get(`quranfoundation/tafsirs/16/${surah}.json`) || files.get(`quranfoundation/tafsirs/169/${surah}.json`);
+    if (tafsirContent) {
+      tafsirs[surah.toString()] = parseJson(tafsirContent, `Tafsir ${surah}`);
+    }
     for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
       const key = `${surah}:${ayah}`;
       wordMeanings[key] = parseJson(files.get(`quranfoundation/word-meanings/${key}.json`)!, `Word meanings ${key}`);
@@ -100,15 +103,32 @@ async function readSourceFiles(): Promise<Map<string, string>> {
   const paths = ['tanzil/quran-uthmani.txt', 'tanzil/LICENSE.txt', 'tanzil/metadata.json', 'mp3quran/husary-118/streams.json', ...(['en', 'fr'] as const).flatMap(locale => {
     const key = QURANENC_RESOURCES[locale].key;
     return [`quranenc/${key}/metadata.json`, `quranenc/${key}/retrieval.json`, ...PREVIEW_SURAH_NUMBERS.map(surah => `quranenc/${key}/surahs/${surah}.json`)];
-  }), 'quranfoundation/retrieval.json', ...PREVIEW_SURAH_NUMBERS.flatMap(surah => {
-    const subPaths = [`quranfoundation/tafsirs/169/${surah}.json`];
+  }), 'quranfoundation/retrieval.json'];
+
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    paths.push(`quranfoundation/tafsirs/16/${surah}.json`);
     for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
-      subPaths.push(`quranfoundation/word-meanings/${surah}:${ayah}.json`);
+      paths.push(`quranfoundation/word-meanings/${surah}:${ayah}.json`);
+      paths.push(`quranfoundation/tafsirs/16/${surah}:${ayah}.json`);
     }
-    return subPaths;
-  })];
+  }
+
   const files = new Map<string, string>();
-  for (const path of paths) files.set(path, await readRequired(join(INPUT_ROOT, path)));
+  for (const path of paths) {
+    const fullPath = join(INPUT_ROOT, path);
+    try {
+      files.set(path, await readFile(fullPath, 'utf8'));
+    } catch {
+      if (path.includes('tafsirs/16/')) {
+        const legacyPath = path.replace('tafsirs/16/', 'tafsirs/169/');
+        try {
+          files.set(path, await readFile(join(INPUT_ROOT, legacyPath), 'utf8'));
+        } catch {
+          // Optional subpath
+        }
+      }
+    }
+  }
   return files;
 }
 

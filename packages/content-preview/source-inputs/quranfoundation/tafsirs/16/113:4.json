@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "113:4": {
+        "id": 6229
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ومن شر الساحرات اللاتي ينفخن فيما يعقدن من عُقَد بقصد السحر."
+  }
+}

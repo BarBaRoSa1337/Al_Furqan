@@ -1,0 +1,91 @@
+{
+  "surah": 105,
+  "tafsirs": {
+    "105:1": {
+      "verses": {
+        "105:1": {
+          "id": 6189
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ألم تعلم -أيها الرسول- كيف فعل ربك بأصحاب الفيل: أبرهة الحبشي وجيشه الذين أرادوا تدمير الكعبة المباركة؟"
+    },
+    "105:2": {
+      "verses": {
+        "105:2": {
+          "id": 6190
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ألم يجعل ما دبَّروه من شر في إبطال وتضييع؟"
+    },
+    "105:3": {
+      "verses": {
+        "105:3": {
+          "id": 6191
+        },
+        "105:4": {
+          "id": 6192
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "وبعث عليهم طيرًا في جماعات متتابعة، تقذفهم بحجارة من طين متحجِّر."
+    },
+    "105:4": {
+      "verses": {
+        "105:3": {
+          "id": 6191
+        },
+        "105:4": {
+          "id": 6192
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "وبعث عليهم طيرًا في جماعات متتابعة، تقذفهم بحجارة من طين متحجِّر."
+    },
+    "105:5": {
+      "verses": {
+        "105:5": {
+          "id": 6193
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "فجعلهم به محطمين كأوراق الزرع اليابسة التي أكلتها البهائم ثم رمت بها."
+    }
+  }
+}

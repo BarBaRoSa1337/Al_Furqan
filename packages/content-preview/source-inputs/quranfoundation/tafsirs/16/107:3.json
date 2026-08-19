@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "107:3": {
+        "id": 6200
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ولا يحضُّ غيره على إطعام المحتاج الذي لا يملك ما يكفيه ويسد حاجته، فكيف له أن يطعمه بنفسه؟"
+  }
+}

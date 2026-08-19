@@ -1,0 +1,85 @@
+{
+  "surah": 113,
+  "tafsirs": {
+    "113:1": {
+      "verses": {
+        "113:1": {
+          "id": 6226
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "قل -أيها الرسول-: أعوذ وأعتصم برب الفلق، وهو الصبح."
+    },
+    "113:2": {
+      "verses": {
+        "113:2": {
+          "id": 6227
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "من شر جميع المخلوقات وأذاها."
+    },
+    "113:3": {
+      "verses": {
+        "113:3": {
+          "id": 6228
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ومن شر ليل شديد الظلمة إذا دخل وتغلغل، وما فيه من الشرور والمؤذيات."
+    },
+    "113:4": {
+      "verses": {
+        "113:4": {
+          "id": 6229
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ومن شر الساحرات اللاتي ينفخن فيما يعقدن من عُقَد بقصد السحر."
+    },
+    "113:5": {
+      "verses": {
+        "113:5": {
+          "id": 6230
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ومن شر حاسد مبغض للناس إذا حسدهم على ما وهبهم الله من نعم، وأراد زوالها عنهم، وإيقاع الأذى بهم."
+    }
+  }
+}

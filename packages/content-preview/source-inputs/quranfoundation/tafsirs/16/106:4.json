@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "106:4": {
+        "id": 6197
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "الذي أطعمهم من جوع شديد، وآمنهم من فزع وخوف عظيم."
+  }
+}

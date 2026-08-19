@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "110:3": {
+        "id": 6216
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إذا وقع ذلك فتهيأ للقاء ربك بالإكثار من التسبيح بحمده والإكثار من استغفاره، إنه كان كثير التوبة على المسبحين والمستغفرين، يتوب عليهم ويرحمهم ويقبل توبتهم."
+  }
+}

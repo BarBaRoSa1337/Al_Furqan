@@ -84,18 +84,20 @@ async function fetchQuranFoundationInputs(): Promise<void> {
       pending.set(`word-meanings/${verseKey}.json`, { url, body });
     }
 
-    // 2. Fetch Tafsir Ibn Kathir for the surah from website Next.js data
-    const tafsirUrl = `https://quran.com/${surah}:1/tafsirs/en-tafisr-ibn-kathir`;
-    const htmlBody = await fetchBytes(tafsirUrl, 'text/html');
-    const html = decodeUtf8(htmlBody, `Tafsir page for ${surah}:1`);
-    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-    if (!match) throw new Error(`Could not find __NEXT_DATA__ for ${tafsirUrl}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = parseJson(match[1], `NextJS data for ${surah}:1`) as any;
-    const tafsir = data?.props?.pageProps?.tafsirData?.tafsir;
-    if (!tafsir || !tafsir.text) throw new Error(`Could not extract Tafsir text for ${surah}`);
-
-    pending.set(`tafsirs/169/${surah}.json`, { url: tafsirUrl, body: Buffer.from(JSON.stringify(tafsir, null, 2) + '\n') });
+    // 2. Fetch Tafsir Al-Muyassar (Resource 16) for each ayah in the surah
+    const surahTafsirMap: Record<string, unknown> = {};
+    for (let ayah = 1; ayah <= expectedAyahs; ayah += 1) {
+      const verseKey = `${surah}:${ayah}`;
+      const tafsirUrl = `https://api.quran.com/api/v4/tafsirs/16/by_ayah/${verseKey}`;
+      const tafsirBody = await fetchBytes(tafsirUrl, 'application/json');
+      const tafsirJson = parseJson(decodeUtf8(tafsirBody, `Tafsir Muyassar for ${verseKey}`), `Tafsir Muyassar for ${verseKey}`) as { tafsir: { text: string } };
+      if (tafsirJson?.tafsir?.text) {
+        tafsirJson.tafsir.text = tafsirJson.tafsir.text.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+      }
+      surahTafsirMap[verseKey] = tafsirJson?.tafsir;
+      pending.set(`tafsirs/16/${verseKey}.json`, { url: tafsirUrl, body: Buffer.from(JSON.stringify(tafsirJson, null, 2) + '\n') });
+    }
+    pending.set(`tafsirs/16/${surah}.json`, { url: `https://api.quran.com/api/v4/tafsirs/16/surah/${surah}`, body: Buffer.from(JSON.stringify({ surah, tafsirs: surahTafsirMap }, null, 2) + '\n') });
   }
 
   const evidence: SourceRetrievalEvidence = {

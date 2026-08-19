@@ -1,0 +1,101 @@
+{
+  "surah": 114,
+  "tafsirs": {
+    "114:1": {
+      "verses": {
+        "114:1": {
+          "id": 6231
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "قل -أيها الرسول-: أعوذ وأعتصم برب الناس، القادر وحده على ردِّ شر الوسواس."
+    },
+    "114:2": {
+      "verses": {
+        "114:2": {
+          "id": 6232
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ملك الناس المتصرف في كل شؤونهم، الغنيِّ عنهم."
+    },
+    "114:3": {
+      "verses": {
+        "114:3": {
+          "id": 6233
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إله الناس الذي لا معبود بحق سواه."
+    },
+    "114:4": {
+      "verses": {
+        "114:4": {
+          "id": 6234
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "من أذى الشيطان الذي يوسوس عند الغفلة، ويختفي عند ذكر الله."
+    },
+    "114:5": {
+      "verses": {
+        "114:5": {
+          "id": 6235
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "الذي يبثُّ الشر والشكوك في صدور الناس."
+    },
+    "114:6": {
+      "verses": {
+        "114:6": {
+          "id": 6236
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "من شياطين الجن والإنس."
+    }
+  }
+}

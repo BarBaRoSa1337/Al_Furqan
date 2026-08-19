@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "108:2": {
+        "id": 6206
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فأخلص لربك صلاتك كلها، واذبح ذبيحتك له وعلى اسمه وحده."
+  }
+}

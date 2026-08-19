@@ -100,7 +100,19 @@ function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBloc
 
 function CanonicalPassageBlock({ block, repo, showTransliteration }: { block: QuranPassageBlock; repo: ContentRepository; showTransliteration: boolean }) {
   const ayat = repo.getAyatByRefs(block.ayahRefs);
-  return <Card variant="ayah" style={styles.ayahCard}>{ayat.map(ayah => <View key={ayah.id} style={styles.passageAyah}><Text style={styles.arabic}>{ayah.arabicText.text}</Text>{showTransliteration && block.showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}</View>)}</Card>;
+  return (
+    <Card variant="mushaf" style={styles.mushafAyahCard}>
+      {ayat.map((ayah, index) => (
+        <View key={ayah.id} style={styles.passageAyah}>
+          <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
+          {showTransliteration && block.showTransliteration && ayah.transliteration ? (
+            <Text style={styles.transliteration}>{ayah.transliteration}</Text>
+          ) : null}
+          {index < ayat.length - 1 ? <View style={styles.divider} /> : null}
+        </View>
+      ))}
+    </Card>
+  );
 }
 
 function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; repo: ContentRepository }) {
@@ -108,7 +120,7 @@ function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; r
     const selected = ayah.translations.filter(entry => entry.locale === block.locale && (!block.translationEntryIds || block.translationEntryIds.includes(entry.id)));
     return selected.map(entry => ({ ayah, entry, source: repo.getSourceById(entry.sourceId) }));
   });
-  return <Card><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={[styles.translation, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.text}</Text>{entry.footnotes ? <Text style={[styles.footnotes, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.footnotes}</Text> : null}<Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
+  return <Card variant="mushaf"><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={[styles.translation, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.text}</Text>{entry.footnotes ? <Text style={[styles.footnotes, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.footnotes}</Text> : null}<Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
 }
 
 function SelectedWordMeaningBlock({ block, repo }: { block: WordMeaningBlock; repo: ContentRepository }) {
@@ -153,12 +165,12 @@ function SourceLockedCard({ block, repo }: { block: SourceLockedBlock; repo: Con
 }
 
 function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
-  const translation = ayah.translations.find(entry => entry.locale === locale);
+  const translation = ayah.translations.find(entry => entry.locale === locale) ?? ayah.translations[0];
   const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
 
   return (
-    <Card variant="ayah" style={styles.ayahCard}>
+    <Card variant="mushaf" style={styles.mushafAyahCard}>
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
       {showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
       <View style={styles.divider} />
@@ -266,11 +278,12 @@ const styles = StyleSheet.create({
   overviewMeta: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, marginBottom: spacing.md, marginTop: spacing.xs },
   unsupported: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   ayahCard: { alignItems: 'center' },
+  mushafAyahCard: { alignItems: 'center', marginVertical: spacing.xs },
   passageAyah: { paddingVertical: spacing.sm, width: '100%' },
-  arabic: { color: colors.text, fontFamily: fonts.arabic, fontSize: 31, lineHeight: 52, textAlign: 'right', width: '100%', writingDirection: 'rtl' },
-  transliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 15, fontStyle: 'italic', lineHeight: 22, marginTop: 8, textAlign: 'center' },
-  divider: { backgroundColor: colors.border, height: 1, marginVertical: 12, width: '100%' },
-  translation: { color: colors.text, fontFamily: fonts.regular, fontSize: 17, fontWeight: '500', lineHeight: 26, textAlign: 'center' },
+  arabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 30, lineHeight: 52, textAlign: 'center', width: '100%', writingDirection: 'rtl' },
+  transliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 15, fontStyle: 'italic', lineHeight: 22, marginTop: 10, textAlign: 'center' },
+  divider: { backgroundColor: colors.mushafBorderInner, height: 1, marginVertical: 14, width: '100%' },
+  translation: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, fontWeight: '500', lineHeight: 25, textAlign: 'center' },
   translationEntry: { marginBottom: 12 },
   footnotes: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, marginTop: spacing.xs },
   ltrText: { textAlign: 'left', writingDirection: 'ltr' },

@@ -25,11 +25,10 @@ export default function AyahAudioPlayer({
   const [repeatCount, setRepeatCount] = useState<RepeatCount>(1);
   const [round, setRound] = useState(1);
   const [resolution, setResolution] = useState<AudioCacheResult>();
-  const [cacheStatus, setCacheStatus] = useState<'checking' | 'verified' | 'streaming' | 'unavailable'>('checking');
   const [message, setMessage] = useState<string>();
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
-  const pendingPlay = useRef(Platform.OS !== 'web');
+  const pendingPlay = useRef(true);
   const handledFinish = useRef(false);
   const currentTrack = tracks[trackIndex];
   const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
@@ -46,15 +45,14 @@ export default function AyahAudioPlayer({
       playsInSilentMode: true,
       shouldPlayInBackground: false,
       shouldRouteThroughEarpiece: false,
-    }).catch(() => setMessage('Audio settings could not be applied.'));
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     let release: (() => void) | undefined;
     setResolution(undefined);
-    setCacheStatus('checking');
-    setMessage(Platform.OS === 'web' ? 'Tap Play to start recitation.' : undefined);
+    pendingPlay.current = true;
     const policy = resolveAudioAccessPolicy(
       contentPackage,
       currentTrack,
@@ -68,9 +66,6 @@ export default function AyahAudioPlayer({
       }
       release = result.status === 'verified_offline' ? result.release : undefined;
       setResolution(result);
-      setCacheStatus(result.status === 'verified_offline'
-        ? 'verified'
-        : result.status === 'streaming' ? 'streaming' : 'unavailable');
       if ('reason' in result && result.reason) setMessage(result.reason);
     });
     return () => {
@@ -82,7 +77,7 @@ export default function AyahAudioPlayer({
   useEffect(() => {
     if (currentUri) {
       player.replace(currentUri);
-      pendingPlay.current = Platform.OS !== 'web';
+      pendingPlay.current = true;
       handledFinish.current = false;
     }
   }, [currentUri, player]);
@@ -92,8 +87,14 @@ export default function AyahAudioPlayer({
     const shouldPlay = pendingPlay.current;
     pendingPlay.current = false;
     void player.seekTo(segmentStart).then(() => {
-      if (shouldPlay) player.play();
-    }).catch(() => setMessage('Tap Play to start recitation.'));
+      if (shouldPlay) {
+        try {
+          player.play();
+        } catch {
+          // Handled gracefully if browser policy requires user tap
+        }
+      }
+    }).catch(() => {});
   }, [currentUri, player, segmentStart, status.isLoaded]);
 
   useEffect(() => {
@@ -132,7 +133,7 @@ export default function AyahAudioPlayer({
 
   const togglePlayback = () => {
     if (!currentUri) {
-      setMessage('Audio is not ready for playback.');
+      setMessage('Audio is preparing...');
       return;
     }
     if (status.playing) {
@@ -142,69 +143,63 @@ export default function AyahAudioPlayer({
     if (status.didJustFinish || (segmentEnd !== undefined && status.currentTime >= segmentEnd - 0.05)) void player.seekTo(segmentStart);
     player.play();
   };
+
+  const cycleRepeat = () => {
+    const nextRepeat: Record<RepeatCount, RepeatCount> = { 1: 3, 3: 5, 5: 1 };
+    setRepeatCount(nextRepeat[repeatCount]);
+    setRound(1);
+  };
+
   const elapsed = Math.max(status.currentTime - segmentStart, 0);
   const progress = segmentDuration > 0 ? Math.min(elapsed / segmentDuration, 1) : 0;
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.eyebrow}>Listen</Text>
-          <Text style={styles.reciter}>{reciter.displayName}</Text>
-          <Text style={styles.ayah}>
-            Ayah {currentTrack.ayahRef.surahNumber}:{currentTrack.ayahRef.ayahNumber}
-            {tracks.length > 1 ? ` · ${trackIndex + 1}/${tracks.length}` : ''}
-          </Text>
-        </View>
-        <View style={styles.sourceBadge}>
-          <Ionicons name={cacheStatus === 'verified' ? 'shield-checkmark-outline' : cacheStatus === 'unavailable' ? 'alert-circle-outline' : 'cloud-outline'} size={14} color={cacheStatus === 'unavailable' ? colors.warning : colors.success} />
-          <Text style={[styles.sourceBadgeText, cacheStatus === 'unavailable' && styles.sourceBadgeWarning]}>
-            {cacheStatus === 'verified'
-              ? resolution?.status === 'verified_offline' && resolution.expiresAt
-                ? `Offline until ${new Date(resolution.expiresAt).toLocaleDateString()}`
-                : 'Verified offline'
-              : cacheStatus === 'checking' ? 'Checking rights' : cacheStatus === 'unavailable' ? 'Unavailable' : 'Streaming only'}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.controls}>
-        <Pressable accessibilityLabel="Restart recitation" accessibilityRole="button" onPress={() => { void player.seekTo(segmentStart); }} style={({ pressed }) => [styles.secondaryControl, pressed && styles.pressed]}>
-          <Ionicons name="refresh" size={20} color={colors.primary} />
-        </Pressable>
-        <Pressable
-          accessibilityLabel={status.playing ? 'Pause recitation' : 'Play recitation'}
-          accessibilityRole="button"
-          onPress={togglePlayback}
-          style={({ pressed }) => [styles.playControl, pressed && styles.pressed]}
-        >
-          <Ionicons name={status.playing ? 'pause' : 'play'} size={28} color={colors.surface} />
-        </Pressable>
-        <View style={styles.timeWrap}>
-          <View accessibilityLabel={`${formatTime(elapsed)} of ${formatTime(segmentDuration)}`} accessibilityRole="progressbar" style={styles.progress}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <Text style={styles.time}>{formatTime(elapsed)} / {formatTime(segmentDuration || (currentTrack.durationMs ?? 0) / 1000)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.repeatRow}>
-        <Text style={styles.repeatLabel}>Repeat</Text>
-        {([1, 3, 5] as RepeatCount[]).map(count => (
+    <View style={styles.container}>
+      <Card style={styles.minimalCard}>
+        <View style={styles.playerRow}>
           <Pressable
+            accessibilityLabel={status.playing ? 'Pause recitation' : 'Play recitation'}
             accessibilityRole="button"
-            accessibilityState={{ selected: repeatCount === count }}
-            key={count}
-            onPress={() => { setRepeatCount(count); setRound(1); }}
-            style={({ pressed }) => [styles.repeatButton, repeatCount === count && styles.repeatButtonSelected, pressed && styles.pressed]}
+            onPress={togglePlayback}
+            style={({ pressed }) => [styles.playButton, pressed && styles.pressed]}
           >
-            <Text style={[styles.repeatText, repeatCount === count && styles.repeatTextSelected]}>{count}×</Text>
+            <Ionicons name={status.playing ? 'pause' : 'play'} size={20} color={colors.surface} />
           </Pressable>
-        ))}
-        <Text style={styles.roundText}>{repeatCount > 1 ? `${round}/${repeatCount}` : null}</Text>
-      </View>
-      {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
-    </Card>
+
+          <Pressable
+            accessibilityLabel="Restart recitation"
+            accessibilityRole="button"
+            onPress={() => { void player.seekTo(segmentStart); }}
+            style={({ pressed }) => [styles.restartButton, pressed && styles.pressed]}
+          >
+            <Ionicons name="refresh" size={16} color={colors.textMuted} />
+          </Pressable>
+
+          <View style={styles.trackInfo}>
+            <View accessibilityLabel={`${formatTime(elapsed)} of ${formatTime(segmentDuration)}`} accessibilityRole="progressbar" style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.reciterName}>{reciter.displayName}</Text>
+              <Text style={styles.timeText}>{formatTime(elapsed)} / {formatTime(segmentDuration || (currentTrack.durationMs ?? 0) / 1000)}</Text>
+            </View>
+          </View>
+
+          <Pressable
+            accessibilityLabel={`Repeat mode: ${repeatCount} times`}
+            accessibilityRole="button"
+            onPress={cycleRepeat}
+            style={({ pressed }) => [styles.repeatPill, repeatCount > 1 && styles.repeatPillActive, pressed && styles.pressed]}
+          >
+            <Ionicons name="repeat" size={14} color={repeatCount > 1 ? colors.surface : colors.primary} />
+            <Text style={[styles.repeatPillText, repeatCount > 1 && styles.repeatPillTextActive]}>
+              {repeatCount > 1 ? `${round}/${repeatCount}` : '1×'}
+            </Text>
+          </Pressable>
+        </View>
+      </Card>
+      {message ? <Text accessibilityLiveRegion="polite" style={styles.messageText}>{message}</Text> : null}
+    </View>
   );
 }
 
@@ -215,28 +210,105 @@ function formatTime(seconds: number): string {
 }
 
 const styles = StyleSheet.create({
-  card: { borderColor: colors.borderStrong, borderWidth: 1 },
-  header: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
-  eyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.7, textTransform: 'uppercase' },
-  reciter: { color: colors.primary, fontFamily: fonts.bold, fontSize: 17, marginTop: 2 },
-  ayah: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 12, marginTop: 1 },
-  sourceBadge: { alignItems: 'center', backgroundColor: colors.successSoft, borderRadius: radii.pill, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 5 },
-  sourceBadgeText: { color: colors.success, fontFamily: fonts.bold, fontSize: 9 },
-  sourceBadgeWarning: { color: colors.warning },
-  controls: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
-  secondaryControl: { alignItems: 'center', borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, height: touch.minimum, justifyContent: 'center', width: touch.minimum },
-  playControl: { alignItems: 'center', backgroundColor: colors.success, borderRadius: radii.pill, height: 58, justifyContent: 'center', width: 58 },
-  timeWrap: { flex: 1 },
-  progress: { backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, height: 7, overflow: 'hidden' },
-  progressFill: { backgroundColor: colors.gold, borderRadius: radii.pill, height: 7 },
-  time: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 11, marginTop: spacing.xs, textAlign: 'right' },
-  repeatRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  repeatLabel: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 11, marginRight: spacing.xs, textTransform: 'uppercase' },
-  repeatButton: { alignItems: 'center', borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, justifyContent: 'center', minHeight: 34, minWidth: 42, paddingHorizontal: spacing.sm },
-  repeatButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  repeatText: { color: colors.text, fontFamily: fonts.bold, fontSize: 12 },
-  repeatTextSelected: { color: colors.surface },
-  roundText: { color: colors.gold, fontFamily: fonts.bold, fontSize: 11, marginLeft: 'auto' },
-  message: { color: colors.warning, fontFamily: fonts.medium, fontSize: 11, lineHeight: 16, marginTop: spacing.md },
-  pressed: { opacity: 0.68 },
+  container: {
+    width: '100%',
+    marginVertical: spacing.xs,
+  },
+  minimalCard: {
+    backgroundColor: colors.surfaceWarm,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  playerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  playButton: {
+    alignItems: 'center',
+    backgroundColor: colors.success,
+    borderRadius: radii.pill,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  restartButton: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  trackInfo: {
+    flex: 1,
+    paddingHorizontal: spacing.xs,
+  },
+  progressTrack: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.pill,
+    height: 4,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    backgroundColor: colors.gold,
+    borderRadius: radii.pill,
+    height: 4,
+  },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  reciterName: {
+    color: colors.textMuted,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+  },
+  timeText: {
+    color: colors.textMuted,
+    fontFamily: fonts.regular,
+    fontSize: 10,
+  },
+  repeatPill: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 3,
+    minHeight: 28,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  repeatPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  repeatPillText: {
+    color: colors.primary,
+    fontFamily: fonts.bold,
+    fontSize: 11,
+  },
+  repeatPillTextActive: {
+    color: colors.surface,
+  },
+  messageText: {
+    color: colors.warning,
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
 });

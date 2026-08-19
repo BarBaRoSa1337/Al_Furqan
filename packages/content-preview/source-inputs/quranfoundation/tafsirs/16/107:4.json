@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "107:4": {
+        "id": 6201
+      },
+      "107:5": {
+        "id": 6202
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فعذاب شديد للمصلين الذين هم عن صلاتهم لاهون، لا يقيمونها على وجهها، ولا يؤدونها في وقتها."
+  }
+}
