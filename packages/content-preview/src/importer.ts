@@ -370,14 +370,17 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
       const level: Level = {
         id, pathId, surahId: surah.id, title: `Ayah ${ayahNumber}`, description: 'Listen, understand, rebuild, and review the ayah.', durationMinutes: 7, ayahRefs: [ayah.ref], difficulty: 'easy', goals: ['memorize', 'understand'], completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
         steps: [
-          { id: `${id}-read`, kind: 'read', title: 'Listen and read', blocks: [{ id: passageId, type: 'ayah_ref', ayahRef: ayah.ref, translationLocale: locale }, { id: `${id}-audio`, type: 'audio', ayahRefs: [ayah.ref], reciterId: MP3QURAN_RECITER_ID }] },
-          { id: `${id}-translation`, kind: 'translation', title: 'Translation', blocks: [{ id: `${id}-translation-block`, type: 'translation', ayahRefs: [ayah.ref], locale, translationEntryIds: [requireTranslation(ayah, locale).id] }] },
-          ayah.wordMeanings && ayah.wordMeanings.length === tokenIds.length
-            ? { id: `${id}-word-meaning`, kind: 'word_meaning', title: 'Word meanings', blocks: [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] }] }
-            : { id: `${id}-word-meaning`, kind: 'word_meaning', title: 'Word meanings', required: false, blocks: [{ id: `${id}-word-meaning-locked`, type: 'source_locked', capability: 'word_meaning', sourceId: WORD_MEANING_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
-          ayah.tafsirEntries && ayah.tafsirEntries.length > 0
-            ? { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', blocks: [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id }] }
-            : { id: `${id}-tafsir`, kind: 'tafsir', title: 'Tafsir', required: false, blocks: [{ id: `${id}-tafsir-locked`, type: 'source_locked', capability: 'tafsir', sourceId: TAFSIR_SOURCE_ID, reason: 'credentials_required', alternativeStepId: understandingStepId, locale }] },
+          {
+            id: `${id}-study`,
+            kind: 'read',
+            title: 'Study the Ayah',
+            blocks: [
+              { id: passageId, type: 'ayah_ref', ayahRef: ayah.ref, translationLocale: locale },
+              { id: `${id}-audio`, type: 'audio', ayahRefs: [ayah.ref], reciterId: MP3QURAN_RECITER_ID },
+              ...(ayah.wordMeanings && ayah.wordMeanings.length > 0 ? [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as const] : []),
+              ...(ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id } as const] : []),
+            ]
+          },
           { id: `${id}-memory`, kind: 'memory_practice', title: 'Build the ayah', blocks: [{ id: orderId, type: 'activity', activity: buildOrderAyahActivity(ayah, passageId, orderId) }] },
           { id: understandingStepId, kind: 'understanding_practice', title: 'Match the translation', blocks: [{ id: matchId, type: 'activity', activity: { id: matchId, kind: 'multiple_choice', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the unchanged translation for this ayah.', required: true, difficulty: 2, knowledgeRefs: [passageId, `${id}-translation-block`], sourceIds: [translationSourceId], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { options: translationOptions, correctOptionId: requireTranslation(ayah, locale).id } } }] },
           { id: `${id}-extra-gap-step`, kind: 'memory_practice', title: 'Extra: Complete the ayah', required: false, blocks: [{ id: `${id}-extra-gap`, type: 'activity', activity: { id: `${id}-extra-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the missing ending token.', required: false, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { tokenBankIds: [...tokenIds].reverse(), correctTokenIds: [tokenIds.at(-1)!] } } }] },
