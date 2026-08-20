@@ -1,0 +1,14 @@
+--- scripts/build-content-preview.ts
++++ scripts/build-content-preview.ts
+@@ -106,12 +106,15 @@
+     paths.push(`quranfoundation/word-meanings/${surah}.json`);
+-    paths.push(`quranfoundation/tafsirs/169/${surah}.json`);
++    paths.push(`quranfoundation/tafsirs/16/${surah}.json`);
++    paths.push(`quranfoundation/tafsirs/169/${surah}.json`); // fetch both for hashes
+     for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
+       paths.push(`quranfoundation/word-meanings/${surah}:${ayah}.json`);
+-      paths.push(`quranfoundation/tafsirs/169/${surah}:${ayah}.json`);
++      paths.push(`quranfoundation/tafsirs/16/${surah}:${ayah}.json`);
++      paths.push(`quranfoundation/tafsirs/169/${surah}:${ayah}.json`); // fetch both for hashes
+     }
+   }

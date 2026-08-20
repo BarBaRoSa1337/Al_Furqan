@@ -191,10 +191,10 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
         const plainText = tafsirObj.text.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
         tafsirEntries = [{
           id: `${TAFSIR_SOURCE_ID}:${key}`,
-          locale: 'ar',
+          locale: 'en',
           text: plainText,
           providerText: tafsirObj.text,
-          providerResourceId: '16',
+          providerResourceId: '169',
           contentHash: hashText(plainText),
           sourceId: TAFSIR_SOURCE_ID,
           reviewerStatus: 'draft' as const,
@@ -377,8 +377,8 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
             blocks: [
               { id: passageId, type: 'ayah_ref', ayahRef: ayah.ref, translationLocale: locale },
               { id: `${id}-audio`, type: 'audio', ayahRefs: [ayah.ref], reciterId: MP3QURAN_RECITER_ID },
-              ...(ayah.wordMeanings && ayah.wordMeanings.length > 0 ? [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as const] : []),
-              ...(ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id } as const] : []),
+              ...(ayah.wordMeanings && ayah.wordMeanings.length > 0 ? [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as any] : []),
+              ...(ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id } as any] : []),
             ]
           },
           { id: `${id}-memory`, kind: 'memory_practice', title: 'Build the ayah', blocks: [{ id: orderId, type: 'activity', activity: buildOrderAyahActivity(ayah, passageId, orderId) }] },

@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   const wordMeanings: Record<string, unknown> = {};
   const tafsirs: Record<string, unknown> = {};
   for (const surah of PREVIEW_SURAH_NUMBERS) {
-    const tafsirContent = files.get(`quranfoundation/tafsirs/16/${surah}.json`) || files.get(`quranfoundation/tafsirs/169/${surah}.json`);
+    const tafsirContent = files.get(`quranfoundation/tafsirs/169/${surah}.json`) || files.get(`quranfoundation/tafsirs/169/${surah}.json`);
     if (tafsirContent) {
       tafsirs[surah.toString()] = parseJson(tafsirContent, `Tafsir ${surah}`);
     }
@@ -107,9 +107,11 @@ async function readSourceFiles(): Promise<Map<string, string>> {
 
   for (const surah of PREVIEW_SURAH_NUMBERS) {
     paths.push(`quranfoundation/tafsirs/16/${surah}.json`);
+    paths.push(`quranfoundation/tafsirs/169/${surah}.json`);
     for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
       paths.push(`quranfoundation/word-meanings/${surah}:${ayah}.json`);
       paths.push(`quranfoundation/tafsirs/16/${surah}:${ayah}.json`);
+      paths.push(`quranfoundation/tafsirs/169/${surah}:${ayah}.json`);
     }
   }
 
@@ -119,8 +121,8 @@ async function readSourceFiles(): Promise<Map<string, string>> {
     try {
       files.set(path, await readFile(fullPath, 'utf8'));
     } catch {
-      if (path.includes('tafsirs/16/')) {
-        const legacyPath = path.replace('tafsirs/16/', 'tafsirs/169/');
+      if (path.includes('tafsirs/169/')) {
+        const legacyPath = path.replace('tafsirs/169/', 'tafsirs/169/');
         try {
           files.set(path, await readFile(join(INPUT_ROOT, legacyPath), 'utf8'));
         } catch {

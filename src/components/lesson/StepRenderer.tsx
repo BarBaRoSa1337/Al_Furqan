@@ -4,6 +4,7 @@ import { LevelStep } from '../../types/content';
 import type { ExerciseSubmissionResult } from '../../types/activities';
 import { colors, fonts } from '../../theme/tokens';
 import LevelBlockRenderer from './LevelBlockRenderer';
+import UnifiedAyahStudyRenderer from './UnifiedAyahStudyRenderer';
 
 interface StepRendererProps {
   step: LevelStep;
@@ -12,6 +13,9 @@ interface StepRendererProps {
 }
 
 export default function StepRenderer({ step, onQuestionAnswer, onActivityAnswer }: StepRendererProps) {
+  if (step.kind === 'read' && step.blocks.some(b => b.type === 'ayah_ref')) {
+    return <UnifiedAyahStudyRenderer step={step} />;
+  }
   return (
     <View>
       <Text style={styles.stepTitle}>{step.title}</Text>
