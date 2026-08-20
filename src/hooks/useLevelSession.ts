@@ -163,7 +163,7 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
         const receipt = await moveToNextStep(correct);
         if (receipt) setCompletionReceipt(receipt);
       });
-    }, correct ? 700 : 400);
+    }, correct ? 500 : 400);
   }
 
   async function moveToNextStep(correct: boolean): Promise<CompletionReceipt | null> {

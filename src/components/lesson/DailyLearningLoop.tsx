@@ -97,12 +97,7 @@ export default function DailyLearningLoop({
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {warning ? <Text style={styles.warning}>{warning}</Text> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        {feedback ? <View accessibilityLiveRegion="polite" style={[styles.feedback, feedback.correct ? styles.feedbackCorrect : styles.feedbackIncorrect]}>
-          <Ionicons name={feedback.correct ? 'checkmark-circle' : 'refresh-circle'} size={22} color={feedback.correct ? colors.success : colors.danger} />
-          <Text style={[styles.feedbackText, { color: feedback.correct ? colors.success : colors.danger }]}>
-            {feedback.correct ? correctFeedbackLabel : retryFeedbackLabel}
-          </Text>
-        </View> : null}
+        {/* Feedback banner removed; activities now provide instant inline feedback */}
         <StepRenderer key={stepRenderKey ?? step.id} step={step} onQuestionAnswer={onQuestionAnswer} onActivityAnswer={onActivityAnswer} />
       </ScrollView>
 

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -42,6 +43,9 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
   const contentPackage = repo.getPackageForBlock(block.id);
   if (!isPreviewContentMode() && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
 
+  const showDraftBadge = isPreviewContentMode() && hasDraftStatus(block);
+
+  const renderInner = () => {
   switch (block.type) {
     case 'surah_overview':
       return <CanonicalSurahOverviewBlock block={block} repo={repo} />;
@@ -81,6 +85,8 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     default:
       return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
   }
+  };
+  return <DraftBadge show={showDraftBadge}>{renderInner()}</DraftBadge>;
 }
 
 function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBlock; repo: ContentRepository }) {
@@ -165,6 +171,7 @@ function SourceLockedCard({ block, repo }: { block: SourceLockedBlock; repo: Con
 }
 
 function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const translation = ayah.translations.find(entry => entry.locale === locale) ?? ayah.translations[0];
   const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
@@ -176,12 +183,15 @@ function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah:
       <View style={styles.divider} />
       <Text style={[styles.translation, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
       {translation?.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
-      <View style={styles.sourceGroup}>
-        <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}</Text>
-        <SourceAttribution source={arabicSource} unavailable={packageText(repo, 'content.sourceUnavailable')} />
-        <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}</Text>
-        <SourceAttribution source={translationSource} unavailable={packageText(repo, 'content.sourceUnavailable')} />
-      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Show Sources" style={styles.infoButton} onPress={() => setSourcesExpanded(s => !s)}>
+        <Ionicons name="information-circle-outline" size={20} color={colors.textMuted} />
+      </Pressable>
+      {sourcesExpanded ? (
+        <View style={styles.collapsibleSources}>
+          <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}: {arabicSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+          <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}: {translationSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -271,6 +281,11 @@ export function resolveWordMeaningArabic(word: WordMeaning, repo: Pick<ContentRe
 }
 
 const styles = StyleSheet.create({
+  draftBadgeContainer: { position: 'relative' },
+  draftBadge: { position: 'absolute', top: -10, right: 10, backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radii.sm, zIndex: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  draftBadgeText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoButton: { position: 'absolute', top: 16, right: 16, zIndex: 5, padding: 4, opacity: 0.5 },
+  collapsibleSources: { marginTop: spacing.lg, padding: spacing.md, backgroundColor: colors.surfaceMuted, borderRadius: radii.sm },
   overviewCard: { alignItems: 'center', paddingVertical: spacing.xl },
   overviewEyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
   overviewArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 42, lineHeight: 64, marginTop: spacing.sm, writingDirection: 'rtl' },
@@ -319,3 +334,29 @@ const styles = StyleSheet.create({
   lockedText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   lockedAlternative: { color: colors.success, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.md },
 });
+
+
+function DraftBadge({ children, show }: { children: React.ReactNode; show: boolean }) {
+  if (!show) return <>{children}</>;
+  return (
+    <View style={styles.draftBadgeContainer}>
+      <View style={styles.draftBadge}>
+        <Text style={styles.draftBadgeText}>DRAFT — Not for production</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function hasDraftStatus(block: LevelBlock): boolean {
+  if (block.type === 'context' || block.type === 'summary' || block.type === 'question') {
+    return (block as any).reviewerStatus !== 'approved';
+  }
+  if (block.type === 'activity') {
+    return block.activity.reviewerStatus !== 'approved';
+  }
+  if (block.type === 'tafsir_ref' || block.type === 'word_meaning' || block.type === 'word_explorer' || block.type === 'ayah_ref') {
+    return true; // We can assume draft in preview mode for these generated blocks
+  }
+  return false;
+}

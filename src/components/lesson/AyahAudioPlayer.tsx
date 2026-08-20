@@ -26,6 +26,7 @@ export default function AyahAudioPlayer({
   const [round, setRound] = useState(1);
   const [resolution, setResolution] = useState<AudioCacheResult>();
   const [message, setMessage] = useState<string>();
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const pendingPlay = useRef(true);
@@ -90,8 +91,9 @@ export default function AyahAudioPlayer({
       if (shouldPlay) {
         try {
           player.play();
+          setAutoplayBlocked(false);
         } catch {
-          // Handled gracefully if browser policy requires user tap
+          setAutoplayBlocked(true);
         }
       }
     }).catch(() => {});
@@ -142,6 +144,7 @@ export default function AyahAudioPlayer({
     }
     if (status.didJustFinish || (segmentEnd !== undefined && status.currentTime >= segmentEnd - 0.05)) void player.seekTo(segmentStart);
     player.play();
+    setAutoplayBlocked(false);
   };
 
   const cycleRepeat = () => {
@@ -198,6 +201,7 @@ export default function AyahAudioPlayer({
           </Pressable>
         </View>
       </Card>
+      {autoplayBlocked && !status.playing ? <Text style={styles.messageText}>Tap play to start audio</Text> : null}
       {message ? <Text accessibilityLiveRegion="polite" style={styles.messageText}>{message}</Text> : null}
     </View>
   );

@@ -98,7 +98,7 @@ export default function CompleteScreen() {
   return (
     <Screen backgroundColor={colors.primary} statusBarStyle="light-content" edges={['top', 'bottom', 'left', 'right']}>
       <MoroccanBackdrop inverted />
-      {receipt && !receipt.alreadyCompleted && !reduceMotion ? (
+      {receipt && !receipt.alreadyCompleted && !reduceMotion && level.metadata?.isFinalReview ? (
         <ConfettiCannon
           count={80}
           colors={[colors.gold, colors.success, colors.goldSoft, colors.surface]}
