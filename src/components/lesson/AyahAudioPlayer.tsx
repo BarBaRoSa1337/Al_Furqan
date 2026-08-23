@@ -147,6 +147,18 @@ export default function AyahAudioPlayer({
     setAutoplayBlocked(false);
   };
 
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 0.75>(1);
+
+  const toggleSpeed = () => {
+    const nextSpeed = playbackSpeed === 1 ? 0.75 : 1;
+    setPlaybackSpeed(nextSpeed);
+    try {
+      player.playbackRate = nextSpeed;
+    } catch {
+      // safe fallback
+    }
+  };
+
   const cycleRepeat = () => {
     const nextRepeat: Record<RepeatCount, RepeatCount> = { 1: 3, 3: 5, 5: 1 };
     setRepeatCount(nextRepeat[repeatCount]);
@@ -187,6 +199,17 @@ export default function AyahAudioPlayer({
               <Text style={styles.timeText}>{formatTime(elapsed)} / {formatTime(segmentDuration || (currentTrack.durationMs ?? 0) / 1000)}</Text>
             </View>
           </View>
+
+          <Pressable
+            accessibilityLabel={`Playback speed: ${playbackSpeed}x`}
+            accessibilityRole="button"
+            onPress={toggleSpeed}
+            style={({ pressed }) => [styles.repeatPill, playbackSpeed !== 1 && styles.repeatPillActive, pressed && styles.pressed]}
+          >
+            <Text style={[styles.repeatPillText, playbackSpeed !== 1 && styles.repeatPillTextActive]}>
+              {playbackSpeed === 1 ? '1.0×' : '0.75×'}
+            </Text>
+          </Pressable>
 
           <Pressable
             accessibilityLabel={`Repeat mode: ${repeatCount} times`}

@@ -6,6 +6,7 @@ import type {
   AyahRecord,
   ContentPackage,
   ContentSource,
+  ContextKind,
   Level,
   LearningPath,
   QuranEdition,
@@ -346,13 +347,200 @@ function buildOrderAyahActivity(ayah: AyahRecord, passageId: string, orderId: st
   };
 }
 
+const SURAH_CONTEXT_MAP: Record<number, { title: string; text: string; kind: ContextKind }> = {
+  105: {
+    title: "Protection of the Ka'bah",
+    text: 'Revealed in Makkah, Surah Al-Fil reminded the Quraysh of how Allah decisively protected His Sacred House from the army of the elephant led by Abrahah.',
+    kind: 'historical_context',
+  },
+  106: {
+    title: 'Blessings upon Quraysh',
+    text: "Highlights Allah's continuous blessings of peace, security, and sustenance for the winter and summer trading journeys, calling upon them to worship the Lord of this House alone.",
+    kind: 'chapter_information',
+  },
+  107: {
+    title: 'Compassion & Devotion',
+    text: 'Connects true religious devotion with practical compassion for orphans and the needy, warning against hypocrisy and withholding small acts of kindness.',
+    kind: 'chapter_information',
+  },
+  108: {
+    title: 'The Divine Abundance',
+    text: 'A tender consolation to the Prophet ﷺ during hardship, promising him the abundant fountain of Al-Kawthar and eternal blessing, while declaring his adversaries cut off.',
+    kind: 'chapter_information',
+  },
+  109: {
+    title: 'The Declaration of Pure Monotheism',
+    text: 'The definitive Quranic declaration establishing uncompromising monotheism and distinct religious boundaries in worship without hostility or syncretism.',
+    kind: 'chapter_information',
+  },
+  110: {
+    title: 'The Divine Victory',
+    text: 'A late Madinan revelation celebrating the opening of Makkah and masses entering Islam, teaching gratitude, glorification, and seeking forgiveness upon fulfillment.',
+    kind: 'occasion_of_revelation',
+  },
+  111: {
+    title: 'The Fate of Arrogance',
+    text: 'Illustrates the inevitable downfall of pride and wealth when turned against divine truth, using the cautionary history of Abu Lahab.',
+    kind: 'historical_context',
+  },
+  112: {
+    title: 'Purity of Faith (Tawhid)',
+    text: 'The definitive essence of the Quran declaring Allah as the One, the Eternal Refuge, Unbegotten and without equal.',
+    kind: 'chapter_information',
+  },
+  113: {
+    title: 'Refuge with the Lord of Dawn',
+    text: "One of the two protectors (Al-Mu'awwidhatayn), teaching the believer to seek refuge with Allah from created harms, deep darkness, occult evils, and envy.",
+    kind: 'chapter_information',
+  },
+  114: {
+    title: 'Refuge with the King of Mankind',
+    text: 'The final Surah of the Quran, invoking Allah as Lord, Sovereign, and God of humanity for complete protection against inner doubts and whispering temptations.',
+    kind: 'chapter_information',
+  },
+};
+
+function buildUnderstandingActivity(
+  ayah: AyahRecord,
+  surahAyat: AyahRecord[],
+  locale: PreviewLocale,
+  passageId: string,
+  matchId: string,
+  translationSourceId: string,
+): { activity: LearningActivity; title: string } {
+  const ayahNumber = ayah.ref.ayahNumber;
+  const tokenIds = ayah.wordTokenIds;
+
+  // 1. Word meaning match when meanings are available (odd-numbered ayat)
+  if (ayahNumber % 2 === 1 && ayah.wordMeanings && ayah.wordMeanings.length >= 2) {
+    const validMeanings = ayah.wordMeanings.filter(wm => Boolean(wm.wordTokenId));
+    if (validMeanings.length >= 2) {
+      const selectedMeanings = validMeanings.slice(0, Math.min(3, validMeanings.length));
+      return {
+        title: 'Match word meanings',
+        activity: {
+          id: matchId,
+          kind: 'match_word_meaning',
+          placement: 'lesson',
+          ayahRefs: [ayah.ref],
+          instruction: 'Match each Quran word with its meaning.',
+          required: true,
+          difficulty: 2,
+          knowledgeRefs: [passageId],
+          sourceIds: [WORD_MEANING_SOURCE_ID],
+          reviewerStatus: 'draft',
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: {
+            pairs: selectedMeanings.map(wm => ({
+              promptTokenId: wm.wordTokenId!,
+              meaningId: wm.id,
+            })),
+          },
+        },
+      };
+    }
+  }
+
+  // 2. Choose continuation for even-numbered ayat with >= 4 tokens
+  if (ayahNumber % 2 === 0 && tokenIds.length >= 4) {
+    const promptTokenIds = tokenIds.slice(0, 2);
+    const correctOptionId = tokenIds[2];
+    const distractorPool = tokenIds.filter((_, idx) => idx !== 2);
+    const distractors = distractorPool.slice(0, 2);
+    const optionIds = [correctOptionId, ...distractors];
+
+    if (distractors.length >= 1) {
+      return {
+        title: 'Complete the ayah',
+        activity: {
+          id: matchId,
+          kind: 'choose_continuation',
+          placement: 'lesson',
+          ayahRefs: [ayah.ref],
+          instruction: 'Choose the word that continues this ayah.',
+          required: true,
+          difficulty: 2,
+          knowledgeRefs: [passageId],
+          sourceIds: [TANZIL_SOURCE_ID],
+          reviewerStatus: 'draft',
+          languageIndependent: true,
+          reviewSchedule: { intervalDays: [1, 3, 7] },
+          config: {
+            optionIds,
+            correctOptionId,
+            promptTokenIds,
+          },
+        },
+      };
+    }
+  }
+
+  // 3. Fallback: Translation multiple choice
+  const translationOptions = surahAyat.map(candidate => {
+    const entry = requireTranslation(candidate, locale);
+    return { id: entry.id, text: entry.text };
+  });
+
+  return {
+    title: 'Match the translation',
+    activity: {
+      id: matchId,
+      kind: 'multiple_choice',
+      placement: 'lesson',
+      ayahRefs: [ayah.ref],
+      instruction: 'Choose the unchanged translation for this ayah.',
+      required: true,
+      difficulty: 2,
+      knowledgeRefs: [passageId],
+      sourceIds: [translationSourceId],
+      reviewerStatus: 'draft',
+      reviewSchedule: { intervalDays: [1, 3, 7] },
+      config: {
+        options: translationOptions,
+        correctOptionId: requireTranslation(ayah, locale).id,
+      },
+    },
+  };
+}
+
 function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRecord[], ayat: AyahRecord[], tokens: WordToken[]): { levels: Level[]; curricula: NonNullable<LearningPath['surahCurricula']> } {
   const levels: Level[] = [];
   const curricula: NonNullable<LearningPath['surahCurricula']> = [];
   const translationSourceId = locale === 'en' ? ENGLISH_SOURCE_ID : FRENCH_SOURCE_ID;
   surahs.forEach(surah => {
     const introId = courseLevelId(surah.surahNumber, 'introduction');
-    levels.push({ id: introId, pathId, surahId: surah.id, title: `Discover ${surah.transliteratedName}`, description: `${surah.ayahCount} ayat`, durationMinutes: 5, ayahRefs: [], difficulty: 'easy', goals: ['memorize'], steps: [{ id: `${introId}-overview`, kind: 'surah_introduction', title: 'Surah introduction', blocks: [{ id: `${introId}-overview-block`, type: 'surah_overview', surahId: surah.id }] }] });
+    const contextInfo = SURAH_CONTEXT_MAP[surah.surahNumber];
+    const introBlocks: Level['steps'][number]['blocks'] = [
+      { id: `${introId}-overview-block`, type: 'surah_overview', surahId: surah.id },
+    ];
+    if (contextInfo) {
+      introBlocks.push({
+        id: `${introId}-context-block`,
+        type: 'context',
+        kind: contextInfo.kind,
+        title: contextInfo.title,
+        text: contextInfo.text,
+        sourceIds: [translationSourceId],
+        reviewerStatus: 'draft',
+      });
+    }
+    levels.push({
+      id: introId,
+      pathId,
+      surahId: surah.id,
+      title: `Discover ${surah.transliteratedName}`,
+      description: `${surah.ayahCount} ayat`,
+      durationMinutes: 5,
+      ayahRefs: [],
+      difficulty: 'easy',
+      goals: ['memorize'],
+      steps: [{
+        id: `${introId}-overview`,
+        kind: 'surah_introduction',
+        title: 'Surah introduction',
+        blocks: introBlocks,
+      }],
+    });
     const lessonIds = [introId];
     const surahAyat = ayat.filter(ayah => ayah.ref.surahNumber === surah.surahNumber);
     const ayahLessons = surahAyat.map(ayah => {
@@ -363,10 +551,7 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
       const matchId = `${id}-translation-match`;
       const understandingStepId = `${id}-understanding`;
       const tokenIds = ayah.wordTokenIds;
-      const translationOptions = surahAyat.map(candidate => {
-        const entry = requireTranslation(candidate, locale);
-        return { id: entry.id, text: entry.text };
-      });
+      const understanding = buildUnderstandingActivity(ayah, surahAyat, locale, passageId, matchId, translationSourceId);
       const level: Level = {
         id, pathId, surahId: surah.id, title: `Ayah ${ayahNumber}`, description: 'Listen, understand, rebuild, and review the ayah.', durationMinutes: 7, ayahRefs: [ayah.ref], difficulty: 'easy', goals: ['memorize', 'understand'], completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
         steps: [
@@ -382,7 +567,7 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
             ]
           },
           { id: `${id}-memory`, kind: 'memory_practice', title: 'Build the ayah', blocks: [{ id: orderId, type: 'activity', activity: buildOrderAyahActivity(ayah, passageId, orderId) }] },
-          { id: understandingStepId, kind: 'understanding_practice', title: 'Match the translation', blocks: [{ id: matchId, type: 'activity', activity: { id: matchId, kind: 'multiple_choice', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the unchanged translation for this ayah.', required: true, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [translationSourceId], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { options: translationOptions, correctOptionId: requireTranslation(ayah, locale).id } } }] },
+          { id: understandingStepId, kind: 'understanding_practice', title: understanding.title, blocks: [{ id: matchId, type: 'activity', activity: understanding.activity }] },
           { id: `${id}-extra-gap-step`, kind: 'memory_practice', title: 'Extra: Complete the ayah', required: false, blocks: [{ id: `${id}-extra-gap`, type: 'activity', activity: { id: `${id}-extra-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the missing ending token.', required: false, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { tokenBankIds: [...tokenIds].reverse(), correctTokenIds: [tokenIds.at(-1)!] } } }] },
           { id: `${id}-extra-type-step`, kind: 'memory_practice', title: 'Extra: Write from memory', required: false, blocks: [{ id: `${id}-extra-type`, type: 'activity', activity: { id: `${id}-extra-type`, kind: 'type_missing_text', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Write the ayah from memory. Harakat are optional.', required: false, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { target: { kind: 'ayah', ayahRef: ayah.ref }, comparisonMode: 'letters_and_order', ignoreHarakat: true } } }] },
         ],
