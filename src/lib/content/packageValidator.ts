@@ -803,7 +803,7 @@ function isBlockAllowedInStep(kind: ReturnType<typeof getLevelStepKind>, blockTy
   if (blockType === 'source_locked') return kind === 'context' || kind === 'read' || kind === 'word_meaning' || kind === 'tafsir' || kind === 'summary';
   if (kind === 'surah_introduction') return blockType === 'surah_overview' || blockType === 'context' || blockType === 'media';
   if (kind === 'context') return blockType === 'context' || blockType === 'media';
-  if (kind === 'read') return blockType === 'quran_passage' || blockType === 'ayah_ref' || blockType === 'audio' || blockType === 'media';
+  if (kind === 'read') return blockType === 'quran_passage' || blockType === 'ayah_ref' || blockType === 'audio' || blockType === 'media' || blockType === 'word_explorer' || blockType === 'tafsir_ref' || blockType === 'translation' || blockType === 'word_meaning';
   if (kind === 'translation') return blockType === 'translation';
   if (kind === 'word_meaning') return blockType === 'word_meaning' || blockType === 'word_explorer';
   if (kind === 'tafsir') return blockType === 'tafsir_ref';

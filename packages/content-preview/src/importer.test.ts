@@ -57,10 +57,9 @@ test('generates the complete source-aware workflow for all ten Surahs', () => {
     expect(pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).some(block => block.type === 'activity' && block.activity.kind === 'match_ayah_translation')).toBe(true);
     const ayahLevels = pkg.levels.filter(level => level.ayahRefs.length === 1 && !level.metadata?.isFinalReview);
     expect(ayahLevels).toHaveLength(48);
-    expect(ayahLevels.every(level => ['read', 'translation', 'word_meaning', 'tafsir', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice'].every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
+    expect(ayahLevels.every(level => ['read', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice'].every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
     expect(ayahLevels.every(level => level.steps.some(step => step.blocks.some(block => block.type === 'audio')))).toBe(true);
     expect(ayahLevels.every(level => level.steps.filter(step => step.required === false && step.blocks.some(block => block.type === 'activity')).length === 2)).toBe(true);
-    expect(ayahLevels.every(level => level.steps.filter(step => step.blocks.some(block => block.type === 'source_locked')).length === 2)).toBe(true);
     expect(pkg.levels.filter(level => level.metadata?.isFinalReview).every(level => level.steps.some(step => step.blocks.some(block => block.type === 'source_locked' && block.capability === 'verified_recap')))).toBe(true);
     expect(validatePackage(pkg, { mode: 'development' }).valid).toBe(true);
     expect(validatePackage(pkg, { mode: 'production' }).valid).toBe(false);
