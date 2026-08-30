@@ -87,6 +87,8 @@ interface WordMeaningBase {
   id: string;
   transliteration: string;
   meaning: string;
+  /** Meaning language. Legacy records inherit their source language. */
+  locale?: string;
   root?: string;
   sourceId: string;
   reviewerStatus: ReviewerStatus;
@@ -570,11 +572,11 @@ export interface FillBlankQuestionBlock extends QuestionBlockBase {
 
 export interface MatchQuestionBlock extends QuestionBlockBase {
   questionType: 'match';
-  matchPairs: Array<{
+  matchPairs: {
     id: string;
     arabic: string;
     meaning: string;
-  }>;
+  }[];
 }
 
 export type QuestionBlock =

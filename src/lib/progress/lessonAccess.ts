@@ -1,6 +1,6 @@
 import { Level } from '../../types/content';
 
-export type LevelAccessState = 'completed' | 'active' | 'locked';
+export type LevelAccessState = 'completed' | 'active' | 'available' | 'locked';
 
 export function getLevelAccessState(
   levels: Level[],
@@ -17,9 +17,9 @@ export function getLevelAccessState(
     return 'completed';
   }
 
-  // Learners may enter any available authored lesson directly. Unlock rules remain in
-  // the content contract for future guided modes, but never block navigation.
-  return 'active';
+  const firstIncompleteIndex = levels.findIndex(level => !completedLevelIds.includes(level.id));
+  // Open navigation stays unrestricted; only one lesson receives current emphasis.
+  return levelIndex === firstIncompleteIndex ? 'active' : 'available';
 }
 
 export function isLevelAccessible(

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { ActivityIndicator, Alert, BackHandler, StyleSheet, Text, View, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,9 +20,11 @@ export default function LessonPlayerScreen() {
   const session = useLevelSession(levelId, startMode);
   const { preferences, setLessonLocale, t } = useLocalization();
   const repo = getContentRepository();
-  const text = (key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => packageText(repo, key, values, preferences.interfaceLocale);
+  const text = useCallback((key: Parameters<typeof packageText>[1], values?: Record<string, string | number>) => (
+    packageText(repo, key, values, preferences.interfaceLocale)
+  ), [preferences.interfaceLocale, repo]);
 
-  const confirmExit = () => {
+  const confirmExit = useCallback(() => {
     if (Platform.OS === 'web') {
       const confirmed = window.confirm(`${text('lesson.leaveLevel')}\n\n${text('lesson.leaveMessage')}`);
       if (confirmed) {
@@ -45,7 +47,7 @@ export default function LessonPlayerScreen() {
         },
       },
     ]);
-  };
+  }, [router, session, text]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -53,7 +55,7 @@ export default function LessonPlayerScreen() {
       return true;
     });
     return () => subscription.remove();
-  }, [router]);
+  }, [confirmExit]);
 
   useEffect(() => {
     if (session.status === 'locked') router.replace('/roadmap');

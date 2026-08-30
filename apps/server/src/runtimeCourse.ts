@@ -256,7 +256,7 @@ function normalizeAyah(
   const wordMeanings = providerWords.flatMap((word, index) => {
     const meaning = providerText(word.translation);
     if (!meaning) return [];
-    return [{ id: `${QURAN_SOURCE_ID}:meaning:${verse.verseKey}:${index + 1}`, wordTokenId: verseTokens[index].id, transliteration: providerText(word.transliteration) ?? '', meaning, sourceId: QURAN_SOURCE_ID, reviewerStatus: 'draft' as const }];
+    return [{ id: `${QURAN_SOURCE_ID}:meaning:${verse.verseKey}:${index + 1}`, wordTokenId: verseTokens[index].id, transliteration: providerText(word.transliteration) ?? '', meaning, locale: 'en', sourceId: QURAN_SOURCE_ID, reviewerStatus: 'draft' as const }];
   });
   const rawTafsir = providerText(tafsir?.text);
   const tafsirEntries = rawTafsir ? [{

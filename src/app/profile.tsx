@@ -15,7 +15,7 @@ import { isLessonLocaleAvailable } from '../lib/content/publication';
 export default function ProfileScreen() {
   const dashboard = useFurqanDashboard();
   const router = useRouter();
-  const { preferences, setInterfaceLocale, setLessonLocale, t, updatePreferences } = useLocalization();
+  const { preferences, setContentLocale, setInterfaceLocale, setLessonLocale, t, updatePreferences } = useLocalization();
   const contentPackage = getContentRepository().getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const completedCount = dashboard.progress.completedLevelIds.length;
@@ -56,6 +56,8 @@ export default function ProfileScreen() {
           <LocaleSelector value={preferences.interfaceLocale} onSelect={locale => { void setInterfaceLocale(locale); }} t={t} />
           <PreferenceLabel>{t('profile.lessonLanguage')}</PreferenceLabel>
           <LocaleSelector value={preferences.lessonLocale} onSelect={locale => { void setLessonLocale(locale); }} t={t} />
+          <PreferenceLabel>{t('profile.contentLanguage')}</PreferenceLabel>
+          <LocaleSelector value={preferences.contentLocale} onSelect={locale => { void setContentLocale(locale); }} t={t} />
           <Detail label={t('profile.translation')} value={preferences.translationResourceId} />
           <Detail label={t('profile.script')} value="Uthmani Hafs" />
           <Detail label={t('profile.reciter')} value="Mahmoud Khalil Al-Husary" />
@@ -70,6 +72,20 @@ export default function ProfileScreen() {
                 style={[styles.preferenceOption, preferences.transliterationPreference === value && styles.preferenceOptionSelected]}
               >
                 <Text style={[styles.preferenceOptionText, preferences.transliterationPreference === value && styles.preferenceOptionTextSelected]}>{t(`profile.${value}`)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <PreferenceLabel>{t('profile.autoplayRecitation')}</PreferenceLabel>
+          <View style={styles.preferenceOptions}>
+            {([true, false] as const).map(value => (
+              <Pressable
+                accessibilityRole="radio"
+                accessibilityState={{ checked: preferences.autoplayRecitation === value }}
+                key={String(value)}
+                onPress={() => { void updatePreferences({ autoplayRecitation: value }); }}
+                style={[styles.preferenceOption, preferences.autoplayRecitation === value && styles.preferenceOptionSelected]}
+              >
+                <Text style={[styles.preferenceOptionText, preferences.autoplayRecitation === value && styles.preferenceOptionTextSelected]}>{t(value ? 'profile.on' : 'profile.off')}</Text>
               </Pressable>
             ))}
           </View>
@@ -114,13 +130,13 @@ export default function ProfileScreen() {
           </View>
         ) : null}
         <View style={styles.detailCard}>
-          <Text style={styles.detailTitle}>Legal</Text>
+          <Text style={styles.detailTitle}>{t('profile.legal')}</Text>
           <Pressable
             accessibilityRole="link"
             onPress={() => router.push('/attributions')}
             style={styles.legalLink}
           >
-            <Text style={styles.legalLinkText}>Sources & Attributions</Text>
+            <Text style={styles.legalLinkText}>{t('profile.attributions')}</Text>
             <Text style={styles.legalArrow}>→</Text>
           </Pressable>
           <Pressable
@@ -128,7 +144,7 @@ export default function ProfileScreen() {
             onPress={() => router.push('/privacy')}
             style={styles.legalLink}
           >
-            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+            <Text style={styles.legalLinkText}>{t('profile.privacy')}</Text>
             <Text style={styles.legalArrow}>→</Text>
           </Pressable>
           <Pressable
@@ -136,7 +152,7 @@ export default function ProfileScreen() {
             onPress={() => router.push('/terms')}
             style={styles.legalLink}
           >
-            <Text style={styles.legalLinkText}>Terms of Use</Text>
+            <Text style={styles.legalLinkText}>{t('profile.terms')}</Text>
             <Text style={styles.legalArrow}>→</Text>
           </Pressable>
         </View>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getContentRepository } from '../lib/content/repository';
 import { evaluateActivity, evaluateQuestion } from '../lib/activities/activityEngine';
 import { createActivityEvaluationContext } from '../lib/activities/activityContext';
@@ -18,7 +18,7 @@ import {
 import { CompletionReceipt, LevelProgress, ProgressRecoveryWarning } from '../types/progress';
 import { LevelStep, QuestionBlock } from '../types/content';
 import { getResumeStepIndex } from '../lib/progress/levelResume';
-import { getCoreLevelSteps } from '../lib/content/lessonSteps';
+import { getLocalizedCoreLevelSteps } from '../lib/content/lessonSteps';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
 import { advanceSessionCursor, createSessionCursor } from '../lib/progress/sessionSequence';
@@ -31,10 +31,14 @@ export type LevelStartMode = 'resume' | 'start_over';
 export function useLevelSession(levelId: string | undefined, startMode: LevelStartMode = 'resume') {
   const { preferences } = useLocalization();
   const lessonLocale = preferences.lessonLocale;
+  const contentLocale = preferences.contentLocale;
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
-  const coreSteps = level ? getCoreLevelSteps(level) : [];
+  const coreSteps = useMemo(
+    () => level ? getLocalizedCoreLevelSteps(level, repo, contentLocale) : [],
+    [contentLocale, level, repo],
+  );
   const [status, setStatus] = useState<LevelSessionStatus>('loading');
   const [cursor, setCursor] = useState(() => createSessionCursor(0));
   const [feedback, setFeedback] = useState<SessionFeedback | null>(null);
@@ -127,7 +131,7 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
 
     void loadSession();
     return () => { cancelled = true; if (advanceTimer.current) clearTimeout(advanceTimer.current); };
-  }, [lessonLocale, levelId, startMode]);
+  }, [coreSteps, lessonLocale, level, levelId, path, repo, startMode]);
 
   async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<ExerciseSubmissionResult> {
     if (!level || !path || !step || !questionIds.includes(blockId) || operationLocked.current || feedback) return { correct: false };

@@ -84,6 +84,7 @@ export class ProgressStorageError extends Error {
 
 let mutationQueue: Promise<void> = Promise.resolve();
 let recoveryWarning: ProgressRecoveryWarning | null = null;
+let snapshotCache: ProgressSnapshotV5 | undefined;
 
 export async function getAppProgress(): Promise<AppProgress> {
   const snapshot = await readAfterMutations();
@@ -473,6 +474,7 @@ export async function resetProgress(): Promise<void> {
       const keysToRemove = keys.filter(isProgressKey);
       if (keysToRemove.length > 0) await AsyncStorage.multiRemove(keysToRemove);
       recoveryWarning = null;
+      snapshotCache = undefined;
     } catch (error) {
       throw new ProgressStorageError('Could not reset progress', error);
     }
@@ -506,7 +508,7 @@ async function readAfterMutations(): Promise<ProgressSnapshotV5> {
 
 function mutateSnapshot<T>(mutation: (snapshot: ProgressSnapshotV5) => T): Promise<T> {
   return enqueueMutation(async () => {
-    const snapshot = await loadSnapshot();
+    const snapshot = cloneSnapshot(await loadSnapshot());
     const result = mutation(snapshot);
     await writeSnapshot(snapshot);
     return result;
@@ -520,6 +522,16 @@ function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 async function loadSnapshot(): Promise<ProgressSnapshotV5> {
+  if (process.env.NODE_ENV !== 'test' && snapshotCache) return snapshotCache;
+  const shouldTime = __DEV__ && process.env.NODE_ENV !== 'test';
+  const startedAt = shouldTime ? performance.now() : 0;
+  const snapshot = await loadSnapshotFromStorage();
+  if (process.env.NODE_ENV !== 'test') snapshotCache = snapshot;
+  if (shouldTime) console.info(`[progress:timing] restore ${(performance.now() - startedAt).toFixed(1)}ms`);
+  return snapshot;
+}
+
+async function loadSnapshotFromStorage(): Promise<ProgressSnapshotV5> {
   try {
     const raw = await AsyncStorage.getItem(KEYS.SNAPSHOT);
     if (raw) {
@@ -701,9 +713,15 @@ function localizeLegacyLevels(levels: Record<string, LevelProgress>): Record<str
 async function writeSnapshot(snapshot: ProgressSnapshotV5): Promise<void> {
   try {
     await AsyncStorage.setItem(KEYS.SNAPSHOT, JSON.stringify(snapshot));
+    if (process.env.NODE_ENV !== 'test') snapshotCache = snapshot;
   } catch (error) {
+    snapshotCache = undefined;
     throw new ProgressStorageError('Could not save progress', error);
   }
+}
+
+function cloneSnapshot(snapshot: ProgressSnapshotV5): ProgressSnapshotV5 {
+  return JSON.parse(JSON.stringify(snapshot)) as ProgressSnapshotV5;
 }
 
 function createEmptySnapshot(): ProgressSnapshotV5 {

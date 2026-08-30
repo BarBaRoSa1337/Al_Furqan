@@ -5,7 +5,7 @@ import { colors, fonts, radii, shadows, spacing } from '../../theme/tokens';
 import { ZelligeSeal } from '../furqan/FurqanArtwork';
 import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
-export type NodeStatus = 'completed' | 'active' | 'locked';
+export type NodeStatus = 'completed' | 'active' | 'available' | 'locked';
 
 interface RoadmapNodeProps {
   id: string;
@@ -36,14 +36,14 @@ export default function RoadmapNode({
   const locked = status === 'locked';
   const completed = status === 'completed';
   const active = status === 'active';
-  const icon = completed ? 'checkmark' : locked ? 'ellipse-outline' : 'play';
+  const icon = completed ? 'checkmark' : active ? 'play' : 'ellipse';
 
   return (
     <View style={[styles.wrapper, active && styles.activeWrapper]}>
       {!isLast ? <View style={[styles.connector, locked && styles.connectorLocked]} /> : null}
       <View style={styles.markerColumn}>
-        <ZelligeSeal size={active ? 78 : 54} tone={completed ? 'completed' : locked ? 'locked' : 'active'}>
-          <Ionicons name={icon} size={active ? 29 : 19} color={colors.surface} />
+        <ZelligeSeal size={active ? 78 : 54} tone={completed ? 'completed' : active ? 'active' : 'locked'}>
+          <Ionicons name={icon} size={active ? 29 : 19} color={active || completed ? colors.surface : colors.textMuted} />
         </ZelligeSeal>
       </View>
       <Pressable

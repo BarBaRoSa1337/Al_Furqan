@@ -4,32 +4,39 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { resolveAndCacheRecitation, type AudioCacheResult } from '../../lib/audio/audioCache';
 import { platformForAudio, resolveAudioAccessPolicy } from '../../lib/audio/audioPolicy';
-import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
+import { colors, fonts, radii, spacing } from '../../theme/tokens';
 import type { ContentPackage } from '../../types/content';
 import type { RecitationTrack, Reciter } from '../../types/media';
 import Card from '../ui/Card';
 import { isPreviewContentMode } from '../../lib/content/contentMode';
+import { useOptionalLocalization } from '../../lib/localization/LocalizationProvider';
+import { appText, getCurrentInterfaceLocale } from '../../lib/localization/catalogs';
 
 type RepeatCount = 1 | 3 | 5;
 
 export default function AyahAudioPlayer({
+  autoplay,
   tracks,
   reciter,
   contentPackage,
 }: {
+  autoplay: boolean;
   tracks: RecitationTrack[];
   reciter: Reciter;
   contentPackage: ContentPackage;
 }) {
+  const localization = useOptionalLocalization();
+  const t = localization?.t ?? ((key: string, values?: Record<string, string | number>) => appText(getCurrentInterfaceLocale(), key, values));
   const [trackIndex, setTrackIndex] = useState(0);
   const [repeatCount, setRepeatCount] = useState<RepeatCount>(1);
   const [round, setRound] = useState(1);
   const [resolution, setResolution] = useState<AudioCacheResult>();
   const [message, setMessage] = useState<string>();
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const player = useAudioPlayer(null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
-  const pendingPlay = useRef(true);
+  const pendingPlay = useRef(autoplay);
   const handledFinish = useRef(false);
   const currentTrack = tracks[trackIndex];
   const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
@@ -53,7 +60,8 @@ export default function AyahAudioPlayer({
     let cancelled = false;
     let release: (() => void) | undefined;
     setResolution(undefined);
-    pendingPlay.current = true;
+    setMessage(undefined);
+    pendingPlay.current = autoplay;
     const policy = resolveAudioAccessPolicy(
       contentPackage,
       currentTrack,
@@ -73,15 +81,15 @@ export default function AyahAudioPlayer({
       cancelled = true;
       release?.();
     };
-  }, [contentPackage, currentTrack]);
+  }, [autoplay, contentPackage, currentTrack, retryKey]);
 
   useEffect(() => {
     if (currentUri) {
       player.replace(currentUri);
-      pendingPlay.current = true;
+      pendingPlay.current = autoplay;
       handledFinish.current = false;
     }
-  }, [currentUri, player]);
+  }, [autoplay, currentUri, player]);
 
   useEffect(() => {
     if (!status.isLoaded || !currentUri) return;
@@ -135,7 +143,7 @@ export default function AyahAudioPlayer({
 
   const togglePlayback = () => {
     if (!currentUri) {
-      setMessage('Audio is preparing...');
+      setMessage(t('audio.preparing'));
       return;
     }
     if (status.playing) {
@@ -173,7 +181,7 @@ export default function AyahAudioPlayer({
       <Card style={styles.minimalCard}>
         <View style={styles.playerRow}>
           <Pressable
-            accessibilityLabel={status.playing ? 'Pause recitation' : 'Play recitation'}
+            accessibilityLabel={status.playing ? t('audio.pause') : t('audio.play')}
             accessibilityRole="button"
             onPress={togglePlayback}
             style={({ pressed }) => [styles.playButton, pressed && styles.pressed]}
@@ -182,7 +190,7 @@ export default function AyahAudioPlayer({
           </Pressable>
 
           <Pressable
-            accessibilityLabel="Restart recitation"
+            accessibilityLabel={t('audio.restart')}
             accessibilityRole="button"
             onPress={() => { void player.seekTo(segmentStart); }}
             style={({ pressed }) => [styles.restartButton, pressed && styles.pressed]}
@@ -201,7 +209,7 @@ export default function AyahAudioPlayer({
           </View>
 
           <Pressable
-            accessibilityLabel={`Playback speed: ${playbackSpeed}x`}
+            accessibilityLabel={t('audio.speed', { speed: `${playbackSpeed}x` })}
             accessibilityRole="button"
             onPress={toggleSpeed}
             style={({ pressed }) => [styles.repeatPill, playbackSpeed !== 1 && styles.repeatPillActive, pressed && styles.pressed]}
@@ -212,7 +220,7 @@ export default function AyahAudioPlayer({
           </Pressable>
 
           <Pressable
-            accessibilityLabel={`Repeat mode: ${repeatCount} times`}
+            accessibilityLabel={t('audio.repeat', { count: repeatCount })}
             accessibilityRole="button"
             onPress={cycleRepeat}
             style={({ pressed }) => [styles.repeatPill, repeatCount > 1 && styles.repeatPillActive, pressed && styles.pressed]}
@@ -224,8 +232,13 @@ export default function AyahAudioPlayer({
           </Pressable>
         </View>
       </Card>
-      {autoplayBlocked && !status.playing ? <Text style={styles.messageText}>Tap play to start audio</Text> : null}
+      {autoplayBlocked && !status.playing ? <Text style={styles.messageText}>{t('audio.tapToPlay')}</Text> : null}
       {message ? <Text accessibilityLiveRegion="polite" style={styles.messageText}>{message}</Text> : null}
+      {resolution?.status === 'unavailable' ? (
+        <Pressable accessibilityLabel={t('audio.retry')} accessibilityRole="button" onPress={() => setRetryKey(value => value + 1)} style={styles.retryButton}>
+          <Text style={styles.retryText}>{t('audio.retry')}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -335,6 +348,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
+  retryButton: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
+  retryText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 14 },
   pressed: {
     opacity: 0.75,
   },

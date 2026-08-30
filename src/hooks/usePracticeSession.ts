@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getContentRepository } from '../lib/content/repository';
 import { evaluateActivity, evaluateQuestion } from '../lib/activities/activityEngine';
 import { createActivityEvaluationContext } from '../lib/activities/activityContext';
@@ -19,7 +19,7 @@ export function usePracticeSession(levelId: string | undefined) {
   const repo = getContentRepository();
   const level = levelId ? repo.getLevelById(levelId) : undefined;
   const path = level ? repo.getLearningPathById(level.pathId) : undefined;
-  const steps = level ? getPracticeLevelSteps(level) : [];
+  const steps = useMemo(() => level ? getPracticeLevelSteps(level) : [], [level]);
   const [status, setStatus] = useState<PracticeSessionStatus>('loading');
   const [cursor, setCursor] = useState(() => createSessionCursor(0));
   const [feedback, setFeedback] = useState<PracticeFeedback | null>(null);
@@ -75,7 +75,7 @@ export function usePracticeSession(levelId: string | undefined) {
     }
     void load();
     return () => { cancelled = true; if (advanceTimer.current) clearTimeout(advanceTimer.current); };
-  }, [lessonLocale, levelId]);
+  }, [lessonLocale, level, levelId, path, repo, steps]);
 
   async function answerQuestion(blockId: string, selectedAnswer: unknown): Promise<ExerciseSubmissionResult> {
     if (!level || !path || !step || !questionIds.includes(blockId) || operationLocked.current || feedback) return { correct: false };

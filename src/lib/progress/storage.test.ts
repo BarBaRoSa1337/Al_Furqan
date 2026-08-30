@@ -29,7 +29,7 @@ const ayah1Level = surahAlFilLevels.find(level => level.id === 'al-fil-level-1-c
 const finalReviewLevel = surahAlFilLevels.find(level => level.id === 'al-fil-level-final-review')!;
 
 jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
 beforeEach(async () => {

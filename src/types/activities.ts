@@ -57,13 +57,13 @@ export interface ChooseContinuationActivity extends ActivityBase {
     segments?: ActivitySegment[];
   };
 }
-export interface MatchWordMeaningActivity extends ActivityBase { kind: 'match_word_meaning'; config: { pairs: Array<{ promptTokenId: string; meaningId: string }> }; }
+export interface MatchWordMeaningActivity extends ActivityBase { kind: 'match_word_meaning'; config: { pairs: { promptTokenId: string; meaningId: string }[] }; }
 export interface MatchAyahTranslationActivity extends ActivityBase {
   kind: 'match_ayah_translation';
   config: {
     ayahSegments: ActivitySegment[];
-    translationSegments: Array<{ id: string; text: string; translationEntryId: string }>;
-    pairs: Array<{ ayahSegmentId: string; translationSegmentId: string }>;
+    translationSegments: { id: string; text: string; translationEntryId: string }[];
+    pairs: { ayahSegmentId: string; translationSegmentId: string }[];
   };
 }
 export type TypedAnswerTarget =
@@ -71,7 +71,7 @@ export type TypedAnswerTarget =
   | { kind: 'token_sequence'; tokenIds: string[] };
 export interface TypeMissingTextActivity extends ActivityBase { kind: 'type_missing_text'; config: { target: TypedAnswerTarget; comparisonMode: TextComparisonMode; ignoreHarakat?: boolean }; }
 export interface OrderAyatActivity extends ActivityBase { kind: 'order_ayat'; config: { correctOrderRefs: AyahRef[] }; }
-export interface MultipleChoiceActivity extends ActivityBase { kind: 'multiple_choice'; config: { options: Array<{ id: string; text: string }>; correctOptionId: string }; }
+export interface MultipleChoiceActivity extends ActivityBase { kind: 'multiple_choice'; config: { options: { id: string; text: string }[]; correctOptionId: string }; }
 
 export type LearningActivity = RecallThenRevealActivity | FillGapActivity | OrderActivity | ChooseContinuationActivity | MatchWordMeaningActivity | MatchAyahTranslationActivity | TypeMissingTextActivity | OrderAyatActivity | MultipleChoiceActivity;
 

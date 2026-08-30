@@ -1,8 +1,9 @@
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { getPackagePayloadHash } from './governance';
 import { isLocalPreviewEnabled, isLocalPreviewRequested } from './contentMode';
-import { validateLocalPreviewArtifact } from './localPreviewProvider';
+import { loadBundledLocalPreviewPackage, validateLocalPreviewArtifact } from './localPreviewProvider';
 import { bundledLocalPreviewArtifacts } from '../../content/local-preview/registry';
+import { getContentRepository } from './repository';
 
 const artifact = () => ({
   package: structuredClone(surahAlFilPackage),
@@ -56,4 +57,12 @@ test.each(['en', 'fr', 'ar'] as const)('loads the generated twenty-two-Surah %s 
   const generated = bundledLocalPreviewArtifacts[locale];
   expect(generated).toBeDefined();
   expect(validateLocalPreviewArtifact(generated!, { expectedLocale: locale }).surahs.filter(surah => !surah.navigationOnly)).toHaveLength(22);
+});
+
+test('activates one multilingual preview package for locale-only selectors', () => {
+  loadBundledLocalPreviewPackage(surahAlFilPackage.id, 'fr');
+  const ayah = getContentRepository().getAyahByRef({ surahNumber: 105, ayahNumber: 1 });
+
+  expect(new Set(ayah?.translations.map(entry => entry.locale))).toEqual(new Set(['en', 'fr']));
+  expect(getContentRepository().packages.filter(pkg => pkg.id === surahAlFilPackage.id)).toHaveLength(1);
 });

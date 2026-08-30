@@ -1,22 +1,29 @@
-const player = {
-  replace: () => undefined,
-  play: () => undefined,
-  pause: () => undefined,
-  seekTo: async () => undefined,
+export const mockAudioPlayer = {
+  replace: jest.fn(),
+  play: jest.fn(),
+  pause: jest.fn(),
+  seekTo: jest.fn(async () => undefined),
 };
 
+export let mockAudioStatus = {
+  currentTime: 0,
+  didJustFinish: false,
+  duration: 10,
+  isLoaded: true,
+  playing: false,
+};
+
+export function resetAudioMock(): void {
+  Object.values(mockAudioPlayer).forEach(mock => mock.mockClear());
+  mockAudioStatus = { currentTime: 0, didJustFinish: false, duration: 10, isLoaded: true, playing: false };
+}
+
 export function useAudioPlayer() {
-  return player;
+  return mockAudioPlayer;
 }
 
 export function useAudioPlayerStatus() {
-  return {
-    currentTime: 0,
-    didJustFinish: false,
-    duration: 0,
-    isLoaded: false,
-    playing: false,
-  };
+  return mockAudioStatus;
 }
 
 export async function setAudioModeAsync() {

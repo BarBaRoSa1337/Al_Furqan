@@ -82,7 +82,7 @@ export default function DailyLearningLoop({
         <View style={styles.progressWrap}>
           <View style={styles.progressMeta}>
             <Text numberOfLines={1} style={styles.levelTitle}>{level.title}</Text>
-            <Text style={styles.stepCount}>{reviewRoundLabel ?? `${currentStepIndex + 1} / ${resolvedTotalSteps}`}</Text>
+            <Text style={styles.stepCount}>{reviewRoundLabel ?? `${currentStepIndex + 1}/${resolvedTotalSteps}`}</Text>
           </View>
           <ProgressBar
             current={currentStepIndex + 1}
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   progressWrap: { flex: 1, marginStart: spacing.lg },
   progressMeta: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   levelTitle: { color: colors.text, flex: 1, fontFamily: fonts.bold, fontSize: 13, fontWeight: '800', marginEnd: spacing.sm },
-  stepCount: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 12, fontWeight: '700' },
+  stepCount: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 12, fontWeight: '700', writingDirection: 'ltr' },
   scroll: { alignSelf: 'center', maxWidth: 720, padding: spacing.lg, paddingBottom: 40, width: '100%' },
   warning: {
     backgroundColor: colors.warningSoft,

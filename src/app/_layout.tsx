@@ -41,6 +41,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string>();
   const [previewProvider, setPreviewProvider] = useState<'backend' | 'local' | 'built_in'>();
+  const [bootstrapLocale, setBootstrapLocale] = useState<typeof preferences.contentLocale>();
   // The development runtime course contains the generic Surah/ayah node
   // workflow for Al-Fil through An-Nas. Deployments can override this ID.
   const packageId = process.env.EXPO_PUBLIC_INITIAL_PACKAGE_ID ?? 'surah-al-fil-v1';
@@ -61,21 +62,21 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
       }
       if (runtimeApiBaseUrl) {
         try {
-          await loadRuntimePackage(packageId, preferences.lessonLocale, contentMode);
+          await loadRuntimePackage(packageId, bootstrapLocale!, contentMode);
           if (previewContent) setPreviewProvider('backend');
         } catch (cause) {
           if (!previewContent) throw cause;
           console.warn('[content] Preview backend unavailable; trying local preview fallback.', cause);
-          const localLoaded = tryLocalPreview(packageId, preferences.lessonLocale, localPreviewEnabled);
+          const localLoaded = tryLocalPreview(packageId, bootstrapLocale!, localPreviewEnabled);
           if (localLoaded) setPreviewProvider('local');
-          else if (preferences.lessonLocale === 'en' && repo.getActivePackage()) setPreviewProvider('built_in');
+          else if (bootstrapLocale === 'en' && repo.getActivePackage()) setPreviewProvider('built_in');
           else {
             throw cause;
           }
         }
-      } else if (tryLocalPreview(packageId, preferences.lessonLocale, localPreviewEnabled)) {
+      } else if (tryLocalPreview(packageId, bootstrapLocale!, localPreviewEnabled)) {
         setPreviewProvider('local');
-      } else if (previewContent && preferences.lessonLocale === 'en' && repo.getActivePackage()) {
+      } else if (previewContent && bootstrapLocale === 'en' && repo.getActivePackage()) {
         setPreviewProvider('built_in');
       } else {
         throw new Error(previewContent
@@ -88,11 +89,15 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
       setError(cause instanceof Error ? cause.message : t('app.contentUnavailable'));
       setState('error');
     }
-  }, [contentMode, localPreviewEnabled, localPreviewRequested, packageId, preferences.lessonLocale, previewContent, runtimeApiBaseUrl, t]);
+  }, [bootstrapLocale, contentMode, localPreviewEnabled, localPreviewRequested, packageId, previewContent, runtimeApiBaseUrl, t]);
 
   useEffect(() => {
-    if (preferencesReady) void loadContent();
-  }, [loadContent, preferencesReady]);
+    if (preferencesReady && !bootstrapLocale) setBootstrapLocale(preferences.contentLocale);
+  }, [bootstrapLocale, preferences.contentLocale, preferencesReady]);
+
+  useEffect(() => {
+    if (preferencesReady && bootstrapLocale) void loadContent();
+  }, [bootstrapLocale, loadContent, preferencesReady]);
 
   if (!fontsLoaded || !preferencesReady || state === 'loading') {
     return <View style={[styles.center, { direction }]}><ActivityIndicator color={colors.success} /><Text style={styles.message}>{t('app.loading')}</Text></View>;

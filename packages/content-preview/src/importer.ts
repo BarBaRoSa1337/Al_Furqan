@@ -191,6 +191,7 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
           wordTokenId: tokenId,
           transliteration: word.transliteration ?? '',
           meaning,
+          locale: 'en',
           sourceId: WORD_MEANING_SOURCE_ID,
           reviewerStatus: 'draft',
         } as WordMeaning;

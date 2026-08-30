@@ -10,24 +10,20 @@ import {
 
 const LOCAL_PREVIEW_PACKAGE_ID = 'surah-al-fil-v1';
 const LOCAL_PREVIEW_SURAH_NUMBERS = Array.from({ length: 22 }, (_, index) => index + 93);
+let cachedMultilingualPackage: ContentPackage | undefined;
 
 export function loadBundledLocalPreviewPackage(
   packageId: string,
-  locale: SupportedLocale,
+  _locale: SupportedLocale,
 ): void {
-  if (locale !== 'en' && locale !== 'fr' && locale !== 'ar') {
-    throw new Error('Local preview content is available only for English, French, and Arabic lesson locales.');
-  }
-  const artifact = bundledLocalPreviewArtifacts[locale];
-  if (!artifact) {
-    throw new Error('Local preview content export is missing. Add the verified Surahs 93-114 package and SHA-256 manifest.');
-  }
-  const pkg = validateLocalPreviewArtifact(artifact, {
-    expectedPackageId: packageId,
-    expectedSurahNumbers: LOCAL_PREVIEW_SURAH_NUMBERS,
-    expectedLocale: locale,
-  });
+  const shouldTime = __DEV__ && process.env.NODE_ENV !== 'test';
+  const startedAt = shouldTime ? performance.now() : 0;
+  const pkg = cachedMultilingualPackage?.id === packageId
+    ? cachedMultilingualPackage
+    : buildMultilingualPreviewPackage(packageId);
+  cachedMultilingualPackage = pkg;
   getContentRepository().registerPackage(pkg, true, 'built_in');
+  if (shouldTime) console.info(`[content:timing] local preview activation ${(performance.now() - startedAt).toFixed(1)}ms`);
 }
 
 /** Returns false only when no generated artifact has been bundled. */
@@ -40,6 +36,56 @@ export function tryLoadBundledLocalPreviewPackage(
   return true;
 }
 
+function buildMultilingualPreviewPackage(packageId: string): ContentPackage {
+  const packages = (['en', 'fr', 'ar'] as const).map(locale => {
+    const artifact = bundledLocalPreviewArtifacts[locale];
+    if (!artifact) throw new Error(`Local preview ${locale} artifact is missing.`);
+    return inspectLocalPreviewArtifact(artifact, {
+      expectedPackageId: packageId,
+      expectedSurahNumbers: LOCAL_PREVIEW_SURAH_NUMBERS,
+      expectedLocale: locale,
+    }, false);
+  });
+  const [base, ...localized] = packages;
+  const sources = uniqueById(packages.flatMap(pkg => pkg.sources));
+  const ayat = base.ayat.map(ayah => {
+    const variants = localized.map(pkg => pkg.ayat.find(candidate => candidate.id === ayah.id)).filter(Boolean);
+    return {
+      ...ayah,
+      translations: uniqueById([ayah, ...variants].flatMap(candidate => candidate?.translations ?? [])),
+      tafsirEntries: uniqueById([ayah, ...variants].flatMap(candidate => candidate?.tafsirEntries ?? [])),
+      wordMeanings: uniqueById([ayah, ...variants].flatMap(candidate => candidate?.wordMeanings ?? [])),
+    };
+  });
+  return {
+    ...base,
+    revisionId: `${base.revisionId}-multilingual`,
+    previousRevisionIds: uniqueStrings([
+      ...(base.previousRevisionIds ?? []),
+      ...packages.map(pkg => pkg.revisionId),
+    ]),
+    sources,
+    ayat,
+    localization: {
+      defaultLocale: 'en',
+      catalogs: uniqueByLocale(packages.flatMap(pkg => pkg.localization.catalogs)),
+    },
+    metadata: { ...base.metadata, language: 'en' },
+  };
+}
+
+function uniqueById<T extends { id: string }>(items: readonly T[]): T[] {
+  return [...new Map(items.map(item => [item.id, item])).values()];
+}
+
+function uniqueByLocale<T extends { locale: string }>(items: readonly T[]): T[] {
+  return [...new Map(items.map(item => [item.locale, item])).values()];
+}
+
+function uniqueStrings(items: readonly string[]): string[] {
+  return [...new Set(items)];
+}
+
 export function validateLocalPreviewArtifact(
   artifact: LocalPreviewArtifact,
   options: {
@@ -47,6 +93,18 @@ export function validateLocalPreviewArtifact(
     expectedSurahNumbers?: readonly number[];
     expectedLocale?: SupportedLocale;
   } = {},
+): ContentPackage {
+  return inspectLocalPreviewArtifact(artifact, options, true);
+}
+
+function inspectLocalPreviewArtifact(
+  artifact: LocalPreviewArtifact,
+  options: {
+    expectedPackageId?: string;
+    expectedSurahNumbers?: readonly number[];
+    expectedLocale?: SupportedLocale;
+  },
+  validateSchema: boolean,
 ): ContentPackage {
   const expectedPackageId = options.expectedPackageId ?? LOCAL_PREVIEW_PACKAGE_ID;
   const expectedSurahNumbers = options.expectedSurahNumbers ?? LOCAL_PREVIEW_SURAH_NUMBERS;
@@ -68,9 +126,11 @@ export function validateLocalPreviewArtifact(
     throw new Error(`Local preview package locale does not match requested ${options.expectedLocale} content.`);
   }
 
-  const validation = validatePackage(pkg, { mode: 'development' });
-  if (!validation.valid) {
-    throw new Error(`Local preview package failed validation: ${validation.errors.join('; ')}`);
+  if (validateSchema) {
+    const validation = validatePackage(pkg, { mode: 'development' });
+    if (!validation.valid) {
+      throw new Error(`Local preview package failed validation: ${validation.errors.join('; ')}`);
+    }
   }
   assertCourseCoverage(pkg, expectedSurahNumbers);
   return pkg;

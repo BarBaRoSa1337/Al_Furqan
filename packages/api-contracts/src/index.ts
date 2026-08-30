@@ -6,19 +6,23 @@ export type TextDirection = 'ltr' | 'rtl';
 export interface LearnerPreferences {
   interfaceLocale: SupportedLocale;
   lessonLocale: SupportedLocale;
+  contentLocale: SupportedLocale;
   secondaryLocale?: SupportedLocale;
   translationResourceId: string;
   quranScript: 'uthmani-hafs';
   transliterationPreference: 'show' | 'hide';
+  autoplayRecitation: boolean;
   reciterId: string;
 }
 
 export const DEFAULT_LEARNER_PREFERENCES: LearnerPreferences = {
   interfaceLocale: 'en',
   lessonLocale: 'en',
+  contentLocale: 'en',
   translationResourceId: 'quranenc-english-rowwad',
   quranScript: 'uthmani-hafs',
   transliterationPreference: 'show',
+  autoplayRecitation: true,
   reciterId: 'mahmoud-khalil-al-husary',
 };
 

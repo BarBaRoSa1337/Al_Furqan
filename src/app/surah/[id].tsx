@@ -12,11 +12,13 @@ import { getAppProgress, reconcileCurriculumProgress } from '../../lib/progress/
 import { colors, fonts, spacing, touch } from '../../theme/tokens';
 import type { AppProgress } from '../../types/progress';
 import { DEFAULT_PROGRESS } from '../../types/progress';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export default function SurahPathScreen() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const surahId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
+  const { t } = useLocalization();
   const repo = getContentRepository();
   const path = repo.getCurrentLearningPath();
   const authored = path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined;
@@ -33,7 +35,7 @@ export default function SurahPathScreen() {
   }, [path]));
 
   if (!authored) {
-    return <Screen style={styles.center}><Text accessibilityRole="header" style={styles.title}>Surah path not found</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/roadmap')}><Text style={styles.link}>Back to Home</Text></Pressable></Screen>;
+    return <Screen style={styles.center}><Text accessibilityRole="header" style={styles.title}>{t('surah.notFound')}</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/roadmap')}><Text style={styles.link}>{t('surah.backHome')}</Text></Pressable></Screen>;
   }
 
   const completed = authored.levels.filter(level => progress.completedLevelIds.includes(level.id)).length;
@@ -43,16 +45,16 @@ export default function SurahPathScreen() {
     <Screen>
       <MoroccanBackdrop />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Pressable accessibilityLabel="Back to Home" accessibilityRole="button" hitSlop={8} onPress={() => router.back()} style={styles.back}>
+        <Pressable accessibilityLabel={t('surah.backHome')} accessibilityRole="button" hitSlop={8} onPress={() => router.back()} style={styles.back}>
           <Ionicons color={colors.primary} name="arrow-back" size={24} />
         </Pressable>
         <View style={styles.hero}>
           <SurahProgressRing activeIndex={activeIndex < 0 ? completed : activeIndex} completed={completed} size={108} surahNumber={authored.surah.surahNumber} total={authored.levels.length} />
           <View style={styles.heroCopy}>
-            <Text style={styles.eyebrow}>SURAH LEARNING PATH</Text>
+            <Text style={styles.eyebrow}>{t('surah.learningPath')}</Text>
             <Text accessibilityRole="header" style={styles.title}>{authored.surah.transliteratedName}</Text>
             <Text style={styles.arabic}>{authored.surah.arabicName}</Text>
-            <Text style={styles.progress}>{completed} of {authored.levels.length} lessons complete</Text>
+            <Text style={styles.progress}>{t('surah.progress', { completed, total: authored.levels.length })}</Text>
           </View>
         </View>
         <View style={styles.roadmap}>
@@ -61,14 +63,14 @@ export default function SurahPathScreen() {
             if (!level) return null;
             const status = getLevelAccessState(authored.levels, progress.completedLevelIds, level.id) as NodeStatus;
             const label = lesson.kind === 'introduction'
-              ? 'Surah introduction'
+              ? t('surah.introduction')
               : lesson.kind === 'final_review'
-                ? 'Surah checkpoint'
+                ? t('surah.checkpoint')
                 : lesson.kind === 'segment_review'
-                  ? 'Segment checkpoint'
+                  ? t('surah.segmentCheckpoint')
                 : level.ayahRefs.length > 1
-                  ? `Ayahs ${level.ayahRefs[0].ayahNumber}-${level.ayahRefs.at(-1)?.ayahNumber}`
-                  : `Ayah ${level.ayahRefs[0]?.ayahNumber}`;
+                  ? t('surah.ayahRange', { start: level.ayahRefs[0].ayahNumber, end: level.ayahRefs.at(-1)?.ayahNumber ?? level.ayahRefs[0].ayahNumber })
+                  : t('home.ayah', { ayah: level.ayahRefs[0]?.ayahNumber ?? 1 });
             return <RoadmapNode ayahLabel={label} description={level.description} durationMinutes={level.durationMinutes} id={level.id} index={index} isLast={index === authored.curriculum.lessons.length - 1} key={level.id} onPress={id => router.push(`/level/${id}`)} status={status} title={level.title} />;
           })}
         </View>

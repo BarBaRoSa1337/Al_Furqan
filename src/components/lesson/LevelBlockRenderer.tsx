@@ -26,6 +26,7 @@ import { packageText } from '../../lib/content/text';
 import WisdomCard from './WisdomCard';
 import AyahAudioPlayer from './AyahAudioPlayer';
 import { colors, fonts, radii, spacing, touch } from '../../theme/tokens';
+import { useOptionalLocalization } from '../../lib/localization/LocalizationProvider';
 import { getCurrentLearnerPreferences } from '../../lib/localization/preferencesState';
 import type { ExerciseSubmissionResult } from '../../types/activities';
 import { isBlockEligibleForProduction } from '../../lib/content/contentEligibility';
@@ -39,7 +40,7 @@ interface LevelBlockRendererProps {
 
 export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivityAnswer }: LevelBlockRendererProps) {
   const repo = getContentRepository();
-  const preferences = getCurrentLearnerPreferences();
+  const preferences = useOptionalLocalization()?.preferences ?? getCurrentLearnerPreferences();
   const contentPackage = repo.getPackageForBlock(block.id);
   if (!isPreviewContentMode() && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
 
@@ -54,24 +55,26 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     case 'translation':
       return <CanonicalTranslationBlock block={block} repo={repo} />;
     case 'word_meaning':
-      return <SelectedWordMeaningBlock block={block} repo={repo} />;
+      return <SelectedWordMeaningBlock block={block} locale={preferences.contentLocale} repo={repo} />;
     case 'ayah_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
-      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={block.translationLocale ?? preferences.lessonLocale} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} /> : null;
+      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={preferences.contentLocale} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} /> : null;
     }
     case 'tafsir_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
-      const entry = ayah?.tafsirEntries.find(tafsir => tafsir.id === block.tafsirEntryId);
+      const entry = ayah?.tafsirEntries.find(tafsir => tafsir.id === block.tafsirEntryId && tafsir.locale === preferences.contentLocale)
+        ?? ayah?.tafsirEntries.find(tafsir => tafsir.locale === preferences.contentLocale);
       return entry ? <CanonicalTafsirBlock entry={entry} repo={repo} /> : null;
     }
     case 'context':
       return <CanonicalContextBlock block={block} repo={repo} />;
     case 'word_explorer': {
-      const words = block.ayahRefs.flatMap(ref => repo.getAyahByRef(ref)?.wordMeanings ?? []);
+      const words = block.ayahRefs.flatMap(ref => repo.getAyahByRef(ref)?.wordMeanings ?? [])
+        .filter(word => wordMeaningLocale(word, repo) === preferences.contentLocale);
       return words.length > 0 ? <WordExplorerBlock words={words} repo={repo} /> : null;
     }
     case 'audio':
-      return <CanonicalAudioBlock block={block} repo={repo} />;
+      return <CanonicalAudioBlock autoplay={preferences.autoplayRecitation} block={block} repo={repo} />;
     case 'source_locked':
       return <SourceLockedCard block={block} repo={repo} />;
     case 'media':
@@ -99,10 +102,10 @@ function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBloc
 
   return (
     <Card variant="ayah" style={styles.overviewCard}>
-      <Text style={styles.overviewEyebrow}>Surah {surah.surahNumber}</Text>
+      <Text style={styles.overviewEyebrow}>{packageText(repo, 'home.surah')} {surah.surahNumber}</Text>
       <Text style={styles.overviewArabic}>{surah.arabicName}</Text>
       <Text accessibilityRole="header" style={styles.overviewTitle}>{surah.transliteratedName}</Text>
-      <Text style={styles.overviewMeta}>{surah.englishName} · {surah.ayahCount} ayat · {surah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
+      <Text style={styles.overviewMeta}>{surah.englishName} · {packageText(repo, 'content.ayatCount', { count: surah.ayahCount })} · {packageText(repo, `content.revelation.${surah.revelationPlace}`)}</Text>
       {themeText ? <Text style={styles.overviewTheme}>{themeText}</Text> : null}
       {asset ? <Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.overviewMedia} /> : null}
       <SourceAttribution source={source} unavailable={packageText(repo, 'content.sourceUnavailable')} />
@@ -135,13 +138,14 @@ function CanonicalTranslationBlock({ block, repo }: { block: TranslationBlock; r
   return <Card variant="mushaf"><Text style={styles.wordTitle}>{packageText(repo, 'content.translation')}</Text>{entries.length > 0 ? entries.map(({ ayah, entry, source }) => <View key={entry.id} style={styles.translationEntry}><Text style={[styles.translation, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.text}</Text>{entry.footnotes ? <Text style={[styles.footnotes, entry.locale === 'ar' ? styles.rtlText : styles.ltrText]}>{entry.footnotes}</Text> : null}<Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')} ({ayah.ref.surahNumber}:{ayah.ref.ayahNumber})</Text></View>) : <Text style={styles.translation}>{packageText(repo, 'content.translationUnavailable')}</Text>}</Card>;
 }
 
-function SelectedWordMeaningBlock({ block, repo }: { block: WordMeaningBlock; repo: ContentRepository }) {
+function SelectedWordMeaningBlock({ block, locale, repo }: { block: WordMeaningBlock; locale: string; repo: ContentRepository }) {
   const selectedIds = new Set(block.wordMeaningIds);
-  const words = repo.ayat.flatMap(ayah => ayah.wordMeanings ?? []).filter(word => selectedIds.has(word.id));
+  const words = repo.ayat.flatMap(ayah => ayah.wordMeanings ?? [])
+    .filter(word => selectedIds.has(word.id) && wordMeaningLocale(word, repo) === locale);
   return words.length > 0 ? <WordExplorerBlock words={words} repo={repo} /> : null;
 }
 
-function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: ContentRepository }) {
+function CanonicalAudioBlock({ autoplay, block, repo }: { autoplay: boolean; block: AudioBlock; repo: ContentRepository }) {
   const tracks = block.ayahRefs.flatMap(ref => {
     const track = repo.getRecitationTrackByAyah(ref, block.reciterId);
     return track ? [track] : [];
@@ -152,7 +156,7 @@ function CanonicalAudioBlock({ block, repo }: { block: AudioBlock; repo: Content
   const reciter = repo.getReciterById(tracks[0].reciterId);
   const contentPackage = repo.getPackageForBlock(block.id);
   return reciter && contentPackage
-    ? <AyahAudioPlayer contentPackage={contentPackage} reciter={reciter} tracks={tracks} />
+    ? <AyahAudioPlayer autoplay={autoplay} contentPackage={contentPackage} reciter={reciter} tracks={tracks} />
     : null;
 }
 
@@ -178,23 +182,18 @@ function SourceLockedCard({ block, repo }: { block: SourceLockedBlock; repo: Con
 
 function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const translation = ayah.translations.find(entry => entry.locale === locale) ?? ayah.translations[0];
+  const translation = ayah.translations.find(entry => entry.locale === locale);
   const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
 
   return (
     <Card variant="mushaf" style={styles.mushafAyahCard}>
-      {ayah.ref.ayahNumber === 1 && ayah.ref.surahNumber !== 1 && ayah.ref.surahNumber !== 9 ? (
-        <Text style={[styles.arabic, { marginBottom: 16, textAlign: 'center' }]}>
-          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-        </Text>
-      ) : null}
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
       {showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
       <View style={styles.divider} />
       <Text style={[styles.translation, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
       {translation?.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
-      <Pressable accessibilityRole="button" accessibilityLabel="Show Sources" style={styles.infoButton} onPress={() => setSourcesExpanded(s => !s)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={packageText(repo, 'content.showSources')} style={styles.infoButton} onPress={() => setSourcesExpanded(s => !s)}>
         <Ionicons name="information-circle-outline" size={20} color={colors.textMuted} />
       </Pressable>
       {sourcesExpanded ? (
@@ -234,7 +233,7 @@ function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: Conte
       {isLong ? (
         <Pressable onPress={() => setExpanded(v => !v)} style={styles.readMoreButton}>
           <Text style={styles.readMoreText}>
-            {expanded ? 'Show less' : 'Read more'}
+            {expanded ? packageText(repo, 'content.showLess') : packageText(repo, 'content.readMore')}
           </Text>
         </Pressable>
       ) : null}
@@ -282,6 +281,10 @@ function WordExplorerBlock({ words, repo }: { words: WordMeaning[]; repo: Conten
 
 export function resolveWordMeaningArabic(word: WordMeaning, repo: Pick<ContentRepository, 'getWordToken'>): string {
   return word.wordTokenId ? repo.getWordToken(word.wordTokenId)?.arabicText ?? '' : '';
+}
+
+function wordMeaningLocale(word: WordMeaning, repo: Pick<ContentRepository, 'getSourceById'>): string | undefined {
+  return word.locale ?? repo.getSourceById(word.sourceId)?.language;
 }
 
 const styles = StyleSheet.create({
@@ -349,7 +352,7 @@ function DraftBadge({ children, show }: { children: React.ReactNode; show: boole
   return (
     <View style={styles.draftBadgeContainer}>
       <View style={styles.draftBadge}>
-        <Text style={styles.draftBadgeText}>DRAFT — Not for production</Text>
+        <Text style={styles.draftBadgeText}>{packageText(getContentRepository(), 'content.draftBadge')}</Text>
       </View>
       {children}
     </View>
