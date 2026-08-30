@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "101:8": {
+        "id": 6165
+      },
+      "101:9": {
+        "id": 6166
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "وأما من خفت موازين حسناته، ورجحت موازين سيئاته، فمأواه جهنم."
+  }
+}

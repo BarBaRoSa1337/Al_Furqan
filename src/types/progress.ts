@@ -58,6 +58,7 @@ export interface ActivityReviewState {
 export interface LevelProgress {
   levelId: string;
   pathId: string;
+  structureFingerprint?: string;
   completed: boolean;
   startedAt: string;
   completedAt?: string;

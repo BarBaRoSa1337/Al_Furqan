@@ -9,18 +9,18 @@ import {
 } from '../../content/local-preview/registry';
 
 const LOCAL_PREVIEW_PACKAGE_ID = 'surah-al-fil-v1';
-const LOCAL_PREVIEW_SURAH_NUMBERS = Array.from({ length: 10 }, (_, index) => index + 105);
+const LOCAL_PREVIEW_SURAH_NUMBERS = Array.from({ length: 22 }, (_, index) => index + 93);
 
 export function loadBundledLocalPreviewPackage(
   packageId: string,
   locale: SupportedLocale,
 ): void {
-  if (locale !== 'en' && locale !== 'fr') {
-    throw new Error('Local preview content is available only for English and French lesson locales.');
+  if (locale !== 'en' && locale !== 'fr' && locale !== 'ar') {
+    throw new Error('Local preview content is available only for English, French, and Arabic lesson locales.');
   }
   const artifact = bundledLocalPreviewArtifacts[locale];
   if (!artifact) {
-    throw new Error('Local preview content export is missing. Add the verified Surahs 105-114 package and SHA-256 manifest.');
+    throw new Error('Local preview content export is missing. Add the verified Surahs 93-114 package and SHA-256 manifest.');
   }
   const pkg = validateLocalPreviewArtifact(artifact, {
     expectedPackageId: packageId,
@@ -90,7 +90,7 @@ function assertCourseCoverage(pkg: ContentPackage, expectedSurahNumbers: readonl
     throw new Error(`Local preview package is missing canonical content for Surah ${missingCanonicalData.join(', ')}.`);
   }
   if ([...availableSurahs].some(surahNumber => !expected.has(surahNumber))) {
-    throw new Error('Local preview package contains canonical content outside Surahs 105-114.');
+    throw new Error('Local preview package contains canonical content outside Surahs 93-114.');
   }
 
   const curriculumSurahs = new Set(pkg.learningPaths.flatMap(path => path.surahCurricula ?? [])

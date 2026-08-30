@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.success,
     marginTop: 8,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   pointText: { color: colors.text, flex: 1, fontFamily: fonts.regular, fontSize: 16, lineHeight: 24 },
   source: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, lineHeight: 16, marginTop: spacing.md },

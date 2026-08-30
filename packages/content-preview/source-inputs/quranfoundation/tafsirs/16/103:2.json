@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "103:2": {
+        "id": 6178
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "أقسم الله بالدهر على أن بني آدم لفي هلكة ونقصان. ولا يجوز للعبد أن يقسم إلا بالله، فإن القسم بغير الله شرك."
+  }
+}

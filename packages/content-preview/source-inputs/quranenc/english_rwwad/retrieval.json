@@ -3,11 +3,59 @@
   "registryUrl": "https://quranenc.com/api/v1/translations/list/en?localization=en",
   "version": "1.0.19",
   "lastUpdate": 1773348325,
-  "retrievedAt": "2026-08-19T21:24:08.073Z",
+  "retrievedAt": "2026-08-25T22:05:56.529Z",
   "files": {
     "metadata.json": {
       "url": "https://quranenc.com/api/v1/translations/list/en?localization=en",
-      "sha256": "a43cca36d8120388a870c389b4fc1828a8dab763c943d6a8bc0ffc279e98f2ff"
+      "sha256": "2116a75961183351dcb86ca16bd9c1fca4750c8d3958c1578b8129d10eaf0abb"
+    },
+    "surahs/93.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/93",
+      "sha256": "27ad8966a8b3120b329f4034edf5b8794cf3e59b9db21892b8d6c28c14b86239"
+    },
+    "surahs/94.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/94",
+      "sha256": "ec91e483933c76e3f363f4d47484e2e1b3de7687b0b1313ae1aded1d87f9b0a9"
+    },
+    "surahs/95.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/95",
+      "sha256": "7bb3d663c44a35d906bc15f5f47ef751124a2f149b850eee58e1c82a0d9093b5"
+    },
+    "surahs/96.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/96",
+      "sha256": "8fdfb0c26bcd6af100ef049d3311be8d872e68e026a0a0d5d37dd9026cf6418f"
+    },
+    "surahs/97.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/97",
+      "sha256": "141fe01c4abd6fd546ccaec4dadd3d96f4442db646e3b0f79a2a3b4ff4897188"
+    },
+    "surahs/98.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/98",
+      "sha256": "9454c8c0afad1365c6f0323a30e0ba6ae504d52fe363b49dee6e3f032d8c6faf"
+    },
+    "surahs/99.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/99",
+      "sha256": "5155bfaa2ef53be2ba0839ec6ab6f4bfbeea77b185c0c798e7a1a04cc554b915"
+    },
+    "surahs/100.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/100",
+      "sha256": "9c13495215938d16111af0cca9d844eda68992e44310ec8aa4f9abb869942641"
+    },
+    "surahs/101.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/101",
+      "sha256": "899c13dd0fcc0ebbe84d4970d52168d6444198dcbb4dcfa2ff8a61c39f54e24b"
+    },
+    "surahs/102.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/102",
+      "sha256": "079d7d907d590da7708af7912532bc02eb0e6107657a232a0a02a3a5b69c32fe"
+    },
+    "surahs/103.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/103",
+      "sha256": "664d6d74cbb9bffe159438a77360430cec2adb0ffd8b000328a3eb3b836bd40e"
+    },
+    "surahs/104.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/104",
+      "sha256": "906bc46ab21c593c980fd1fd355b105549f0bf25d43df43e9e3864df71bed9c2"
     },
     "surahs/105.json": {
       "url": "https://quranenc.com/api/v1/translation/sura/english_rwwad/105",

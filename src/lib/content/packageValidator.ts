@@ -529,7 +529,7 @@ function validateLevel(
   if (level.steps.length === 0) errors.push(`${label} has no steps`);
   const curriculumLesson = path?.surahCurricula?.flatMap(item => item.lessons).find(item => item.levelId === level.id);
   const isIntroduction = curriculumLesson?.kind === 'introduction';
-  if (pkg.schemaVersion >= 2 && !isIntroduction && (!level.completionRules?.requireMemoryActivity || !level.completionRules.requireUnderstandingActivity)) errors.push(`${label} schema v2 requires memory and understanding completion rules`);
+  if (pkg.schemaVersion >= 2 && !isIntroduction && (!level.completionRules?.requireMemoryActivity || (!level.completionRules.requireUnderstandingActivity && pkg.metadata?.language !== 'ar'))) errors.push(`${label} schema v2 requires memory and understanding completion rules (unless language is ar)`);
   validateUniqueIds(`step in ${label}`, level.steps.map(step => step.id), errors);
   validateUniqueIds(`block in ${label}`, level.steps.flatMap(step => step.blocks.map(block => block.id)), errors);
   validateUniqueIds(`ayah ref in ${label}`, level.ayahRefs.map(refKey), errors);

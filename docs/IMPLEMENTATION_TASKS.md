@@ -229,3 +229,19 @@ Status: implemented as an English development runtime candidate.
   persisting Quran Foundation payloads on mobile.
 - Arabic/French complete lesson publications, source approvals, and production
   runtime activation remain deferred release work.
+
+## Lesson workflow cleanup
+
+Status: implemented for preview curriculum and activity rendering.
+
+- The study step keeps canonical Uthmani Arabic, available transliteration,
+  translation, footnotes, attribution, and audio in one authored `ayah_ref`
+  experience.
+- Word meanings and concise tafsir remain separate steps. English preview can
+  show the provider-backed word meanings and QuranEnc Al-Mukhtasar tafsir;
+  French and Arabic do not silently render those English-only resources.
+- Exercises submit only after a complete answer. Correct results auto-advance;
+  incorrect results receive red, haptic, accessible feedback then enter the
+  existing retry queue. Partial sequence edits never persist a failed attempt.
+- Preview validation derives coverage from `PREVIEW_SURAH_NUMBERS`, keeping
+  93-114 expansion and future scope changes consistent.

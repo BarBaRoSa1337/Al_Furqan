@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "100:9": {
+        "id": 6155
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "أفلا يعلم الإنسان ما ينتظره إذا أخرج الله الأموات من القبور للحساب والجزاء؟"
+  }
+}

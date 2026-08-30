@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "103:1": {
+        "id": 6177
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "أقسم الله بالدهر؛ لما فيه من عجائب قدرة الله الدالة على عظمته، على أن بني آدم لفي هلكة ونقصان. ولا يجوز للعبد أن يقسم إلا بالله، فإن القسم بغير الله شرك."
+  }
+}

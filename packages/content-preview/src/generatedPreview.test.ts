@@ -18,12 +18,17 @@ test('generated bundle preserves source ayat and covers every manifest output', 
   expect(manifest.includedSurahs).toEqual(PREVIEW_SURAH_NUMBERS.map(surah => ({ surah, ayahCount: EXPECTED_AYAH_COUNTS[surah] })));
   expect(manifest.sources[0]).toMatchObject({ provider: 'Tanzil Project', version: '1.1', textType: 'Uthmani', modificationAllowed: false });
   for (const locale of ['en', 'fr'] as const) {
-    expect(bundle.packages[locale].surahs).toHaveLength(10);
-    expect(bundle.packages[locale].ayat).toHaveLength(48);
-    expect(bundle.packages[locale].recitationTracks).toHaveLength(48);
+    expect(bundle.packages[locale].surahs).toHaveLength(22);
+    expect(bundle.packages[locale].ayat).toHaveLength(157);
+    expect(bundle.packages[locale].recitationTracks).toHaveLength(157);
     expect(bundle.packages[locale].recitationTracks.every((track: { deliveryMode: string }) => track.deliveryMode === 'stream_only')).toBe(true);
     bundle.packages[locale].ayat.forEach((ayah: { ref: { surahNumber: number; ayahNumber: number }; arabicText: { text: string } }) => {
-      expect(ayah.arabicText.text).toBe(sourceAyat.get(`${ayah.ref.surahNumber}:${ayah.ref.ayahNumber}`));
+      let expectedText = sourceAyat.get(`${ayah.ref.surahNumber}:${ayah.ref.ayahNumber}`)!;
+      const BASMALA_PREFIX = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ ';
+      if (ayah.ref.ayahNumber === 1 && ayah.ref.surahNumber !== 1 && ayah.ref.surahNumber !== 9 && expectedText.startsWith(BASMALA_PREFIX)) {
+        expectedText = expectedText.substring(BASMALA_PREFIX.length);
+      }
+      expect(ayah.arabicText.text).toBe(expectedText);
     });
   }
   expect(manifest.sources).toEqual(expect.arrayContaining([expect.objectContaining({ provider: 'MP3Quran.net', resourceKey: 'reciter-118:mushaf-118:riwayah-1' })]));
@@ -32,8 +37,8 @@ test('generated bundle preserves source ayat and covers every manifest output', 
   });
   expect(manifest.generatedFiles.map((file: { path: string }) => file.path).sort()).toEqual([
     'packages/content-preview/generated/packages.json',
-    'src/content/local-preview/surahs-105-114.preview.json',
-    'src/content/local-preview/surahs-105-114.preview.sha256.json',
+    'src/content/local-preview/surahs-93-114.preview.json',
+    'src/content/local-preview/surahs-93-114.preview.sha256.json',
   ]);
   expect(manifestSidecar).toEqual({ path: 'packages/content-preview/generated/manifest.json', sha256: sha256(manifestBytes) });
 });

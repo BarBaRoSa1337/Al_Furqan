@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "94:7": {
+        "id": 6097
+      },
+      "94:8": {
+        "id": 6098
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فإذا فرغت من أمور الدنيا وأشغالها فَجِدَّ في العبادة، وإلى ربك وحده فارغب فيما عنده."
+  }
+}

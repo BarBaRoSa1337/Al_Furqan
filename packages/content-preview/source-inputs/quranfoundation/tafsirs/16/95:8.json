@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "95:8": {
+        "id": 6106
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "أليس الله الذي جعل هذا اليوم للفصل بين الناس بأحكم الحاكمين في كل ما خلق؟ بلى. فهل يُترك الخلق سدى لا يؤمرون ولا يُنهون، ولا يثابون ولا يعاقبون؟ لا يصحُّ ذلك ولا يكون."
+  }
+}

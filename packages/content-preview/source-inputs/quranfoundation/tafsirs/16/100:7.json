@@ -1,0 +1,24 @@
+{
+  "tafsir": {
+    "verses": {
+      "100:6": {
+        "id": 6152
+      },
+      "100:7": {
+        "id": 6153
+      },
+      "100:8": {
+        "id": 6154
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إن الإنسان لِنعم ربه لَجحود، وإنه بجحوده ذلك لمقر. وإنه لحب المال لشديد."
+  }
+}

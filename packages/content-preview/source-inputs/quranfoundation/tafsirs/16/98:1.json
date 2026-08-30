@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "98:1": {
+        "id": 6131
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "لم يكن الذين كفروا من اليهود والنصارى والمشركين تاركين كفرهم حتى تأتيهم العلامة التي وُعِدوا بها في الكتب السابقة."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "98:7": {
+        "id": 6137
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إن الذين صَدَّقوا الله واتبعوا رسوله وعملوا الصالحات، أولئك هم خير الخلق."
+  }
+}

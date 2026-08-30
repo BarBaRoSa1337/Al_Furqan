@@ -452,6 +452,8 @@ export interface SurahOverviewBlock {
   id: string;
   type: 'surah_overview';
   surahId: string;
+  themeText?: string;
+  mediaAssetId?: string;
 }
 
 export interface AyahRefBlock {

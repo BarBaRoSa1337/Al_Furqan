@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "96:7": {
+        "id": 6113
+      },
+      "96:8": {
+        "id": 6114
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "حقًا إن الإنسان ليتجاوز حدود الله إذا أبطره الغنى، فليعلم كل طاغية أن المصير إلى الله، فيجازي كلَّ إنسان بعمله."
+  }
+}

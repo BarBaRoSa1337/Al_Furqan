@@ -6,7 +6,6 @@ import type {
   AyahRecord,
   ContentPackage,
   ContentSource,
-  ContextKind,
   Level,
   LearningPath,
   QuranEdition,
@@ -44,9 +43,8 @@ const ENGLISH_SOURCE_ID = 'quranenc-english-rowwad';
 const FRENCH_SOURCE_ID = 'quranenc-french-rashid';
 const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
 const WORD_MEANING_SOURCE_ID = 'quran-foundation-word-meanings-v4';
-const TAFSIR_SOURCE_ID = 'quran-foundation-tafsir-muyassar';
 const EDITION_ID = 'hafs-an-asim';
-type PreviewLocale = 'en' | 'fr';
+type PreviewLocale = 'en' | 'fr' | 'ar';
 
 export function parseTanzilText(input: string): Map<string, string> {
   const sourceLines = input.split(/\r?\n/).filter(line => line.length > 0 && !line.startsWith('#'));
@@ -77,9 +75,9 @@ export function parseQuranEncPayload(value: unknown, resourceKey: string, surahN
     if (Number(row.sura) !== surahNumber || !Number.isInteger(aya)) throw new Error(`QuranEnc ${resourceKey} contains an invalid coordinate in Surah ${surahNumber}.`);
     if (seen.has(aya)) throw new Error(`QuranEnc ${resourceKey} contains duplicate ayah ${surahNumber}:${aya}.`);
     if (!row.translation.trim()) throw new Error(`QuranEnc ${resourceKey} contains blank translation ${surahNumber}:${aya}.`);
-    if (row.footnotes !== undefined && typeof row.footnotes !== 'string') throw new Error(`QuranEnc ${resourceKey} footnotes for ${surahNumber}:${aya} must be text.`);
+    if (row.footnotes !== undefined && row.footnotes !== null && typeof row.footnotes !== 'string') throw new Error(`QuranEnc ${resourceKey} footnotes for ${surahNumber}:${aya} must be text.`);
     seen.add(aya);
-    return { sura: row.sura, aya: row.aya, translation: row.translation, ...(row.footnotes !== undefined ? { footnotes: row.footnotes } : {}) };
+    return { sura: row.sura, aya: row.aya, translation: row.translation, ...(row.footnotes ? { footnotes: row.footnotes } : {}) };
   });
   const expected = EXPECTED_AYAH_COUNTS[surahNumber];
   if (rows.length !== expected || Array.from({ length: expected }, (_, index) => index + 1).some(ayah => !seen.has(ayah))) {
@@ -97,15 +95,17 @@ export function resolveQuranEncMetadata(value: unknown, resourceKey: string, loc
   const updateDate = requiredStringOrNumber(candidate, 'last_update', resourceKey);
   const title = requiredString(candidate, 'title', resourceKey);
   const description = requiredString(candidate, 'description', resourceKey);
-  const resource = QURANENC_RESOURCES[locale];
-  if (resource.key !== resourceKey) throw new Error(`QuranEnc resource-key mismatch: expected ${resource.key}, received ${resourceKey}.`);
+
+  const publisher = candidate.publisher
+    ? String(candidate.publisher)
+    : (locale === 'fr' ? QURANENC_RESOURCES.fr.author : QURANENC_RESOURCES.en.author);
   return {
     key: resourceKey,
     version,
     title,
     description,
-    publisher: resource.author,
-    attributionText: `${resource.author}, provided by QuranEnc. Translation and footnotes are unmodified.`,
+    publisher,
+    attributionText: `${publisher}, provided by QuranEnc. Translation and footnotes are unmodified.`,
     updateDate,
     raw: candidate,
   };
@@ -146,60 +146,72 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
   const tanzil = parseTanzilText(inputs.tanzilText);
   const english = resolveQuranEncMetadata(inputs.englishMetadata, QURANENC_RESOURCES.en.key, 'en');
   const french = resolveQuranEncMetadata(inputs.frenchMetadata, QURANENC_RESOURCES.fr.key, 'fr');
+  const englishMokhtasar = resolveQuranEncMetadata(inputs.englishMokhtasarMetadata, 'english_mokhtasar', 'en');
   validateRetrieval(inputs.englishRetrieval, english);
   validateRetrieval(inputs.frenchRetrieval, french);
+  validateRetrieval(inputs.englishMokhtasarRetrieval, englishMokhtasar);
   const surahs = PREVIEW_SURAH_NUMBERS.map(getSourceSurah);
   const englishRows = readAllTranslations(inputs.englishSurahs, english.key);
   const frenchRows = readAllTranslations(inputs.frenchSurahs, french.key);
+  const mokhtasarRows = readAllTranslations(inputs.englishMokhtasarSurahs, englishMokhtasar.key);
   const wordTokens: WordToken[] = [];
   const ayat: AyahRecord[] = [];
 
   surahs.forEach(surah => {
     for (let ayahNumber = 1; ayahNumber <= surah.ayahCount; ayahNumber += 1) {
       const key = `${surah.surahNumber}:${ayahNumber}`;
-      const arabicText = tanzil.get(key);
+      let arabicText = tanzil.get(key);
       const en = englishRows.get(key);
       const fr = frenchRows.get(key);
       if (arabicText === undefined) throw new Error(`Tanzil input is missing ayah ${key}.`);
       if (!en || !fr) throw new Error(`QuranEnc translation inputs are missing ayah ${key}.`);
+
+      const BASMALA_PREFIX = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ ';
+      if (ayahNumber === 1 && surah.surahNumber !== 1 && surah.surahNumber !== 9) {
+        if (arabicText.startsWith(BASMALA_PREFIX)) {
+          arabicText = arabicText.substring(BASMALA_PREFIX.length);
+        }
+      }
+
       const ref = { surahNumber: surah.surahNumber, ayahNumber };
-      const tokenIds = splitExactWords(arabicText).map((arabicText, index) => {
+      const tokenIds = splitExactWords(arabicText).map((wordText, index) => {
         const id = `${key}:word:${index + 1}`;
-        wordTokens.push({ id, editionId: EDITION_ID, ayahRef: ref, position: index + 1, arabicText, sourceId: TANZIL_SOURCE_ID, sourceVersion: inputs.tanzilMetadata.textVersion });
+        wordTokens.push({ id, editionId: EDITION_ID, ayahRef: ref, position: index + 1, arabicText: wordText, sourceId: TANZIL_SOURCE_ID, sourceVersion: inputs.tanzilMetadata.textVersion });
         return id;
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawWordMeanings = inputs.wordMeanings[key] as any;
-      const wordMeanings: WordMeaning[] = rawWordMeanings?.verse?.words ? tokenIds.map((tokenId, index) => {
-        const word = rawWordMeanings.verse.words[index];
-        const meaning = word?.translation?.text;
+
+      const qfWords = getQuranFoundationWords(inputs.wordMeanings[key]);
+      const wordMeanings: WordMeaning[] = qfWords.length > 0 ? tokenIds.map((tokenId, index) => {
+        const position = index + 1;
+        const word = qfWords.find(candidate => candidate.position === position);
+        const meaning = word?.translation;
         if (!meaning) return undefined;
         return {
-          id: `quran-foundation-word-meanings-v4:meaning:${key}:${index + 1}`,
+          id: `${WORD_MEANING_SOURCE_ID}:meaning:${key}:${position}`,
           wordTokenId: tokenId,
-          transliteration: word.transliteration?.text ?? '',
+          transliteration: word.transliteration ?? '',
           meaning,
           sourceId: WORD_MEANING_SOURCE_ID,
           reviewerStatus: 'draft',
         } as WordMeaning;
       }).filter((w): w is WordMeaning => w !== undefined) : [];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawTafsirData = inputs.tafsirs[surah.surahNumber.toString()] as any;
+      const transliteration = wordMeanings.map(wm => wm.transliteration).filter(Boolean).join(' ') || undefined;
+
       let tafsirEntries: TafsirEntry[] = [];
-      const tafsirObj = rawTafsirData?.tafsirs?.[key] || (rawTafsirData?.verses?.[key] && rawTafsirData) || rawTafsirData?.[key];
-      if (tafsirObj?.text) {
-        const plainText = tafsirObj.text.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+      const mokhtasarRow = mokhtasarRows.get(key);
+      if (mokhtasarRow?.translation) {
+        const plainText = mokhtasarRow.translation.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
         tafsirEntries = [{
-          id: `${TAFSIR_SOURCE_ID}:${key}`,
+          id: `quranenc-english-mokhtasar:${key}`,
           locale: 'en',
           text: plainText,
-          providerText: tafsirObj.text,
-          providerResourceId: '169',
+          providerText: mokhtasarRow.translation,
+          providerResourceId: 'english_mokhtasar',
           contentHash: hashText(plainText),
-          sourceId: TAFSIR_SOURCE_ID,
+          sourceId: 'quranenc-english-mokhtasar',
           reviewerStatus: 'draft' as const,
-          citation: { sourceId: TAFSIR_SOURCE_ID, locator: `resource 16, ayah ${key}` }
+          citation: { sourceId: 'quranenc-english-mokhtasar', locator: `english_mokhtasar ayah ${key}` }
         }];
       }
 
@@ -212,6 +224,7 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
         sourceId: TANZIL_SOURCE_ID,
         sourceVersion: inputs.tanzilMetadata.textVersion,
         checksum: hashText(arabicText),
+        transliteration,
         translations: [translationFor(en, 'en', ENGLISH_SOURCE_ID, english), translationFor(fr, 'fr', FRENCH_SOURCE_ID, french)],
         tafsirEntries,
         wordMeanings,
@@ -221,10 +234,11 @@ export function buildPreviewPackages(inputs: PreviewSourceInputs): PreviewGenera
 
   return {
     packages: {
-      en: buildLocalePackage('en', inputs, surahs, ayat, wordTokens, english, french),
-      fr: buildLocalePackage('fr', inputs, surahs, ayat, wordTokens, english, french),
+      en: buildLocalePackage('en', inputs, surahs, ayat, wordTokens, english, french, englishMokhtasar),
+      fr: buildLocalePackage('fr', inputs, surahs, ayat, wordTokens, english, french, englishMokhtasar),
+      ar: buildLocalePackage('ar', inputs, surahs, ayat, wordTokens, english, french, englishMokhtasar),
     },
-    sourceMetadata: { tanzil: inputs.tanzilMetadata, english, french },
+    sourceMetadata: { tanzil: inputs.tanzilMetadata, english, french, englishMokhtasar },
     sourceSurahs: surahs,
   };
 }
@@ -241,10 +255,15 @@ function buildLocalePackage(
   wordTokens: WordToken[],
   english: QuranEncResourceMetadata,
   french: QuranEncResourceMetadata,
+  englishMokhtasar: QuranEncResourceMetadata,
 ): ContentPackage {
   const pathId = 'surah-al-fil-path-v1';
   const { levels, curricula } = buildCurriculum(pathId, locale, surahs, ayat, wordTokens);
-  const selectedSourceId = locale === 'en' ? ENGLISH_SOURCE_ID : FRENCH_SOURCE_ID;
+  const selectedSourceId = locale === 'en'
+    ? ENGLISH_SOURCE_ID
+    : locale === 'fr'
+      ? FRENCH_SOURCE_ID
+      : TANZIL_SOURCE_ID;
   const path: LearningPath = {
     id: pathId,
     title: 'Al-Fil to An-Nas',
@@ -253,14 +272,14 @@ function buildLocalePackage(
     levelIds: levels.map(level => level.id),
     surahCurricula: curricula,
     discovery: { alignment: { type: 'custom_ranges', ranges: surahs.map(surah => ({ start: { surahNumber: surah.surahNumber, ayahNumber: 1 }, end: { surahNumber: surah.surahNumber, ayahNumber: surah.ayahCount } })) }, themeIds: [], contentTypes: ['surah_course'], studyLocales: [locale], audiences: ['teen', 'adult', 'family'] },
-    sourceMetadata: { reviewerStatus: 'draft', sourceIds: [TANZIL_SOURCE_ID, selectedSourceId, STRUCTURE_SOURCE_ID], notes: 'Development preview only. No editorial or Islamic approval asserted.' },
+    sourceMetadata: { reviewerStatus: 'draft', sourceIds: [TANZIL_SOURCE_ID, selectedSourceId, STRUCTURE_SOURCE_ID].filter(Boolean), notes: 'Development preview only. No editorial or Islamic approval asserted.' },
   };
-  const sources = sourceRecords(inputs, english, french);
+  const sources = sourceRecords(inputs, english, french, englishMokhtasar);
   const editions: QuranEdition[] = [{ id: EDITION_ID, qiraah: 'asim', riwayah: 'hafs', displayName: 'Hafs an Asim', textSourceId: TANZIL_SOURCE_ID, fontProfileId: 'madani-mushaf', version: inputs.tanzilMetadata.textVersion, checksum: hashText(inputs.tanzilText) }];
   const publications: LocalePublication[] = [
-    { locale: 'en', status: 'draft', version: english.version, availableAlternatives: ['fr'] },
-    { locale: 'fr', status: 'draft', version: french.version, availableAlternatives: ['en'] },
-    { locale: 'ar', status: 'unavailable', version: '0', availableAlternatives: ['en', 'fr'] },
+    { locale: 'en', status: locale === 'en' ? 'draft' : 'unavailable', version: english.version, availableAlternatives: locale === 'en' ? ['fr', 'ar'] : [] },
+    { locale: 'fr', status: locale === 'fr' ? 'draft' : 'unavailable', version: french.version, availableAlternatives: locale === 'fr' ? ['en', 'ar'] : [] },
+    { locale: 'ar', status: locale === 'ar' ? 'draft' : 'unavailable', version: englishMokhtasar.version, availableAlternatives: locale === 'ar' ? ['en', 'fr'] : [] },
   ];
   const reciters = previewReciters();
   const recitationTracks = previewTracks(inputs);
@@ -270,8 +289,8 @@ function buildLocalePackage(
     version: PREVIEW_PACKAGE_VERSION,
     schemaVersion: 4,
     revisionId: `${PREVIEW_REVISION_ID}-${locale}`,
-    previousRevisionIds: [`surahs-105-114-local-preview-v1-${locale}`],
-    title: 'Al-Fil to An-Nas Local Preview',
+    previousRevisionIds: [`surahs-105-114-local-preview-v2-${locale}`, `surahs-105-114-local-preview-v1-${locale}`],
+    title: 'Ad-Duha to An-Nas Local Preview',
     description: 'Development preview. Religious review and production publication intentionally absent.',
     type: 'course',
     sources,
@@ -346,59 +365,6 @@ function buildOrderAyahActivity(ayah: AyahRecord, passageId: string, orderId: st
     config: { itemIds: [...segmentIds].reverse(), correctOrderIds: segmentIds, segments },
   };
 }
-
-const SURAH_CONTEXT_MAP: Record<number, { title: string; text: string; kind: ContextKind }> = {
-  105: {
-    title: "Protection of the Ka'bah",
-    text: 'Revealed in Makkah, Surah Al-Fil reminded the Quraysh of how Allah decisively protected His Sacred House from the army of the elephant led by Abrahah.',
-    kind: 'historical_context',
-  },
-  106: {
-    title: 'Blessings upon Quraysh',
-    text: "Highlights Allah's continuous blessings of peace, security, and sustenance for the winter and summer trading journeys, calling upon them to worship the Lord of this House alone.",
-    kind: 'chapter_information',
-  },
-  107: {
-    title: 'Compassion & Devotion',
-    text: 'Connects true religious devotion with practical compassion for orphans and the needy, warning against hypocrisy and withholding small acts of kindness.',
-    kind: 'chapter_information',
-  },
-  108: {
-    title: 'The Divine Abundance',
-    text: 'A tender consolation to the Prophet ﷺ during hardship, promising him the abundant fountain of Al-Kawthar and eternal blessing, while declaring his adversaries cut off.',
-    kind: 'chapter_information',
-  },
-  109: {
-    title: 'The Declaration of Pure Monotheism',
-    text: 'The definitive Quranic declaration establishing uncompromising monotheism and distinct religious boundaries in worship without hostility or syncretism.',
-    kind: 'chapter_information',
-  },
-  110: {
-    title: 'The Divine Victory',
-    text: 'A late Madinan revelation celebrating the opening of Makkah and masses entering Islam, teaching gratitude, glorification, and seeking forgiveness upon fulfillment.',
-    kind: 'occasion_of_revelation',
-  },
-  111: {
-    title: 'The Fate of Arrogance',
-    text: 'Illustrates the inevitable downfall of pride and wealth when turned against divine truth, using the cautionary history of Abu Lahab.',
-    kind: 'historical_context',
-  },
-  112: {
-    title: 'Purity of Faith (Tawhid)',
-    text: 'The definitive essence of the Quran declaring Allah as the One, the Eternal Refuge, Unbegotten and without equal.',
-    kind: 'chapter_information',
-  },
-  113: {
-    title: 'Refuge with the Lord of Dawn',
-    text: "One of the two protectors (Al-Mu'awwidhatayn), teaching the believer to seek refuge with Allah from created harms, deep darkness, occult evils, and envy.",
-    kind: 'chapter_information',
-  },
-  114: {
-    title: 'Refuge with the King of Mankind',
-    text: 'The final Surah of the Quran, invoking Allah as Lord, Sovereign, and God of humanity for complete protection against inner doubts and whispering temptations.',
-    kind: 'chapter_information',
-  },
-};
 
 function buildUnderstandingActivity(
   ayah: AyahRecord,
@@ -506,24 +472,12 @@ function buildUnderstandingActivity(
 function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRecord[], ayat: AyahRecord[], tokens: WordToken[]): { levels: Level[]; curricula: NonNullable<LearningPath['surahCurricula']> } {
   const levels: Level[] = [];
   const curricula: NonNullable<LearningPath['surahCurricula']> = [];
-  const translationSourceId = locale === 'en' ? ENGLISH_SOURCE_ID : FRENCH_SOURCE_ID;
+  const translationSourceId = locale === 'en' ? ENGLISH_SOURCE_ID : locale === 'fr' ? FRENCH_SOURCE_ID : '';
   surahs.forEach(surah => {
     const introId = courseLevelId(surah.surahNumber, 'introduction');
-    const contextInfo = SURAH_CONTEXT_MAP[surah.surahNumber];
     const introBlocks: Level['steps'][number]['blocks'] = [
       { id: `${introId}-overview-block`, type: 'surah_overview', surahId: surah.id },
     ];
-    if (contextInfo) {
-      introBlocks.push({
-        id: `${introId}-context-block`,
-        type: 'context',
-        kind: contextInfo.kind,
-        title: contextInfo.title,
-        text: contextInfo.text,
-        sourceIds: [translationSourceId],
-        reviewerStatus: 'draft',
-      });
-    }
     levels.push({
       id: introId,
       pathId,
@@ -551,23 +505,33 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
       const matchId = `${id}-translation-match`;
       const understandingStepId = `${id}-understanding`;
       const tokenIds = ayah.wordTokenIds;
-      const understanding = buildUnderstandingActivity(ayah, surahAyat, locale, passageId, matchId, translationSourceId);
+      const understanding = locale === 'ar' ? null : buildUnderstandingActivity(ayah, surahAyat, locale, passageId, matchId, translationSourceId);
       const level: Level = {
-        id, pathId, surahId: surah.id, title: `Ayah ${ayahNumber}`, description: 'Listen, understand, rebuild, and review the ayah.', durationMinutes: 7, ayahRefs: [ayah.ref], difficulty: 'easy', goals: ['memorize', 'understand'], completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
+        id, pathId, surahId: surah.id, title: `Ayah ${ayahNumber}`, description: 'Listen, understand, rebuild, and review the ayah.', durationMinutes: 7, ayahRefs: [ayah.ref], difficulty: 'easy', goals: ['memorize', 'understand'], completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: locale !== 'ar' },
         steps: [
           {
             id: `${id}-study`,
             kind: 'read',
             title: 'Study the Ayah',
             blocks: [
-              { id: passageId, type: 'ayah_ref', ayahRef: ayah.ref, translationLocale: locale },
+              { id: passageId, type: 'ayah_ref', ayahRef: ayah.ref, ...(locale === 'ar' ? {} : { translationLocale: locale }) },
               { id: `${id}-audio`, type: 'audio', ayahRefs: [ayah.ref], reciterId: MP3QURAN_RECITER_ID },
-              ...(ayah.wordMeanings && ayah.wordMeanings.length > 0 ? [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as any] : []),
-              ...(ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id } as any] : []),
             ]
           },
+          ...(locale === 'en' && ayah.wordMeanings && ayah.wordMeanings.length > 0 ? [{
+            id: `${id}-words`,
+            kind: 'word_meaning' as const,
+            title: 'Word Meanings',
+            blocks: [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as any]
+          }] : []),
+          ...(locale === 'en' && ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{
+            id: `${id}-tafsir`,
+            kind: 'tafsir' as const,
+            title: 'Context & Tafsir',
+            blocks: [{ id: `${id}-tafsir-block`, type: 'tafsir_ref', ayahRef: ayah.ref, tafsirEntryId: ayah.tafsirEntries[0].id } as any]
+          }] : []),
           { id: `${id}-memory`, kind: 'memory_practice', title: 'Build the ayah', blocks: [{ id: orderId, type: 'activity', activity: buildOrderAyahActivity(ayah, passageId, orderId) }] },
-          { id: understandingStepId, kind: 'understanding_practice', title: understanding.title, blocks: [{ id: matchId, type: 'activity', activity: understanding.activity }] },
+          ...(understanding ? [{ id: understandingStepId, kind: 'understanding_practice' as const, title: understanding.title, blocks: [{ id: matchId, type: 'activity' as const, activity: understanding.activity }] }] : []),
           { id: `${id}-extra-gap-step`, kind: 'memory_practice', title: 'Extra: Complete the ayah', required: false, blocks: [{ id: `${id}-extra-gap`, type: 'activity', activity: { id: `${id}-extra-gap`, kind: 'fill_gap', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Choose the missing ending token.', required: false, difficulty: 2, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { tokenBankIds: [...tokenIds].reverse(), correctTokenIds: [tokenIds.at(-1)!] } } }] },
           { id: `${id}-extra-type-step`, kind: 'memory_practice', title: 'Extra: Write from memory', required: false, blocks: [{ id: `${id}-extra-type`, type: 'activity', activity: { id: `${id}-extra-type`, kind: 'type_missing_text', placement: 'lesson', ayahRefs: [ayah.ref], instruction: 'Write the ayah from memory. Harakat are optional.', required: false, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { target: { kind: 'ayah', ayahRef: ayah.ref }, comparisonMode: 'letters_and_order', ignoreHarakat: true } } }] },
         ],
@@ -579,17 +543,17 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
     const refs = ayahLessons.map(item => item.ref);
     const reviewId = courseLevelId(surah.surahNumber, 'review');
     const passageId = `${reviewId}-passage`;
-    const matchSegments = surahAyat.map(ayah => ({
+    const matchSegments = locale === 'ar' ? [] : surahAyat.map(ayah => ({
       ayahSegment: { id: `${reviewId}-ayah-${ayah.ref.ayahNumber}`, tokenIds: ayah.wordTokenIds },
       translationSegment: { id: `${reviewId}-translation-${ayah.ref.ayahNumber}`, text: requireTranslation(ayah, locale).text, translationEntryId: requireTranslation(ayah, locale).id },
     }));
     levels.push({
-      id: reviewId, pathId, surahId: surah.id, title: 'Surah Review', description: 'Order the ayat and match their exact translations.', durationMinutes: 8, ayahRefs: refs, difficulty: 'medium', goals: ['memorize', 'quiz'], metadata: { isFinalReview: true }, completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: true },
+      id: reviewId, pathId, surahId: surah.id, title: 'Surah Review', description: 'Order the ayat and match their exact translations.', durationMinutes: 8, ayahRefs: refs, difficulty: 'medium', goals: ['memorize', 'quiz'], metadata: { isFinalReview: true }, completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: locale !== 'ar' },
       steps: [
         { id: `${reviewId}-read`, kind: 'read', title: 'Review the Surah', blocks: [{ id: passageId, type: 'quran_passage', ayahRefs: refs }] },
         { id: `${reviewId}-order-step`, kind: 'memory_practice', title: 'Order the ayat', blocks: [{ id: `${reviewId}-order`, type: 'activity', activity: { id: `${reviewId}-order`, kind: 'order_ayat', placement: 'surah_review', ayahRefs: refs, instruction: 'Put all ayat in Quran order.', required: true, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { correctOrderRefs: refs } } }] },
-        { id: `${reviewId}-match-step`, kind: 'understanding_practice', title: 'Match translations', blocks: [{ id: `${reviewId}-match`, type: 'activity', activity: { id: `${reviewId}-match`, kind: 'match_ayah_translation', placement: 'surah_review', ayahRefs: refs, instruction: 'Match each ayah to its unchanged translation.', required: true, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [translationSourceId], reviewerStatus: 'draft', reviewSchedule: { intervalDays: [1, 3, 7] }, config: { ayahSegments: matchSegments.map(item => item.ayahSegment), translationSegments: matchSegments.map(item => item.translationSegment), pairs: matchSegments.map(item => ({ ayahSegmentId: item.ayahSegment.id, translationSegmentId: item.translationSegment.id })) } } }] },
-        { id: `${reviewId}-recap-step`, kind: 'summary', title: 'Verified Recap', required: false, blocks: [{ id: `${reviewId}-recap-locked`, type: 'source_locked', capability: 'verified_recap', sourceId: translationSourceId, reason: 'license_restricted', alternativeStepId: `${reviewId}-match-step`, locale }] },
+        ...(locale !== 'ar' ? [{ id: `${reviewId}-match-step`, kind: 'understanding_practice' as const, title: 'Match translations', blocks: [{ id: `${reviewId}-match`, type: 'activity' as const, activity: { id: `${reviewId}-match`, kind: 'match_ayah_translation' as const, placement: 'surah_review' as const, ayahRefs: refs, instruction: 'Match each ayah to its unchanged translation.', required: true, difficulty: 3 as const, knowledgeRefs: [passageId], sourceIds: [translationSourceId], reviewerStatus: 'draft' as const, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { ayahSegments: matchSegments.map(item => item.ayahSegment), translationSegments: matchSegments.map(item => item.translationSegment), pairs: matchSegments.map(item => ({ ayahSegmentId: item.ayahSegment.id, translationSegmentId: item.translationSegment.id })) } } }] }] : []),
+        ...(locale !== 'ar' ? [{ id: `${reviewId}-recap-step`, kind: 'summary' as const, title: 'Verified Recap', required: false, blocks: [{ id: `${reviewId}-recap-locked`, type: 'source_locked' as const, capability: 'verified_recap' as const, sourceId: translationSourceId, reason: 'license_restricted' as const, alternativeStepId: `${reviewId}-match-step`, locale }] }] : []),
       ],
     });
     lessonIds.push(reviewId);
@@ -609,18 +573,51 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
   return { levels, curricula };
 }
 
-function sourceRecords(inputs: PreviewSourceInputs, english: QuranEncResourceMetadata, french: QuranEncResourceMetadata): ContentSource[] {
+function sourceRecords(inputs: PreviewSourceInputs, english: QuranEncResourceMetadata, french: QuranEncResourceMetadata, englishMokhtasar: QuranEncResourceMetadata): ContentSource[] {
   const structure = basePackage.sources.find(source => source.id === STRUCTURE_SOURCE_ID);
   if (!structure) throw new Error('Repository Quran structure source is unavailable.');
+
+  const mokhtasarRecord: ContentSource = {
+    id: 'quranenc-english-mokhtasar',
+    name: 'Al-Mukhtasar in Tafseer',
+    publisher: 'QUL / QuranEnc',
+    version: '1.0',
+    language: 'en',
+    reviewerStatus: 'draft',
+    license: 'QuranEnc terms',
+    sourceUrl: 'https://quranenc.com/en/browse/english_mokhtasar',
+    notes: 'Short English tafsir.'
+  };
+
   return [
     { id: TANZIL_SOURCE_ID, name: 'Tanzil Uthmani Quran text', publisher: 'Tanzil Project', version: inputs.tanzilMetadata.textVersion, language: 'ar', reviewerStatus: 'draft', license: 'CC BY 3.0', sourceUrl: TANZIL_SOURCE_URL, attributionText: inputs.tanzilMetadata.attributionText, retrievedAt: inputs.tanzilMetadata.retrievedAt, evidenceReference: TANZIL_LICENSE_URL, notes: 'Arabic text preserved unchanged from the terms-accepted official Tanzil source.' },
     translationSource(ENGLISH_SOURCE_ID, english, 'en', inputs.englishRetrieval.retrievedAt),
     translationSource(FRENCH_SOURCE_ID, french, 'fr', inputs.frenchRetrieval.retrievedAt),
+    mokhtasarRecord,
     { id: WORD_MEANING_SOURCE_ID, name: 'Quran Foundation word-by-word meanings', publisher: 'Quran Foundation', version: 'content-api-v4', language: 'multilingual', reviewerStatus: 'draft', license: 'Backend access and seven-day cache policy', sourceUrl: 'https://api-docs.quran.com/docs/content_apis_versioned/4.0.0/verses-by-range/', notes: 'Protected backend resource. Not bundled in local preview.' },
-    { id: TAFSIR_SOURCE_ID, name: 'Tafsir Al-Muyassar', author: 'King Fahd Complex for the Printing of the Holy Quran', publisher: 'Quran Foundation', version: 'resource-16', language: 'ar', reviewerStatus: 'draft', license: 'Backend access and public Islamic educational use', sourceUrl: 'https://api-docs.quran.com/docs/content_apis_versioned/4.0.0/tafsir/', resourceKey: '16', notes: 'Concise source-verified Arabic commentary.' },
     requireBaseSource(MP3QURAN_SOURCE_ID),
     { ...structure, sourceUrl: 'https://api-docs.quran.com/', notes: `${structure.notes ?? ''} Reused only for structural Surah metadata in development preview.` },
   ];
+}
+
+type QuranFoundationWord = {
+  position: number;
+  transliteration?: string;
+  translation?: string;
+};
+
+function getQuranFoundationWords(value: unknown): QuranFoundationWord[] {
+  if (!isRecord(value) || !isRecord(value.verse) || !Array.isArray(value.verse.words)) return [];
+  return value.verse.words.flatMap(word => {
+    if (!isRecord(word) || word.char_type_name !== 'word' || typeof word.position !== 'number' || !Number.isInteger(word.position)) return [];
+    const transliteration = isRecord(word.transliteration) && typeof word.transliteration.text === 'string'
+      ? word.transliteration.text
+      : undefined;
+    const translation = isRecord(word.translation) && typeof word.translation.text === 'string'
+      ? word.translation.text
+      : undefined;
+    return [{ position: word.position, transliteration, translation }];
+  });
 }
 
 function requireBaseSource(id: string): ContentSource {
@@ -637,7 +634,7 @@ function previewReciters(): Reciter[] {
 
 function previewTracks(inputs: PreviewSourceInputs): RecitationTrack[] {
   if (!isDate(inputs.audio.retrievedAt)) throw new Error('MP3Quran retrieval date is invalid.');
-  if (inputs.audio.streams.length !== PREVIEW_SURAH_NUMBERS.length) throw new Error('MP3Quran preview metadata must cover Surahs 105-114.');
+  if (inputs.audio.streams.length !== PREVIEW_SURAH_NUMBERS.length) throw new Error('MP3Quran preview metadata must cover Surahs 93-114.');
   return inputs.audio.streams.flatMap(stream => {
     if (!PREVIEW_SURAH_NUMBERS.includes(stream.surahId as typeof PREVIEW_SURAH_NUMBERS[number])) throw new Error(`Unexpected MP3Quran Surah ${stream.surahId}.`);
     if (stream.reciterId !== 118 || stream.mushafId !== 118 || stream.riwayahId !== 1 || stream.deliveryMode !== 'stream_only' || stream.providerVersion !== 'api-v3' || stream.permissionEvidenceUrl !== MP3QURAN_PERMISSION_URL) throw new Error(`MP3Quran identity mismatch for Surah ${stream.surahId}.`);

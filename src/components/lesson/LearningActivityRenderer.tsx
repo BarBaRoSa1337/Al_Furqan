@@ -1,12 +1,23 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { ExerciseSubmissionResult, LearningActivity } from '../../types/activities';
 import { getContentRepository } from '../../lib/content/repository';
 import { packageText } from '../../lib/content/text';
 import Card from '../ui/Card';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+
+/** Fire-and-forget haptic for quiz feedback. No-ops on web. */
+function quizHaptic(correct: boolean): void {
+  if (Platform.OS === 'web') return;
+  if (correct) {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  } else {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  }
+}
 
 interface Props {
   activity: LearningActivity;
@@ -42,12 +53,12 @@ function SequenceActivity({ activity, ids, answerLength, onAnswer }: Props & { i
     if (nextAnswer.length === answerLength && onAnswer) {
       const submission = await onAnswer(nextAnswer, false);
       setResult(submission.correct);
+      quizHaptic(submission.correct);
       AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
     }
   };
   const remove = (index: number) => {
     setAnswer(current => current.filter((_, itemIndex) => itemIndex !== index));
-    void onAnswer?.(answer.filter((_, itemIndex) => itemIndex !== index), false);
   };
 
   const expected = activity.kind === 'fill_gap' || activity.kind === 'complete_missing_token'
@@ -100,7 +111,10 @@ function ContinuationActivity({ activity, onAnswer }: { activity: Extract<Learni
     setSubmitting(true);
     setAnswer(id);
     const submission = await onAnswer?.(id, false);
-    if (submission) setResult(submission.correct);
+    if (submission) {
+      setResult(submission.correct);
+      quizHaptic(submission.correct);
+    }
     setSubmitting(false);
   };
   return <Animated.View style={shakeStyle}><ActivityCard instruction={activity.instruction}>
@@ -114,22 +128,41 @@ function MatchActivity({ activity, prompts, choices, hint, promptLabel, onAnswer
   const [activePrompt, setActivePrompt] = useState<string>();
   const [matchedPairs, setMatchedPairs] = useState<Record<string, string>>({});
   const [incorrectPair, setIncorrectPair] = useState<{ promptId: string; choiceId: string }>();
+  const [result, setResult] = useState<boolean>();
   const matchedCount = Object.keys(matchedPairs).length;
+  const shakeStyle = useIncorrectShake(result === false || Boolean(incorrectPair));
+
+  React.useEffect(() => {
+    if (!incorrectPair) return;
+    const timeout = setTimeout(() => setIncorrectPair(undefined), 500);
+    return () => clearTimeout(timeout);
+  }, [incorrectPair]);
+
+  const submitCompleteMatch = async (pairs: Record<string, string>) => {
+    const submission = await onAnswer?.(pairs, false);
+    if (!submission) return;
+    setResult(submission.correct);
+    quizHaptic(submission.correct);
+    AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
+  };
 
   const choose = (choiceId: string) => {
-    if (!activePrompt) return;
+    if (!activePrompt || result !== undefined) return;
     if (isCorrectMatch(activity, activePrompt, choiceId)) {
+      quizHaptic(true);
       const nextPairs = { ...matchedPairs, [activePrompt]: choiceId };
       setMatchedPairs(nextPairs);
       setIncorrectPair(undefined);
       setActivePrompt(undefined);
-      if (Object.keys(nextPairs).length === prompts.length) void onAnswer?.(nextPairs, false);
+      if (Object.keys(nextPairs).length === prompts.length) void submitCompleteMatch(nextPairs);
     } else {
+      quizHaptic(false);
       setIncorrectPair({ promptId: activePrompt, choiceId });
+      AccessibilityInfo.announceForAccessibility('Incorrect match. Choose another meaning.');
     }
   };
 
-  return <ActivityCard instruction={activity.instruction}>
+  return <Animated.View style={shakeStyle}><ActivityCard instruction={activity.instruction}>
     <Text style={styles.hint}>{hint}</Text>
     <Text accessibilityLiveRegion="polite" style={styles.matchProgress}>{packageText(repo, 'activity.matchProgress', { current: matchedCount, total: prompts.length })}</Text>
     <View style={styles.matchColumns}>
@@ -152,7 +185,7 @@ function MatchActivity({ activity, prompts, choices, hint, promptLabel, onAnswer
         })}
       </View>
     </View>
-  </ActivityCard>;
+  </ActivityCard></Animated.View>;
 }
 
 function ChoiceActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'multiple_choice' }>; onAnswer?: Props['onAnswer'] }) {
@@ -166,7 +199,11 @@ function ChoiceActivity({ activity, onAnswer }: { activity: Extract<LearningActi
     setSubmitting(true);
     setAnswer(id);
     const submission = await onAnswer?.(id, false);
-    if (submission) setResult(submission.correct);
+    if (submission) {
+      setResult(submission.correct);
+      quizHaptic(submission.correct);
+      AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
+    }
     setSubmitting(false);
   };
   return <Animated.View style={shakeStyle}><ActivityCard instruction={activity.instruction}><View style={styles.choiceList}>{options.map(option => <Option key={option.id} label={option.text} fullWidth selected={answer === option.id && result === undefined} correct={answer === option.id && result === true} incorrect={answer === option.id && result === false} disabled={submitting || result !== undefined} onPress={() => { void submit(option.id); }} />)}</View></ActivityCard></Animated.View>;
@@ -184,7 +221,11 @@ function TypedActivity({ activity, onAnswer }: { activity: Extract<LearningActiv
     if (!answer.trim() || result !== undefined || submitting) return;
     setSubmitting(true);
     const submission = await onAnswer?.(answer, false);
-    if (submission) setResult(submission.correct);
+    if (submission) {
+      setResult(submission.correct);
+      quizHaptic(submission.correct);
+      AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
+    }
     setSubmitting(false);
   };
   return <Animated.View style={shakeStyle}><ActivityCard instruction={activity.instruction}>

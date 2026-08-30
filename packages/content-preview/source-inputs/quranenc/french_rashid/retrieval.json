@@ -3,11 +3,59 @@
   "registryUrl": "https://quranenc.com/api/v1/translations/list/fr?localization=en",
   "version": "1.0.3",
   "lastUpdate": 1782043143,
-  "retrievedAt": "2026-08-19T21:24:10.169Z",
+  "retrievedAt": "2026-08-25T22:06:01.192Z",
   "files": {
     "metadata.json": {
       "url": "https://quranenc.com/api/v1/translations/list/fr?localization=en",
-      "sha256": "ed9b1203e2880dbb985c859946e8ca0497a0851768f5a141e1288a3bf0e03d2a"
+      "sha256": "4c6c7c12b8d6f687b3a0f185d9bcc9b9b3830aea64093190a1e4aecd5e17fd21"
+    },
+    "surahs/93.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/93",
+      "sha256": "c2148502f3f943e561283ea004047e24d99d0bf2345034f060f25e9d6f263484"
+    },
+    "surahs/94.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/94",
+      "sha256": "42902303b7f6393745d6947954a34380deb45097fde455acbe8efa118c914743"
+    },
+    "surahs/95.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/95",
+      "sha256": "52392719d26a7d97d9696efeea8401dbf4638b66983ee4a430b597986ee7bbd8"
+    },
+    "surahs/96.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/96",
+      "sha256": "8e10f219db8debaba748b4beb15f81d67a3357aa095d5ee0a51a1402bd1e0689"
+    },
+    "surahs/97.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/97",
+      "sha256": "353b7fe8a503aec712bbd8e805089655e153f6cc141b3d39a3fc1c13da24bac2"
+    },
+    "surahs/98.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/98",
+      "sha256": "60a3cf82d6bcc0aed15d54a0fe8cee016ffe7477bfa8d79f9bbbba46167414ce"
+    },
+    "surahs/99.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/99",
+      "sha256": "18e698e7a5cc2f3f76a1bf4c1ef3baf8d5bb3e081d6d8edfcb3a242c43d8d4d6"
+    },
+    "surahs/100.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/100",
+      "sha256": "08c22101d8e8f1de4d821b479e5fe6d7fd523a8395c6d03b353e0af3debe766e"
+    },
+    "surahs/101.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/101",
+      "sha256": "c5efd8c15d299dee6d0cdcd932d1d61dc625dc086fc92cc9e9f8fd73ec60104b"
+    },
+    "surahs/102.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/102",
+      "sha256": "6d2635c9ca70160aa9b49eaebf34a99d1df5dd09869d45f3d6ee43053c8184d1"
+    },
+    "surahs/103.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/103",
+      "sha256": "7c358bf1e32c6919e183c2f2e4ba939f07a9bc9854b4ec51887fe3bed504dce3"
+    },
+    "surahs/104.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/104",
+      "sha256": "a161d172c3011bccbf72e3e13d548bff6913359c4056850d9bc037ad3bcd7b7f"
     },
     "surahs/105.json": {
       "url": "https://quranenc.com/api/v1/translation/sura/french_rashid/105",

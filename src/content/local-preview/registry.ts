@@ -1,7 +1,7 @@
 import type { SupportedLocale } from '../../../packages/api-contracts/src';
 import type { ContentPackage } from '../../types/content';
-import rawIntegrity from './surahs-105-114.preview.sha256.json';
-import rawBundle from './surahs-105-114.preview.json';
+import rawIntegrity from './surahs-93-114.preview.sha256.json';
+import rawBundle from './surahs-93-114.preview.json';
 
 export interface LocalPreviewIntegrityManifest {
   packageId: string;
@@ -17,21 +17,21 @@ export interface LocalPreviewArtifact {
 interface LocalPreviewBundle {
   schemaVersion: 1;
   contentMode: 'preview';
-  packages: Record<'en' | 'fr', ContentPackage>;
+  packages: Record<'en' | 'fr' | 'ar', ContentPackage>;
 }
 
 interface LocalPreviewBundleIntegrity {
   schemaVersion: 1;
   packageId: string;
-  revisions: Record<'en' | 'fr', string>;
-  payloadSha256: Record<'en' | 'fr', string>;
+  revisions: Record<'en' | 'fr' | 'ar', string>;
+  payloadSha256: Record<'en' | 'fr' | 'ar', string>;
 }
 
 const bundle: unknown = rawBundle;
 const integrity: unknown = rawIntegrity;
 
 export const bundledLocalPreviewArtifacts: Partial<Record<SupportedLocale, LocalPreviewArtifact>> = isBundle(bundle) && isBundleIntegrity(integrity)
-  ? Object.fromEntries((['en', 'fr'] as const).map(locale => [locale, {
+  ? Object.fromEntries((['en', 'fr', 'ar'] as const).map(locale => [locale, {
       package: bundle.packages[locale],
       integrity: {
         packageId: integrity.packageId,
@@ -43,14 +43,14 @@ export const bundledLocalPreviewArtifacts: Partial<Record<SupportedLocale, Local
 
 function isBundle(value: unknown): value is LocalPreviewBundle {
   if (!isRecord(value) || value.schemaVersion !== 1 || value.contentMode !== 'preview' || !isRecord(value.packages)) return false;
-  return isContentPackage(value.packages.en) && isContentPackage(value.packages.fr);
+  return isContentPackage(value.packages.en) && isContentPackage(value.packages.fr) && isContentPackage(value.packages.ar);
 }
 
 function isBundleIntegrity(value: unknown): value is LocalPreviewBundleIntegrity {
   if (!isRecord(value) || value.schemaVersion !== 1 || typeof value.packageId !== 'string' || !isRecord(value.revisions) || !isRecord(value.payloadSha256)) return false;
   const revisions = value.revisions;
   const hashes = value.payloadSha256;
-  return ['en', 'fr'].every(locale => typeof revisions[locale] === 'string' && typeof hashes[locale] === 'string');
+  return ['en', 'fr', 'ar'].every(locale => typeof revisions[locale] === 'string' && typeof hashes[locale] === 'string');
 }
 
 function isContentPackage(value: unknown): value is ContentPackage {

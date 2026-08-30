@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.65 },
   iconWrap: { alignItems: 'center', borderRadius: 14, height: 28, justifyContent: 'center', minWidth: 38, position: 'relative' },
   iconWrapActive: { backgroundColor: colors.successSoft },
-  badge: { alignItems: 'center', backgroundColor: colors.danger, borderColor: colors.surface, borderRadius: 8, borderWidth: 1, minWidth: 16, paddingHorizontal: 3, position: 'absolute', right: -3, top: -4 },
+  badge: { alignItems: 'center', backgroundColor: colors.danger, borderColor: colors.surface, borderRadius: 8, borderWidth: 1, minWidth: 16, paddingHorizontal: 3, position: 'absolute', end: -3, top: -4 },
   badgeText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 8, lineHeight: 13 },
   label: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 10, marginTop: 2 },
   labelActive: { color: colors.success },

@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "101:6": {
+        "id": 6163
+      },
+      "101:7": {
+        "id": 6164
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فأما من رجحت موازين حسناته، فهو في حياة مرضية في الجنة."
+  }
+}

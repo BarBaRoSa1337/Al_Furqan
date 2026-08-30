@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "101:4": {
+        "id": 6161
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "في ذلك اليوم يكون الناس في كثرتهم وتفرقهم وحركتهم كالفراش المنتشر، وهو الذي يتساقط في النار."
+  }
+}

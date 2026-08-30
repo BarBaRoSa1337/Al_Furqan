@@ -77,7 +77,7 @@ test('keeps vocabulary prompts in authored order and requires an explicit word s
   expect(screen.getByRole('button', { name: firstMeaning }).props.accessibilityState.selected).toBe(false);
 });
 
-test('marks an incorrect vocabulary pair red and keeps a correct pair visible in green', () => {
+test('marks an incorrect vocabulary pair red and keeps a correct pair visible in green', async () => {
   const repo = getContentRepository();
   const activity = repo.getActivityById('l1-match-meaning');
   expect(activity?.kind).toBe('match_word_meaning');
@@ -93,6 +93,7 @@ test('marks an incorrect vocabulary pair red and keeps a correct pair visible in
   fireEvent.press(screen.getByRole('button', { name: secondMeaning }));
   expect(screen.getByRole('button', { name: firstArabic })).toHaveStyle({ backgroundColor: colors.dangerSoft });
   expect(screen.getByRole('button', { name: secondMeaning })).toHaveStyle({ backgroundColor: colors.dangerSoft });
+  await waitFor(() => expect(screen.getByRole('button', { name: firstArabic })).not.toHaveStyle({ backgroundColor: colors.dangerSoft }));
 
   fireEvent.press(screen.getByRole('button', { name: firstMeaning }));
   const matchedLabel = `${firstArabic}, matched correctly with ${firstMeaning}`;

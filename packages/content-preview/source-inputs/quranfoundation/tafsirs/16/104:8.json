@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "104:8": {
+        "id": 6187
+      },
+      "104:9": {
+        "id": 6188
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إنها عليهم مطبَقة في سلاسل وأغلال مطوَّلة؛ لئلا يخرجوا منها."
+  }
+}

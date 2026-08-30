@@ -13,12 +13,11 @@ async function main(): Promise<void> {
   const read = async (path: string) => readRequired(join(INPUT_ROOT, path));
   const englishRetrieval = parseRetrieval(await read('quranenc/english_rwwad/retrieval.json'), 'english_rwwad');
   const frenchRetrieval = parseRetrieval(await read('quranenc/french_rashid/retrieval.json'), 'french_rashid');
+  const englishMokhtasarRetrieval = parseRetrieval(await read('quranenc/english_mokhtasar/retrieval.json'), 'english_mokhtasar');
   const tanzilMetadata = parseTanzilMetadata(JSON.parse(await read('tanzil/metadata.json')));
   const quranFoundationRetrieval = parseRetrieval(await read('quranfoundation/retrieval.json'), 'quranfoundation');
   const wordMeanings: Record<string, unknown> = {};
-  const tafsirs: Record<string, unknown> = {};
   for (const surah of PREVIEW_SURAH_NUMBERS) {
-    tafsirs[surah.toString()] = JSON.parse(await read(`quranfoundation/tafsirs/169/${surah}.json`));
     for (let ayah = 1; ayah <= EXPECTED_AYAH_COUNTS[surah]; ayah += 1) {
       const key = `${surah}:${ayah}`;
       wordMeanings[key] = JSON.parse(await read(`quranfoundation/word-meanings/${key}.json`));
@@ -33,25 +32,30 @@ async function main(): Promise<void> {
     englishSurahs: await readSurahs(read, QURANENC_RESOURCES.en.key),
     frenchMetadata: JSON.parse(await read('quranenc/french_rashid/metadata.json')),
     frenchSurahs: await readSurahs(read, QURANENC_RESOURCES.fr.key),
+    englishMokhtasarMetadata: JSON.parse(await read('quranenc/english_mokhtasar/metadata.json')),
+    englishMokhtasarSurahs: await readSurahs(read, 'english_mokhtasar'),
     audio: JSON.parse(await read('mp3quran/husary-118/streams.json')) as PreviewAudioInputs,
     englishRetrieval,
     frenchRetrieval,
+    englishMokhtasarRetrieval,
     quranFoundationRetrieval,
     wordMeanings,
-    tafsirs,
   };
   await verifyTanzilEvidence(read, tanzilMetadata);
   await verifyEvidence(read, englishRetrieval, 'quranenc/english_rwwad');
   await verifyEvidence(read, frenchRetrieval, 'quranenc/french_rashid');
+  await verifyEvidence(read, englishMokhtasarRetrieval, 'quranenc/english_mokhtasar');
   const result = buildPreviewPackages(inputs);
   for (const locale of ['en', 'fr'] as const) {
     const pkg = result.packages[locale];
     const development = validatePackage(pkg, { mode: 'development' });
     if (!development.valid) throw new Error(`${locale} preview package invalid: ${development.errors.join('; ')}`);
     if (validatePackage(pkg, { mode: 'production' }).valid) throw new Error(`${locale} preview package unexpectedly passes production validation.`);
-    if (pkg.ayat.length !== 48 || pkg.recitationTracks.length !== 48 || pkg.learningPaths[0]?.surahCurricula?.length !== 10 || pkg.levels.length !== 68) throw new Error(`${locale} preview coverage is incomplete.`);
+    const expectedAyat = PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + EXPECTED_AYAH_COUNTS[surah], 0);
+    const expectedLevels = expectedAyat + (PREVIEW_SURAH_NUMBERS.length * 2);
+    if (pkg.ayat.length !== expectedAyat || pkg.recitationTracks.length !== expectedAyat || pkg.learningPaths[0]?.surahCurricula?.length !== PREVIEW_SURAH_NUMBERS.length || pkg.levels.length !== expectedLevels) throw new Error(`${locale} preview coverage is incomplete.`);
   }
-  console.log('Validated English/French local preview: 10 Surahs, 48 ayat, 68 nodes. Production still blocked.');
+  console.log(`Validated English/French local preview: ${PREVIEW_SURAH_NUMBERS.length} Surahs, ${PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + EXPECTED_AYAH_COUNTS[surah], 0)} ayat. Production still blocked.`);
 }
 
 async function verifyTanzilEvidence(read: (path: string) => Promise<string>, metadata: TanzilSourceMetadata): Promise<void> {

@@ -89,10 +89,18 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
           preSessionRef.current = existingProgress ?? undefined;
         }
 
-        const progress = startMode === 'start_over'
-          ? await restartLevel(level.id, path.id, initialStepId)
-          : await startLevel(level.id, path.id, initialStepId);
-        const nextIndex = startMode === 'start_over' ? 0 : getResumeStepIndex(coreSteps, progress, level.steps);
+        const currentFingerprint = level.steps.map(s => s.id).join('|');
+        let progress;
+
+        if (startMode === 'start_over') {
+          progress = await restartLevel(level.id, path.id, initialStepId, currentFingerprint);
+        } else if (existingProgress && !existingProgress.completed && existingProgress.structureFingerprint && existingProgress.structureFingerprint !== currentFingerprint) {
+          progress = await restartLevel(level.id, path.id, initialStepId, currentFingerprint);
+        } else {
+          progress = await startLevel(level.id, path.id, initialStepId, currentFingerprint);
+        }
+
+        const nextIndex = startMode === 'start_over' || progress.currentStepId === initialStepId && existingProgress?.currentStepId !== initialStepId ? 0 : getResumeStepIndex(coreSteps, progress, level.steps);
         const pendingRetryIndexes = startMode === 'start_over'
           ? []
           : getPendingRetryStepIds(coreSteps, progress, lessonLocale)

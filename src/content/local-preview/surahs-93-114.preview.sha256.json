@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "packageId": "surah-al-fil-v1",
+  "revisions": {
+    "en": "surahs-93-114-local-preview-v1-en",
+    "fr": "surahs-93-114-local-preview-v1-fr",
+    "ar": "surahs-93-114-local-preview-v1-ar"
+  },
+  "payloadSha256": {
+    "en": "957decb66faad2c6ad8cf6d82e77a7aa866f41195082918f9ef1c106f3c05222",
+    "fr": "9e7bdd426d1b69c0bcb21cfcde455a17bd0a5ae520ef2c04060a2caf0947e911",
+    "ar": "08ca58244bfffdab07d485cd0de48fd75b95a4dfa0400c67a77f8e47393fe035"
+  }
+}

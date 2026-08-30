@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "99:4": {
+        "id": 6142
+      },
+      "99:5": {
+        "id": 6143
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "يوم القيامة تخبر الأرض بما عُمل عليها من خير أو شر، وبأن الله سبحانه وتعالى أمرها بأن تخبر بما عُمل عليها."
+  }
+}

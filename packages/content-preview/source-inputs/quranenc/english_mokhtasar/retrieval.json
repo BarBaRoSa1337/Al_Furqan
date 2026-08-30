@@ -1,0 +1,101 @@
+{
+  "resourceKey": "english_mokhtasar",
+  "registryUrl": "https://quranenc.com/api/v1",
+  "version": "1.0",
+  "lastUpdate": "2026-08-25T17:45:45.531252Z",
+  "retrievedAt": "2026-08-25T17:45:45.531275Z",
+  "files": {
+    "surahs/107.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/107",
+      "sha256": "891a217e3496dee39a77686acad6a86a73039ce7511616c1f07977e34fa2a6aa"
+    },
+    "surahs/109.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/109",
+      "sha256": "6a59bb21b95df4e528504a9b55012a4e584b58671cf68411b2a70ca1c5fbda49"
+    },
+    "surahs/111.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/111",
+      "sha256": "7f2b6b0321e238390adfbacd779778c7e7c57c8c698b4c8d79cc50e35cdd139e"
+    },
+    "surahs/114.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/114",
+      "sha256": "8c317563673eef91513c3a4a27ecc05a3dd86a5337f2e5144234210396556869"
+    },
+    "surahs/106.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/106",
+      "sha256": "b25b98f7c8f4fcf5163ebc3190c256f46fc3e6031a044b896641eea56c0e25a7"
+    },
+    "surahs/110.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/110",
+      "sha256": "66968419dedd8d97ab8dbc5a1a3710080226b7a5f95fb9c88a162742af6f99d8"
+    },
+    "surahs/112.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/112",
+      "sha256": "3cb93495a9cee41c55455e941723812c3630990a518d6b5842293473eb1b76b7"
+    },
+    "surahs/113.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/113",
+      "sha256": "f2e9713606e5805359c49081e5e57ce0d5808a7e1649c83b1de5a5cf4d8ff89c"
+    },
+    "surahs/105.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/105",
+      "sha256": "81363b78087b048f927dd05c59235499815489fce4164d4bf806c8b8b7a8518e"
+    },
+    "surahs/108.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/108",
+      "sha256": "3c6c2caa73984623012a6abe6f32ab4eff55a164c4aa764a87c66088fc7d5f48"
+    },
+    "surahs/93.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/93",
+      "sha256": "565be6a09c36ec70d33ccb608e126d8e5ae29c45510e6d99b376a1d75086fa9b"
+    },
+    "surahs/94.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/94",
+      "sha256": "368bf9ddcca3cc7259b14e09f4c9957f2c5dae9eee8264d3712564fd0129993c"
+    },
+    "surahs/95.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/95",
+      "sha256": "d644b695d09e47ff9a78c3308f5f9d8eee149c572275eaef28de6cc7c345ef19"
+    },
+    "surahs/96.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/96",
+      "sha256": "aa12ed7da5e5e880c6e371e5cead284e0d8d87f195cfcba6b98a163f6981415d"
+    },
+    "surahs/97.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/97",
+      "sha256": "79d395b65614108c058f2560e799b2beedc5df96ffb7984fd2b85926de266c9c"
+    },
+    "surahs/98.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/98",
+      "sha256": "1ac40849a0b0673f2981248686da7cd5ce7e8f4f81dfcf1afd8318b39c8cd434"
+    },
+    "surahs/99.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/99",
+      "sha256": "9ad3489ffa8bb2db69b3e95f71d6d3417ecc30038fe1a911fb0dd0bf863c5d61"
+    },
+    "surahs/100.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/100",
+      "sha256": "25b91cda968b68abaca0b56b030e573c000a89ccf00144fbae6bf09ceac40554"
+    },
+    "surahs/101.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/101",
+      "sha256": "34460dcaa506203c352f41289990cc3e0577830dc7ede41b72f01a5f6cba7361"
+    },
+    "surahs/102.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/102",
+      "sha256": "e7b61c4f81dd976a6816840431adae986010d143b6d815ed0a4a92a5408cf676"
+    },
+    "surahs/103.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/103",
+      "sha256": "75c65a7548eecbca4d7b52d56d727b6022d0f4c8040691e18c1751119715e73b"
+    },
+    "surahs/104.json": {
+      "url": "https://quranenc.com/api/v1/translation/sura/english_mokhtasar/104",
+      "sha256": "1135b5634354b904bfe79a30ffd399bd7f4a9175a83ca04c68e3371fdf7648f7"
+    },
+    "metadata.json": {
+      "url": "https://quranenc.com/api/v1/translations/list/en?localization=en",
+      "sha256": "7dd83f8f3b67cb92b4efb54c4264d3b1f73c821c73a6aaf617e55499775fde49"
+    }
+  }
+}

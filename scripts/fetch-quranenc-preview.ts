@@ -66,7 +66,7 @@ async function fetchMp3QuranInputs(): Promise<void> {
     streams,
   };
   await writeRaw(join(MP3QURAN_ROOT, 'streams.json'), `${JSON.stringify(payload, null, 2)}\n`);
-  console.log('Fetched MP3Quran Al-Husary Hafs stream metadata: Surahs 105-114, 48 ayah segments, no audio persisted.');
+  console.log('Fetched MP3Quran Al-Husary Hafs stream metadata: Surahs 93-114, 157 ayah segments, no audio persisted.');
 }
 
 async function fetchQuranFoundationInputs(): Promise<void> {
@@ -113,7 +113,7 @@ async function fetchQuranFoundationInputs(): Promise<void> {
     ...[...pending].map(([path, item]) => writeRaw(join(QURAN_FOUNDATION_ROOT, path), item.body)),
     writeRaw(join(QURAN_FOUNDATION_ROOT, 'retrieval.json'), `${JSON.stringify(evidence, null, 2)}\n`),
   ]);
-  console.log('Fetched Quran Foundation word meanings and tafsirs for Surahs 105-114.');
+  console.log('Fetched Quran Foundation word meanings and tafsirs for Surahs 93-114.');
 }
 
 async function fetchTanzilInputs(): Promise<void> {
@@ -184,8 +184,42 @@ async function fetchQuranEncInputs(): Promise<void> {
       ...[...pending].map(([path, item]) => writeRaw(join(resourceRoot, path), item.body)),
       writeRaw(join(resourceRoot, 'retrieval.json'), `${JSON.stringify(evidence, null, 2)}\n`),
     ]);
-    console.log(`Fetched ${resource.key} ${metadata.version}: Surahs 105-114, raw responses unchanged.`);
+    console.log(`Fetched ${resource.key} ${metadata.version}: Surahs 93-114, raw responses unchanged.`);
   }
+
+  // Fetch english_mokhtasar manually
+  const mokhtasarKey = 'english_mokhtasar';
+  const mokhtasarRegistryUrl = 'https://quranenc.com/api/v1/translations/list/en?localization=en';
+  const registryBody = await fetchBytes(mokhtasarRegistryUrl, 'application/json');
+  const registryText = decodeUtf8(registryBody, `QuranEnc english_mokhtasar registry`);
+  const registry = parseJson(registryText, `QuranEnc english_mokhtasar registry`);
+  const metadata = resolveQuranEncMetadata(registry, mokhtasarKey, 'en');
+  const pending = new Map<string, { url: string; body: Buffer }>();
+  pending.set('metadata.json', { url: mokhtasarRegistryUrl, body: registryBody });
+
+  for (const surah of PREVIEW_SURAH_NUMBERS) {
+    const url = `https://quranenc.com/api/v1/translation/sura/english_mokhtasar/${surah}`;
+    const body = await fetchBytes(url, 'application/json');
+    const text = decodeUtf8(body, `${mokhtasarKey} Surah ${surah}`);
+    const rows = parseQuranEncPayload(parseJson(text, `${mokhtasarKey} Surah ${surah}`), mokhtasarKey, surah);
+    if (rows.length !== EXPECTED_AYAH_COUNTS[surah]) throw new Error(`${mokhtasarKey} Surah ${surah} ayah count mismatch.`);
+    pending.set(`surahs/${surah}.json`, { url, body });
+  }
+
+  const evidence: SourceRetrievalEvidence = {
+    resourceKey: mokhtasarKey,
+    registryUrl: mokhtasarRegistryUrl,
+    version: metadata.version,
+    lastUpdate: metadata.updateDate,
+    retrievedAt: new Date().toISOString(),
+    files: Object.fromEntries([...pending].map(([path, item]) => [path, { url: item.url, sha256: sha256(item.body) }])),
+  };
+  const resourceRoot = join(QURANENC_ROOT, mokhtasarKey);
+  await Promise.all([
+    ...[...pending].map(([path, item]) => writeRaw(join(resourceRoot, path), item.body)),
+    writeRaw(join(resourceRoot, 'retrieval.json'), `${JSON.stringify(evidence, null, 2)}\n`),
+  ]);
+  console.log(`Fetched ${mokhtasarKey} ${metadata.version}: Surahs 93-114, raw responses unchanged.`);
 }
 
 function validateTanzilText(text: string): void {

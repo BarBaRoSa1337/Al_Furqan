@@ -74,21 +74,24 @@ export interface PreviewSourceInputs {
   englishSurahs: Record<number, unknown>;
   frenchMetadata: unknown;
   frenchSurahs: Record<number, unknown>;
+  englishMokhtasarMetadata: unknown;
+  englishMokhtasarSurahs: Record<number, unknown>;
+  englishMokhtasarRetrieval: SourceRetrievalEvidence;
   audio: PreviewAudioInputs;
   quranFoundationRetrieval: SourceRetrievalEvidence;
   wordMeanings: Record<string, unknown>;
-  tafsirs: Record<string, unknown>;
   sourceFileHashes?: Record<string, string>;
   englishRetrieval: SourceRetrievalEvidence;
   frenchRetrieval: SourceRetrievalEvidence;
 }
 
 export interface PreviewGeneratedFiles {
-  packages: Record<'en' | 'fr', ContentPackage>;
+  packages: Record<'en' | 'fr' | 'ar', ContentPackage>;
   sourceMetadata: {
     tanzil: TanzilSourceMetadata;
     english: QuranEncResourceMetadata;
     french: QuranEncResourceMetadata;
+    englishMokhtasar: QuranEncResourceMetadata;
   };
   sourceSurahs: SurahRecord[];
 }

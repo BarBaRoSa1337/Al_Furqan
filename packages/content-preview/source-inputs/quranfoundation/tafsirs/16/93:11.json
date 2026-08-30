@@ -1,0 +1,24 @@
+{
+  "tafsir": {
+    "verses": {
+      "93:9": {
+        "id": 6088
+      },
+      "93:10": {
+        "id": 6089
+      },
+      "93:11": {
+        "id": 6090
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فأما اليتيم فلا تُسِئْ معاملته، وأما السائل فلا تزجره، بل أطعمه، واقض حاجته، وأما بنعمة ربك التي أسبغها عليك فتحدث بها."
+  }
+}

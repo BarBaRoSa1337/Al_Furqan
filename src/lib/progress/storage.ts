@@ -171,13 +171,14 @@ export function getProgressRecoveryWarning(): ProgressRecoveryWarning | null {
   return recoveryWarning;
 }
 
-export async function startLevel(levelId: string, pathId: string, initialStepId: string): Promise<LevelProgress> {
+export async function startLevel(levelId: string, pathId: string, initialStepId: string, structureFingerprint?: string): Promise<LevelProgress> {
   return mutateSnapshot(snapshot => {
     const now = new Date().toISOString();
     const existing = snapshot.levels[levelId];
     const progress = existing ?? {
       levelId,
       pathId,
+      structureFingerprint,
       completed: false,
       startedAt: now,
       currentStepId: initialStepId,
@@ -185,6 +186,9 @@ export async function startLevel(levelId: string, pathId: string, initialStepId:
       questionAttempts: [],
       activityAttempts: [],
     };
+    if (existing && existing.structureFingerprint !== structureFingerprint) {
+      progress.structureFingerprint = structureFingerprint;
+    }
     snapshot.levels[levelId] = progress;
     snapshot.app.currentLevelId = levelId;
     snapshot.app.lastActiveAt = now;
@@ -192,13 +196,14 @@ export async function startLevel(levelId: string, pathId: string, initialStepId:
   });
 }
 
-export async function restartLevel(levelId: string, pathId: string, initialStepId: string): Promise<LevelProgress> {
+export async function restartLevel(levelId: string, pathId: string, initialStepId: string, structureFingerprint?: string): Promise<LevelProgress> {
   return mutateSnapshot(snapshot => {
     const now = new Date().toISOString();
     const existing = snapshot.levels[levelId];
     const progress: LevelProgress = {
       levelId,
       pathId,
+      structureFingerprint,
       completed: existing?.completed ?? false,
       startedAt: existing?.startedAt ?? now,
       completedAt: existing?.completedAt,

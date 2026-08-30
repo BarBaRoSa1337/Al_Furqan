@@ -93,12 +93,18 @@ function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBloc
   const surah = repo.getSurahById(block.surahId);
   if (!surah) return null;
   const source = repo.getSourceById(surah.sourceMetadata.quranTextSourceId);
+  const themeText = (block as any).themeText;
+  const mediaAssetId = (block as any).mediaAssetId;
+  const asset = mediaAssetId ? repo.getPackageForBlock(block.id)?.mediaAssets.find(a => a.id === mediaAssetId) : undefined;
+
   return (
     <Card variant="ayah" style={styles.overviewCard}>
       <Text style={styles.overviewEyebrow}>Surah {surah.surahNumber}</Text>
       <Text style={styles.overviewArabic}>{surah.arabicName}</Text>
       <Text accessibilityRole="header" style={styles.overviewTitle}>{surah.transliteratedName}</Text>
       <Text style={styles.overviewMeta}>{surah.englishName} · {surah.ayahCount} ayat · {surah.revelationPlace === 'makkah' ? 'Makkan' : 'Madinan'}</Text>
+      {themeText ? <Text style={styles.overviewTheme}>{themeText}</Text> : null}
+      {asset ? <Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.overviewMedia} /> : null}
       <SourceAttribution source={source} unavailable={packageText(repo, 'content.sourceUnavailable')} />
     </Card>
   );
@@ -178,6 +184,11 @@ function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah:
 
   return (
     <Card variant="mushaf" style={styles.mushafAyahCard}>
+      {ayah.ref.ayahNumber === 1 && ayah.ref.surahNumber !== 1 && ayah.ref.surahNumber !== 9 ? (
+        <Text style={[styles.arabic, { marginBottom: 16, textAlign: 'center' }]}>
+          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+        </Text>
+      ) : null}
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
       {showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
       <View style={styles.divider} />
@@ -212,35 +223,28 @@ function SourceAttribution({ source, unavailable }: { source?: ContentSource; un
 }
 
 function CanonicalTafsirBlock({ entry, repo }: { entry: TafsirEntry; repo: ContentRepository }) {
-  const [expanded, setExpanded] = useState(true);
+  const isLong = entry.text.length > 150 || Boolean(entry.explanation);
+  const [expanded, setExpanded] = useState(!isLong);
   const source = repo.getSourceById(entry.sourceId);
 
   return (
     <Card variant="tafsir">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={packageText(repo, 'content.toggleDetails')}
-        accessibilityState={{ expanded }}
-        onPress={() => setExpanded(value => !value)}
-        style={({ pressed }) => [styles.tafsirControl, pressed && styles.pressed]}
-      >
-        <View style={styles.tafsirHeader}>
-          <Text style={styles.tafsirLabel}>{packageText(repo, 'content.tafsir')}</Text>
-          <Text style={styles.toggle}>{expanded ? '▲' : '▼'}</Text>
-        </View>
-      </Pressable>
-      {expanded ? (
-        <View>
-          <Text style={styles.tafsirText}>{entry.text}</Text>
-          {entry.explanation ? (
-            <View style={styles.explanationSection}>
-            <Text style={styles.explanationLabel}>{packageText(repo, 'content.explanation')}</Text>
-              <Text style={styles.explanationText}>{entry.explanation}</Text>
-            </View>
-          ) : null}
-          <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+      <Text style={[styles.tafsirLabel, { marginBottom: spacing.sm }]}>{packageText(repo, 'content.tafsir')}</Text>
+      <Text style={styles.tafsirText} numberOfLines={expanded ? undefined : 3}>{entry.text}</Text>
+      {isLong ? (
+        <Pressable onPress={() => setExpanded(v => !v)} style={styles.readMoreButton}>
+          <Text style={styles.readMoreText}>
+            {expanded ? 'Show less' : 'Read more'}
+          </Text>
+        </Pressable>
+      ) : null}
+      {expanded && entry.explanation ? (
+        <View style={styles.explanationSection}>
+          <Text style={styles.explanationLabel}>{packageText(repo, 'content.explanation')}</Text>
+          <Text style={styles.explanationText}>{entry.explanation}</Text>
         </View>
       ) : null}
+      <Text style={styles.source}>{packageText(repo, 'content.source')}: {source?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
     </Card>
   );
 }
@@ -282,15 +286,17 @@ export function resolveWordMeaningArabic(word: WordMeaning, repo: Pick<ContentRe
 
 const styles = StyleSheet.create({
   draftBadgeContainer: { position: 'relative' },
-  draftBadge: { position: 'absolute', top: -10, right: 10, backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radii.sm, zIndex: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  draftBadge: { position: 'absolute', top: -10, end: 10, backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radii.sm, zIndex: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
   draftBadgeText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoButton: { position: 'absolute', top: 16, right: 16, zIndex: 5, padding: 4, opacity: 0.5 },
+  infoButton: { position: 'absolute', top: 16, end: 16, zIndex: 5, padding: 4, opacity: 0.5 },
   collapsibleSources: { marginTop: spacing.lg, padding: spacing.md, backgroundColor: colors.surfaceMuted, borderRadius: radii.sm },
   overviewCard: { alignItems: 'center', paddingVertical: spacing.xl },
   overviewEyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
   overviewArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 42, lineHeight: 64, marginTop: spacing.sm, writingDirection: 'rtl' },
   overviewTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 26 },
   overviewMeta: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, marginBottom: spacing.md, marginTop: spacing.xs },
+  overviewTheme: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, lineHeight: 26, textAlign: 'center', marginTop: spacing.sm, marginBottom: spacing.md },
+  overviewMedia: { width: '100%', height: 160, marginTop: spacing.md, marginBottom: spacing.lg },
   unsupported: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
   ayahCard: { alignItems: 'center' },
   mushafAyahCard: { alignItems: 'center', marginVertical: spacing.xs },
@@ -316,6 +322,8 @@ const styles = StyleSheet.create({
   explanationSection: { backgroundColor: colors.goldSoft, borderRadius: radii.md, marginTop: spacing.md, padding: spacing.md },
   explanationLabel: { color: colors.warning, fontFamily: fonts.bold, fontSize: 12, marginBottom: spacing.xs, textTransform: 'uppercase' },
   explanationText: { color: colors.text, fontFamily: fonts.regular, fontSize: 14, lineHeight: 22 },
+  readMoreButton: { marginTop: spacing.md, alignSelf: 'flex-start', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, backgroundColor: colors.surfaceMuted, borderRadius: radii.pill },
+  readMoreText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 13 },
   source: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 11, marginTop: spacing.md },
   contextLabel: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.6, marginBottom: spacing.sm, textTransform: 'uppercase' },
   contextTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 18, marginBottom: 10 },
@@ -324,7 +332,7 @@ const styles = StyleSheet.create({
   wordTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 14, fontWeight: '700', letterSpacing: 0.8, marginBottom: 12, textTransform: 'uppercase' },
   wordRow: { alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 10 },
   wordArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 24, textAlign: 'right', width: 90 },
-  wordMeaning: { flex: 1, marginLeft: 14 },
+  wordMeaning: { flex: 1, marginStart: 14 },
   wordTransliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 13, fontStyle: 'italic', marginBottom: 2 },
   wordText: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
   media: { width: '100%', minHeight: 180 },

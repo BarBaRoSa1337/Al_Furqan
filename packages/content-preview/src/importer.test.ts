@@ -4,13 +4,26 @@ import { buildPreviewPackages, getPackagePayloadJson, parseQuranEncPayload, pars
 import { assertTanzilTermsAccepted } from './sourcePolicy';
 
 function inputs() {
-  const tanzilText = PREVIEW_SURAH_NUMBERS.flatMap(surah => Array.from({ length: EXPECTED_AYAH_COUNTS[surah] }, (_, index) => `${surah}|${index + 1}|سُورَةُ ${surah}-${index + 1}`)).join('\n');
+  const BASMALA_PREFIX = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ ';
+  const tanzilText = PREVIEW_SURAH_NUMBERS.flatMap(surah => Array.from({ length: EXPECTED_AYAH_COUNTS[surah] }, (_, index) => {
+    const isAyah1 = index === 0;
+    const text = isAyah1 ? `${BASMALA_PREFIX}سُورَةُ ${surah}-${index + 1}` : `سُورَةُ ${surah}-${index + 1}`;
+    return `${surah}|${index + 1}|${text}`;
+  })).join('\n');
   const makeRows = (locale: string) => Object.fromEntries(PREVIEW_SURAH_NUMBERS.map(surah => [surah, { result: Array.from({ length: EXPECTED_AYAH_COUNTS[surah] }, (_, index) => ({ sura: String(surah), aya: String(index + 1), translation: `${locale}-${surah}-${index + 1}`, footnotes: `footnote-${locale}-${surah}-${index + 1}` })) }]));
   const metadata = (key: string) => [{ key, version: 'test-version', last_update: '2026-08-01', title: `${key} title`, description: `${key} transcript` }];
   const retrieval = (key: string) => ({ resourceKey: key, registryUrl: `https://quranenc.test/${key}`, version: 'test-version', lastUpdate: '2026-08-01', retrievedAt: '2026-08-04T00:00:00.000Z', files: {} });
   const tanzilMetadata = { schemaVersion: 1 as const, provider: 'Tanzil Project' as const, textVersion: '1.1' as const, textType: 'Uthmani' as const, sourceUrl: 'https://tanzil.net/download/', downloadUrl: TANZIL_DOWNLOAD_URL, licenseUrl: 'https://tanzil.net/docs/Text_License', retrievedAt: '2026-08-03T00:00:00.000Z', attributionText: TANZIL_ATTRIBUTION, modificationAllowed: false as const, downloadOptions: { ...TANZIL_DOWNLOAD_OPTIONS }, files: { 'quran-uthmani.txt': { url: TANZIL_DOWNLOAD_URL, sha256: '0'.repeat(64) }, 'LICENSE.txt': { url: TANZIL_LICENSE_RAW_URL, sha256: '1'.repeat(64) } } };
   const audio = { retrievedAt: '2026-08-04T00:00:00.000Z', streams: PREVIEW_SURAH_NUMBERS.map(surah => ({ provider: 'mp3quran' as const, reciterId: 118 as const, mushafId: 118 as const, riwayahId: 1 as const, surahId: surah, uri: `https://server13.mp3quran.net/husr/${surah}.mp3`, approvedHostnames: ['server13.mp3quran.net'], segments: Array.from({ length: EXPECTED_AYAH_COUNTS[surah] }, (_, index) => ({ ayah: index + 1, startMs: index * 1000, endMs: (index + 1) * 1000 })), deliveryMode: 'stream_only' as const, providerVersion: 'api-v3' as const, attributionText: 'Recitation streamed directly from MP3Quran.net.', permissionEvidenceUrl: 'https://www.mp3quran.net/en/page/about' })) };
-  return { tanzilText, tanzilLicense: 'Creative Commons Attribution 3.0 (CC BY 3.0)', tanzilMetadata, englishMetadata: metadata('english_rwwad'), englishSurahs: makeRows('en'), frenchMetadata: metadata('french_rashid'), frenchSurahs: makeRows('fr'), englishRetrieval: retrieval('english_rwwad'), frenchRetrieval: retrieval('french_rashid'), quranFoundationRetrieval: retrieval('quranfoundation'), wordMeanings: {}, tafsirs: {}, audio };
+  const wordMeanings = Object.fromEntries(PREVIEW_SURAH_NUMBERS.flatMap(surah => Array.from({ length: EXPECTED_AYAH_COUNTS[surah] }, (_, index) => {
+    // 2 words for each ayah to match the split text above (سُورَةُ and surah-ayah)
+    return [`${surah}:${index + 1}`, { verse: { words: [
+      { position: 1, char_type_name: 'word', transliteration: { text: 'sura' }, translation: { text: 'chapter' } },
+      { position: 2, char_type_name: 'word', transliteration: { text: 'num' }, translation: { text: 'number' } },
+      { position: 3, char_type_name: 'end' }
+    ]}}];
+  })));
+  return { tanzilText, tanzilLicense: 'Creative Commons Attribution 3.0 (CC BY 3.0)', tanzilMetadata, englishMetadata: metadata('english_rwwad'), englishSurahs: makeRows('en'), frenchMetadata: metadata('french_rashid'), frenchSurahs: makeRows('fr'), englishMokhtasarMetadata: metadata('english_mokhtasar'), englishMokhtasarSurahs: makeRows('en'), englishRetrieval: retrieval('english_rwwad'), frenchRetrieval: retrieval('french_rashid'), englishMokhtasarRetrieval: retrieval('english_mokhtasar'), quranFoundationRetrieval: retrieval('quranfoundation'), wordMeanings, audio };
 }
 
 test('requires explicit Tanzil terms acceptance', () => {
@@ -41,23 +54,26 @@ test('resolves real QuranEnc registry fields and rejects wrong keys', () => {
   expect(() => resolveQuranEncMetadata([], 'english_rwwad', 'en')).toThrow('does not contain resource');
 });
 
-test('generates the complete source-aware workflow for all ten Surahs', () => {
+test('generates source-aware workflows without silently mixing English resources into French lessons', () => {
   const result = buildPreviewPackages(inputs());
   for (const locale of ['en', 'fr'] as const) {
     const pkg = result.packages[locale];
     expect(pkg.surahs.map(surah => surah.surahNumber)).toEqual(PREVIEW_SURAH_NUMBERS);
-    expect(pkg.ayat).toHaveLength(48);
-    expect(pkg.levels).toHaveLength(68);
+    expect(pkg.ayat).toHaveLength(157);
+    expect(pkg.levels).toHaveLength(201); // 157 ayahs + 22 intros + 22 reviews
     expect(pkg.learningPaths[0].id).toBe('surah-al-fil-path-v1');
     expect(pkg.levels.map(level => level.id)).toContain('al-fil-level-final-review');
-    expect(pkg.learningPaths[0].surahCurricula).toHaveLength(10);
-    expect(pkg.recitationTracks).toHaveLength(48);
+    expect(pkg.learningPaths[0].surahCurricula).toHaveLength(22);
+    expect(pkg.recitationTracks).toHaveLength(157);
     expect(pkg.recitationTracks.every(track => track.deliveryMode === 'stream_only')).toBe(true);
-    expect(pkg.ayat.every(ayah => ayah.tafsirEntries.length === 0 && ayah.wordMeanings?.length === 0)).toBe(true);
+    expect(pkg.ayat.every(ayah => ayah.tafsirEntries.length === 1 && ayah.wordMeanings?.length === 2)).toBe(true);
     expect(pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).some(block => block.type === 'activity' && block.activity.kind === 'match_ayah_translation')).toBe(true);
     const ayahLevels = pkg.levels.filter(level => level.ayahRefs.length === 1 && !level.metadata?.isFinalReview);
-    expect(ayahLevels).toHaveLength(48);
-    expect(ayahLevels.every(level => ['read', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice'].every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
+    expect(ayahLevels).toHaveLength(157);
+    const expectedStepKinds = locale === 'en'
+      ? ['read', 'word_meaning', 'tafsir', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice']
+      : ['read', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice'];
+    expect(ayahLevels.every(level => expectedStepKinds.every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
     expect(ayahLevels.every(level => level.steps.some(step => step.blocks.some(block => block.type === 'audio')))).toBe(true);
     expect(ayahLevels.every(level => level.steps.filter(step => step.required === false && step.blocks.some(block => block.type === 'activity')).length === 2)).toBe(true);
     expect(pkg.levels.filter(level => level.metadata?.isFinalReview).every(level => level.steps.some(step => step.blocks.some(block => block.type === 'source_locked' && block.capability === 'verified_recap')))).toBe(true);
@@ -67,7 +83,7 @@ test('generates the complete source-aware workflow for all ten Surahs', () => {
   }
   expect(result.packages.en.revisionId).not.toBe(result.packages.fr.revisionId);
   expect(result.packages.en.ayat[0].translations[0].transcriptInfo).toBe('english_rwwad transcript');
-  expect(result.packages.fr.levels.find(level => level.id === 'al-fil-level-1-context-ayah-1')?.steps.find(step => step.id.endsWith('-understanding'))?.blocks[0]).toMatchObject({ type: 'activity', activity: { config: { correctOptionId: 'quranenc-french-rashid:105:1' } } });
+  expect(result.packages.fr.levels.find(level => level.id === 'al-fil-level-2-ayah-2')?.steps.find(step => step.id.endsWith('-understanding'))?.blocks.find(b => b.type === 'activity' && b.activity.kind === 'multiple_choice')).toMatchObject({ type: 'activity', activity: { config: { correctOptionId: 'quranenc-french-rashid:105:2' } } });
 });
 
 test('serializes identical source packages deterministically', () => {
@@ -75,4 +91,18 @@ test('serializes identical source packages deterministically', () => {
   const second = buildPreviewPackages(inputs());
   expect(getPackagePayloadJson(first.packages.en)).toBe(getPackagePayloadJson(second.packages.en));
   expect(getPackagePayloadJson(first.packages.fr)).toBe(getPackagePayloadJson(second.packages.fr));
+});
+
+test('strips basmala from ayah 1 and aligns word meanings by position', () => {
+  const result = buildPreviewPackages(inputs());
+  const en = result.packages.en;
+  // Check Surah 105 Ayah 1
+  const ayah1 = en.ayat.find(a => a.ref.surahNumber === 105 && a.ref.ayahNumber === 1)!;
+  expect(ayah1.arabicText.text).toBe('سُورَةُ 105-1'); // Basmala is stripped
+  // Check word meanings
+  expect(ayah1.wordMeanings).toHaveLength(2);
+  expect(ayah1.wordMeanings![0].meaning).toBe('chapter');
+  // Ensure that wordTokens count matches the stripped text
+  const tokens = en.wordTokens.filter(t => t.ayahRef.surahNumber === 105 && t.ayahRef.ayahNumber === 1);
+  expect(tokens).toHaveLength(2);
 });

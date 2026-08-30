@@ -23,7 +23,7 @@ describe.each(['en', 'fr'] as const)('downloaded QuranEnc %s source', locale => 
       const raw = read(path);
       const rows = parseQuranEncPayload(JSON.parse(raw), resource.key, surah);
       expect(rows).toHaveLength(EXPECTED_AYAH_COUNTS[surah]);
-      expect(rows.every(row => typeof row.footnotes === 'string')).toBe(true);
+      expect(rows.every(row => row.footnotes === undefined || typeof row.footnotes === 'string')).toBe(true);
       expect(evidence.files[path].sha256).toBe(sha256(raw));
     });
   });

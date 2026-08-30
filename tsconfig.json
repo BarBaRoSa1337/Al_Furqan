@@ -27,5 +27,9 @@
       }
     ]
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "exclude": [
+    "check.ts",
+    "scratch.ts"
+  ]
 }

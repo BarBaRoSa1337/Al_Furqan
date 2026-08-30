@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "98:3": {
+        "id": 6133
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "في تلك الصحف أخبار صادقة وأوامر عادلة، تهدي إلى الحق وإلى صراط مستقيم."
+  }
+}

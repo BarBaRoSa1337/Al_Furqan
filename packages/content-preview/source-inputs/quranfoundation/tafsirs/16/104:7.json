@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "104:7": {
+        "id": 6186
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إنها نار الله الموقدة التي من شدتها تنفُذ من الأجسام إلى القلوب."
+  }
+}

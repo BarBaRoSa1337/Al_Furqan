@@ -1,10 +1,22 @@
 export const PREVIEW_PACKAGE_ID = 'surah-al-fil-v1';
 export const PREVIEW_PACKAGE_VERSION = '5.1.0-preview';
-export const PREVIEW_REVISION_ID = 'surahs-105-114-local-preview-v2';
+export const PREVIEW_REVISION_ID = 'surahs-93-114-local-preview-v1';
 export const PREVIEW_GENERATOR_VERSION = '1.1.0';
-export const PREVIEW_SURAH_NUMBERS = [105, 106, 107, 108, 109, 110, 111, 112, 113, 114] as const;
+export const PREVIEW_SURAH_NUMBERS = [93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114] as const;
 
 export const EXPECTED_AYAH_COUNTS: Record<number, number> = {
+  93: 11,
+  94: 8,
+  95: 8,
+  96: 19,
+  97: 5,
+  98: 8,
+  99: 8,
+  100: 11,
+  101: 11,
+  102: 8,
+  103: 3,
+  104: 9,
   105: 5,
   106: 4,
   107: 7,

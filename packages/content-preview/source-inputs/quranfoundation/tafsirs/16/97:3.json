@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "97:3": {
+        "id": 6128
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ليلة القدر ليلة مباركة، العمل الصالح فيها خير من عمل ألف شهر ليس فيها ليلة قدر."
+  }
+}

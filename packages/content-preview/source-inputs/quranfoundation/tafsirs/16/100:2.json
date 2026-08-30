@@ -1,0 +1,18 @@
+{
+  "tafsir": {
+    "verses": {
+      "100:2": {
+        "id": 6148
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "فالخيل اللاتي تنقدح النار من صلابة حوافرها؛ من شدَّة عَدْوها."
+  }
+}

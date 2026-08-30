@@ -1,0 +1,21 @@
+{
+  "tafsir": {
+    "verses": {
+      "93:4": {
+        "id": 6083
+      },
+      "93:5": {
+        "id": 6084
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "ولَلدَّار الآخرة خير لك من دار الدنيا، ولسوف يعطيك ربك -أيها النبي- مِن أنواع الإنعام في الآخرة، فترضى بذلك."
+  }
+}

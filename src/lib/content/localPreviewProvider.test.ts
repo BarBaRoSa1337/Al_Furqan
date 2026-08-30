@@ -49,11 +49,11 @@ test('rejects a tampered local preview package', () => {
 });
 
 test('rejects incomplete local preview Surah coverage', () => {
-  expect(() => validateLocalPreviewArtifact(artifact())).toThrow('missing canonical content for Surah 106');
+  expect(() => validateLocalPreviewArtifact(artifact())).toThrow('missing canonical content for Surah 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 106, 107, 108, 109, 110, 111, 112, 113, 114');
 });
 
-test.each(['en', 'fr'] as const)('loads the generated ten-Surah %s runtime artifact', locale => {
+test.each(['en', 'fr', 'ar'] as const)('loads the generated twenty-two-Surah %s runtime artifact', locale => {
   const generated = bundledLocalPreviewArtifacts[locale];
   expect(generated).toBeDefined();
-  expect(validateLocalPreviewArtifact(generated!, { expectedLocale: locale }).surahs.filter(surah => !surah.navigationOnly)).toHaveLength(10);
+  expect(validateLocalPreviewArtifact(generated!, { expectedLocale: locale }).surahs.filter(surah => !surah.navigationOnly)).toHaveLength(22);
 });

@@ -11,5 +11,5 @@ test('retains one validated direct-stream Al-Husary record for every preview Sur
     expect(new URL(stream.uri).hostname).toBe('server13.mp3quran.net');
     expect(stream.segments).toHaveLength(EXPECTED_AYAH_COUNTS[stream.surahId]);
   });
-  expect(input.streams.reduce((total, stream) => total + stream.segments.length, 0)).toBe(48);
+  expect(input.streams.reduce((total, stream) => total + stream.segments.length, 0)).toBe(157);
 });

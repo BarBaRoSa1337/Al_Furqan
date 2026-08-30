@@ -1,0 +1,85 @@
+{
+  "surah": 97,
+  "tafsirs": {
+    "97:1": {
+      "verses": {
+        "97:1": {
+          "id": 6126
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "إنا أنزلنا القرآن في ليلة الشرف والفضل، وهي إحدى ليالي شهر رمضان."
+    },
+    "97:2": {
+      "verses": {
+        "97:2": {
+          "id": 6127
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "وما أدراك -أيها النبي- ما ليلة القدر والشرف؟"
+    },
+    "97:3": {
+      "verses": {
+        "97:3": {
+          "id": 6128
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "ليلة القدر ليلة مباركة، العمل الصالح فيها خير من عمل ألف شهر ليس فيها ليلة قدر."
+    },
+    "97:4": {
+      "verses": {
+        "97:4": {
+          "id": 6129
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "يكثر نزول الملائكة وجبريل عليه السلام فيها، بإذن ربهم من كل أمر قضاه في تلك السنة."
+    },
+    "97:5": {
+      "verses": {
+        "97:5": {
+          "id": 6130
+        }
+      },
+      "resource_id": 16,
+      "resource_name": "المیسر",
+      "language_id": 9,
+      "slug": "ar-tafsir-muyassar",
+      "translated_name": {
+        "name": "Tafsir Muyassar",
+        "language_name": "english"
+      },
+      "text": "هي أمن كلها، لا شرَّ فيها إلى مطلع الفجر."
+    }
+  }
+}

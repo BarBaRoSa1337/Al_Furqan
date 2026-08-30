@@ -1,0 +1,24 @@
+{
+  "tafsir": {
+    "verses": {
+      "99:1": {
+        "id": 6139
+      },
+      "99:2": {
+        "id": 6140
+      },
+      "99:3": {
+        "id": 6141
+      }
+    },
+    "resource_id": 16,
+    "resource_name": "المیسر",
+    "language_id": 9,
+    "slug": "ar-tafsir-muyassar",
+    "translated_name": {
+      "name": "Tafsir Muyassar",
+      "language_name": "english"
+    },
+    "text": "إذا رُجَّت الأرض رجًّا شديدًا، وأخرجت ما في بطنها من موتى وكنوز، وتساءل الإنسان فزعًا: ما الذي حدث لها؟"
+  }
+}

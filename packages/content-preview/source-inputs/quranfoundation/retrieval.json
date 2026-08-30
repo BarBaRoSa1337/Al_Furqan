@@ -2,9 +2,929 @@
   "resourceKey": "quranfoundation",
   "registryUrl": "https://api.quran.com",
   "version": "4.0",
-  "lastUpdate": "2026-08-19T21:24:40.376Z",
-  "retrievedAt": "2026-08-19T21:24:40.376Z",
+  "lastUpdate": "2026-08-25T21:59:38.735Z",
+  "retrievedAt": "2026-08-25T21:59:38.735Z",
   "files": {
+    "word-meanings/93:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d15a89e7a1a0dfb3bb861c7b5616b99111615d434155c6487f69c4b4456bc516"
+    },
+    "word-meanings/93:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1da97a2f1c8e4f74ba3cc6aa71cbfe81b6c610b92caec0f3d99aa79f4307a750"
+    },
+    "word-meanings/93:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "a5c0b671f19471e37f69a51fd13af0cf1d42641842c4a23629592d130c3540b5"
+    },
+    "word-meanings/93:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "448205212f754ce289bed8af07a982312338037a59f37722a066b6ca45df322b"
+    },
+    "word-meanings/93:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8a6e3ac0972ec8438c5fac9a81ef64c9e728bdf268251bdd1fd3f9a22c5c5d47"
+    },
+    "word-meanings/93:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "a5521f0cc613122b6c47522b05c3f2ffe300413fd4dc34702dfb0f6920610137"
+    },
+    "word-meanings/93:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5d9170daed0a7e592f517dcd05a95e350570b4f3f1e10a280253f2ee1c46d015"
+    },
+    "word-meanings/93:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "3a9c4682e2cf7ff9a9f546e0f726517a56427bcfff429e6f85638e0ab357d54c"
+    },
+    "word-meanings/93:9.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:9?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "43bafdc680f77b9f7ae888cd5676b8769135e07e5758fac71de482cb43eee4c1"
+    },
+    "word-meanings/93:10.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:10?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "f21ed487f5f5a1be749e4bbcb10e875fc41cbb36974d6128cdb9aacc49067232"
+    },
+    "word-meanings/93:11.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/93:11?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "45bbfd9d7b03c20c8c1c15d9ceafd5bb89766b0c50e8b069dab07af72b837cd4"
+    },
+    "tafsirs/16/93:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:1",
+      "sha256": "ccd150dc9b214999df57b00f50e6225639180a303999eecb6d443f66506a857b"
+    },
+    "tafsirs/16/93:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:2",
+      "sha256": "ccd150dc9b214999df57b00f50e6225639180a303999eecb6d443f66506a857b"
+    },
+    "tafsirs/16/93:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:3",
+      "sha256": "ccd150dc9b214999df57b00f50e6225639180a303999eecb6d443f66506a857b"
+    },
+    "tafsirs/16/93:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:4",
+      "sha256": "db1f86efa0850fe112d2ba161574ef3fd837906b7874881bb24ffd58f2f54d99"
+    },
+    "tafsirs/16/93:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:5",
+      "sha256": "db1f86efa0850fe112d2ba161574ef3fd837906b7874881bb24ffd58f2f54d99"
+    },
+    "tafsirs/16/93:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:6",
+      "sha256": "2af6c1552e48ce5ce663d6dff74bc659af065cf8de702b9d7be1236ac430b268"
+    },
+    "tafsirs/16/93:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:7",
+      "sha256": "957b450969ad5ff98b1749209492521988a8ba331b667e54cf467ff2d6586706"
+    },
+    "tafsirs/16/93:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:8",
+      "sha256": "957b450969ad5ff98b1749209492521988a8ba331b667e54cf467ff2d6586706"
+    },
+    "tafsirs/16/93:9.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:9",
+      "sha256": "33ac1d48861ba0c61857e5bb8896d1404e0557bbf0d000e9de91b6f14ffaebd9"
+    },
+    "tafsirs/16/93:10.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:10",
+      "sha256": "33ac1d48861ba0c61857e5bb8896d1404e0557bbf0d000e9de91b6f14ffaebd9"
+    },
+    "tafsirs/16/93:11.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/93:11",
+      "sha256": "33ac1d48861ba0c61857e5bb8896d1404e0557bbf0d000e9de91b6f14ffaebd9"
+    },
+    "tafsirs/16/93.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/93",
+      "sha256": "52a51ce7b497f74907db43b6fe3f34ea7ad64ed4938a7eb5a405fa9c611420a1"
+    },
+    "word-meanings/94:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4958dca2230ed98e404eadbc77dd15e2dc3a65bab84d5ca6aef5b6e49d47dd13"
+    },
+    "word-meanings/94:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "3d8df10933fd36815c086673ab671f460f0b63babd80556e730f2cc5f45ace23"
+    },
+    "word-meanings/94:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e4daa922beeb46ffd764b7e040bcd4a1b3f4b1e368e6826249c5c9ecf58984f5"
+    },
+    "word-meanings/94:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "05304ad1bdd239d69242fd378c1414485ad29470fe814c6ea79222ea4a2089e8"
+    },
+    "word-meanings/94:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ca1f3050b34e3d1a70278e8158e9121e897691ac00ae6dc7b9459e2641ea988a"
+    },
+    "word-meanings/94:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e5579dd361b4a56b8764648ce98f34df65fe3055dc45244de724d805ea3ecde0"
+    },
+    "word-meanings/94:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "84d9762bb9f542f67ed19d4eb36d5e22a2d463d80c251d0b056dd94a83d9e643"
+    },
+    "word-meanings/94:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/94:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "738402d64bb7e93c21a8f986dd45721c7880df5a247975fe93089d8476090975"
+    },
+    "tafsirs/16/94:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:1",
+      "sha256": "c7e8d3e0641f58ea41513bc0975a04648fbd04077b0b65a5486781932204d143"
+    },
+    "tafsirs/16/94:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:2",
+      "sha256": "12aa3aa8c1760d4b5cdd67f622a78cecf960981627ee3d218f666bc8f3bfc620"
+    },
+    "tafsirs/16/94:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:3",
+      "sha256": "13efaa4c4692a1862c6fa16bc23cd432526a4069e8e432bdba03342d495347e6"
+    },
+    "tafsirs/16/94:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:4",
+      "sha256": "1a371239e276542e5334bdf37d82e77f0518c04d508404be7a8a17ba4cc3b0c3"
+    },
+    "tafsirs/16/94:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:5",
+      "sha256": "7cb031201e3f1c47ea7b9518260d139c3a0d0a32d4f7352be813a41a55958c35"
+    },
+    "tafsirs/16/94:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:6",
+      "sha256": "8c8707f1390133beeb82ad9134d088e71c944d10e8e8f3595a645fe5da0aeedf"
+    },
+    "tafsirs/16/94:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:7",
+      "sha256": "ee8e00ab25c554e3ec268c835cc3e3b22b31f96c8285608106a5bc8ee69245e6"
+    },
+    "tafsirs/16/94:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/94:8",
+      "sha256": "ee8e00ab25c554e3ec268c835cc3e3b22b31f96c8285608106a5bc8ee69245e6"
+    },
+    "tafsirs/16/94.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/94",
+      "sha256": "b08bb01776194b40d0fd45d6e872e0067f2dab39e90e00f622348b0c26a8a18f"
+    },
+    "word-meanings/95:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ac4290eec0c343ccf635a47f63be081614a59aa559749d956d292df683e9af0e"
+    },
+    "word-meanings/95:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5eb0dbeac9cf4a35a6c0078a734961bdac70b4f9810fdfebcd4ba58f9efd95c2"
+    },
+    "word-meanings/95:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "da39353d7782a86f533a0a337fb20ef920ec6cee77dc4f9c1b3ba49c23504787"
+    },
+    "word-meanings/95:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "51dce1c26dda78a58ecc54eaf89cd3cdc239cb6c40359a5cd75c694d936b16ec"
+    },
+    "word-meanings/95:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4563b7308d4849c5c4467707b3507a1e2fc53337d1e21bc8181b458463206138"
+    },
+    "word-meanings/95:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "f90c9b5c70073052eb65b57026c73c1eaf49870bcca7e41ab1ce266654b966a0"
+    },
+    "word-meanings/95:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "0650b784fc478e5fe6fee6c0c71f96401b033cb78016579743ed9c5adeacbdff"
+    },
+    "word-meanings/95:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/95:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "848707d55c50733b309bcad58906f194f9ab23a70452a0fba24e8246524e932c"
+    },
+    "tafsirs/16/95:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:1",
+      "sha256": "7df74508bd7d0371c591780df611a80969fc748a079a1468f4400f68cf6a6551"
+    },
+    "tafsirs/16/95:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:2",
+      "sha256": "e95ce660b21e2803232f831d3f2a5cf30e83b085e9ebf2999be6273b52d58318"
+    },
+    "tafsirs/16/95:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:3",
+      "sha256": "e95ce660b21e2803232f831d3f2a5cf30e83b085e9ebf2999be6273b52d58318"
+    },
+    "tafsirs/16/95:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:4",
+      "sha256": "e95ce660b21e2803232f831d3f2a5cf30e83b085e9ebf2999be6273b52d58318"
+    },
+    "tafsirs/16/95:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:5",
+      "sha256": "e95ce660b21e2803232f831d3f2a5cf30e83b085e9ebf2999be6273b52d58318"
+    },
+    "tafsirs/16/95:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:6",
+      "sha256": "e95ce660b21e2803232f831d3f2a5cf30e83b085e9ebf2999be6273b52d58318"
+    },
+    "tafsirs/16/95:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:7",
+      "sha256": "f138fba682f68424a3d85d35c457222b6f44915dcf21d5586b65616fe6800153"
+    },
+    "tafsirs/16/95:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/95:8",
+      "sha256": "863bd63396ce34961be305ef830efa838ac63dbed69c851c19e188d37281f693"
+    },
+    "tafsirs/16/95.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/95",
+      "sha256": "1c99484ef00b94b118393224b1f6be57742a2841423c844632a53a453dbd4d24"
+    },
+    "word-meanings/96:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "943bd1a6d0d0de54063986567e361385f37dcfc9581fd20b5e8634d3ed174776"
+    },
+    "word-meanings/96:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "c2275ccd124039741a6d8d94834de086b094b565a36ec2a3ad3952db8e5e2ffb"
+    },
+    "word-meanings/96:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "40be08a9dcf4343ecfa59b07238d9630c222ae01ecfa594dcd1588999b702246"
+    },
+    "word-meanings/96:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5882a44e8e20f4a2cc07c3e982cdea591ec613e1e20cf37401c93f9c735a3779"
+    },
+    "word-meanings/96:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "0fcf60fed81608b8ee0e9b2c21d6c35a73c670d15adc38e492f73895adcc599c"
+    },
+    "word-meanings/96:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "de2413ad087f993ce842a3ea722edec0900277c400d02d29939c4bbb2718e881"
+    },
+    "word-meanings/96:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5b2a7a87833f79dd09fdaf510c35f42f33322aa66d702d9e9dc485dc23e70703"
+    },
+    "word-meanings/96:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "33db12eebab22b30bf6ec3d0bb21f940eb2c267bcda3af9c6bec07bce1a8b77e"
+    },
+    "word-meanings/96:9.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:9?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7a4160e46e84b2e2ec6f66c898e0018db79e5f6509986121470dbf3b18fa0a95"
+    },
+    "word-meanings/96:10.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:10?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "f1d521f231110ea60a171fa5e5d049c8a9fab3ad7a55da4e73d3617454b30ec5"
+    },
+    "word-meanings/96:11.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:11?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "2028d37cadd404754a55b1a4395c539e160fe0a124d62ea495b08f9aa3d2c440"
+    },
+    "word-meanings/96:12.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:12?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ed0f683c5527feba0fd7dc1a20c6f0eb93c5da06270bd5feb7073c5dcaf0c428"
+    },
+    "word-meanings/96:13.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:13?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "db08a1fc3b41c00458acd08c51cc2d42da1bd72face493c6525db51f2d14e0b5"
+    },
+    "word-meanings/96:14.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:14?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "b354574c4d2f3c44835089cb9e1154d25a0d1bc6632e356edd9a1325822e4562"
+    },
+    "word-meanings/96:15.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:15?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "13142d882f86eeee75480e019150833d6ac2ef96b0e87626f2d76dd23df4dfe0"
+    },
+    "word-meanings/96:16.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:16?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "90ce8a5f7c17e1a9d78a491adbaeb6d4c11081ae3dd7678d14c030ee802a6cc7"
+    },
+    "word-meanings/96:17.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:17?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "900688f2f3560ef850c32c9e9f8b99c9fbe2b021272b367f1ab96642b767a657"
+    },
+    "word-meanings/96:18.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:18?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "31f49597c3be10998f4ddd1ce1e26db38d4819d831dc7e96b12b8d4103c8f347"
+    },
+    "word-meanings/96:19.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/96:19?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "22bdca87367c7fa0caeac4007e7ac9239d613d67186bcb03c585e8295ca634c4"
+    },
+    "tafsirs/16/96:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:1",
+      "sha256": "e468bc10ba008d981ce258a770e1d2f9bcf03a05ac1dd15c9920ae76e0e7f99e"
+    },
+    "tafsirs/16/96:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:2",
+      "sha256": "e468bc10ba008d981ce258a770e1d2f9bcf03a05ac1dd15c9920ae76e0e7f99e"
+    },
+    "tafsirs/16/96:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:3",
+      "sha256": "e468bc10ba008d981ce258a770e1d2f9bcf03a05ac1dd15c9920ae76e0e7f99e"
+    },
+    "tafsirs/16/96:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:4",
+      "sha256": "e468bc10ba008d981ce258a770e1d2f9bcf03a05ac1dd15c9920ae76e0e7f99e"
+    },
+    "tafsirs/16/96:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:5",
+      "sha256": "e468bc10ba008d981ce258a770e1d2f9bcf03a05ac1dd15c9920ae76e0e7f99e"
+    },
+    "tafsirs/16/96:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:6",
+      "sha256": "07b841e2898c60c9730d8ba9318961defe7befe319383d77927455b82be0933d"
+    },
+    "tafsirs/16/96:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:7",
+      "sha256": "b91f9c9a2118118aa80ab680cd49b521ca27ab95ddec59f0524f1756b6738987"
+    },
+    "tafsirs/16/96:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:8",
+      "sha256": "b91f9c9a2118118aa80ab680cd49b521ca27ab95ddec59f0524f1756b6738987"
+    },
+    "tafsirs/16/96:9.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:9",
+      "sha256": "29179ba13f7b1f8085e2c9ebc7a27615924abb2b0a9147133c76e888466cd917"
+    },
+    "tafsirs/16/96:10.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:10",
+      "sha256": "a833b72e54ebf6ad2e5cdd4fc8cf0f6987ca2b64fed8c55534ab43253283b17d"
+    },
+    "tafsirs/16/96:11.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:11",
+      "sha256": "a833b72e54ebf6ad2e5cdd4fc8cf0f6987ca2b64fed8c55534ab43253283b17d"
+    },
+    "tafsirs/16/96:12.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:12",
+      "sha256": "a833b72e54ebf6ad2e5cdd4fc8cf0f6987ca2b64fed8c55534ab43253283b17d"
+    },
+    "tafsirs/16/96:13.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:13",
+      "sha256": "f420f378d9922f60bcf9b38caaa1540a2ac63dd4b00edb5dfd924b76288673a6"
+    },
+    "tafsirs/16/96:14.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:14",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96:15.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:15",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96:16.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:16",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96:17.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:17",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96:18.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:18",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96:19.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/96:19",
+      "sha256": "f308f3a4fa0ac9f9bfc9ef113a7052b202659eb22998677df95c2bc0b30deeab"
+    },
+    "tafsirs/16/96.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/96",
+      "sha256": "7f9d796c48f9f78fb8ad21c6896bda3bd2697d542db74e74f020e9b0f56b5c00"
+    },
+    "word-meanings/97:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/97:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d83d20033bf17eac9621627a2b834f2db49a56b9307cdcf8628f2888ba8b699a"
+    },
+    "word-meanings/97:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/97:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ea4f512ae3ffadcff9bd573f708580c0b95983cc7a80acbc831786a249c11780"
+    },
+    "word-meanings/97:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/97:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d8e28674c381dea9c5b0803ddb6bdfa3963a19bd58f729c1dcce08eb08abc157"
+    },
+    "word-meanings/97:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/97:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e3549661031285d63b6463890c8602fa6970450dbe0efdbed69c4d82452a76a0"
+    },
+    "word-meanings/97:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/97:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "898749280e2ce2cdc588d038ebb648d1c900500b0cf4c06fbfb7e2a87a005080"
+    },
+    "tafsirs/16/97:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/97:1",
+      "sha256": "5e94016496fd01debec6cfa4d907c612222ce41c334fa8a04519fcffeef39c1c"
+    },
+    "tafsirs/16/97:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/97:2",
+      "sha256": "9d1730d1255ff78b66c922428461910effe1be9c459cd7a9777470a55a3fdf42"
+    },
+    "tafsirs/16/97:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/97:3",
+      "sha256": "c63e352dfb3d8db38a3173e1913548ceb3ee0c465d233a96390cac6d3f41a55d"
+    },
+    "tafsirs/16/97:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/97:4",
+      "sha256": "1322331323e13d92dbf003caf2ef1e4ae34cd59567d9c02742f04dc4616832a5"
+    },
+    "tafsirs/16/97:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/97:5",
+      "sha256": "da05e0af8b524c700a2b948fd10b3464013261d2d62894dac7b4f3c82f6eb552"
+    },
+    "tafsirs/16/97.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/97",
+      "sha256": "3d3cb6256205949a070f2393b448cab210a7bfe93c50e8dacfe2ae57456141df"
+    },
+    "word-meanings/98:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "799059d1750aa39ba965def390642c02f424e812bd9b3b6824c0b9f3dd4cc820"
+    },
+    "word-meanings/98:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1124489ecd03ca7ad57650f428806443c5948c44a49a775c9207849a79bac3c0"
+    },
+    "word-meanings/98:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "153b5c1650caa93729fcc8854cc21f8684aa9631f42a4c4dc269ce4ba65b528f"
+    },
+    "word-meanings/98:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "fa17f21d88a12a9e64cb62d4a5c7b6e6ea667ed899f7d423c2964c9f86cd5a36"
+    },
+    "word-meanings/98:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "0d8425e98b8c01bb50387028680f06923eab881b6fdee15fd89ccc1d72be01fe"
+    },
+    "word-meanings/98:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8d2237318142bca4c5da4a57367d3328da2d088ee19018945c54222bf5ce520b"
+    },
+    "word-meanings/98:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7cdb3edcf20f46d62a672e770ae02eafaa8bd3d1ad9a63722b3c300b27bb68ee"
+    },
+    "word-meanings/98:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/98:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e6358e12678a501db7a816cd1ccc7975c9955b140a91345b41ed58cbcb6e8ac4"
+    },
+    "tafsirs/16/98:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:1",
+      "sha256": "ad46bc6c9920e62fea43aba54a998f7d39390de1c1a36fb851a497c4b080a4ef"
+    },
+    "tafsirs/16/98:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:2",
+      "sha256": "94eaa89a8570b2a2e05bb88b4e036a41ff012d160e83a2dfbd57f40f6cc87264"
+    },
+    "tafsirs/16/98:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:3",
+      "sha256": "06001c965391f0b3e341ae5f2712721027464e359a2fb7e309855d1f37aaf075"
+    },
+    "tafsirs/16/98:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:4",
+      "sha256": "023ef996b4d2d82b873b5a7e3884db07f5abda868a51c23d4b28651309c5b9bc"
+    },
+    "tafsirs/16/98:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:5",
+      "sha256": "92af1dd29c9838fd4dcc93e26aa99374c2fd5e7a9957ebef7662668df1c74dc7"
+    },
+    "tafsirs/16/98:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:6",
+      "sha256": "f063d0b8d78599857ca6347dbd1e87ddbdd08cc9a558c49b1ed558c2e312a1a8"
+    },
+    "tafsirs/16/98:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:7",
+      "sha256": "6df3909398470dfc5853786871166713818b1ca3fcbb70766273e2081601e203"
+    },
+    "tafsirs/16/98:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/98:8",
+      "sha256": "66c533bdd2273c185f53af8db83a72edd5c5cee29be35f8e7036371c23c35ed6"
+    },
+    "tafsirs/16/98.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/98",
+      "sha256": "64fd697424bb04f5dfed8c085659b1ec82e74dbbb3c8278a833b5625fcd0ed2c"
+    },
+    "word-meanings/99:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "b691823e52d44483262d8eea4b0e1f9ff9008022a689bb46f435b05e4877d573"
+    },
+    "word-meanings/99:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "fdd8e9ed253bde087865bf4165b95b5910f34f78f798cd11efed0bfa3be95b35"
+    },
+    "word-meanings/99:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "13de9f342b70beac9a190bd58d10b2fb7a7ff31130bf473cb58a0b023ba4b4a5"
+    },
+    "word-meanings/99:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "484223ea22b1599c2bc823bea03e95e79421df0346455d4ca649f7c8752801e9"
+    },
+    "word-meanings/99:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7a54831f31a0d54dbbf2122d82901ead4b5256a0de6833386c07748fa0533080"
+    },
+    "word-meanings/99:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1ac69884cf824fb6cb6ca733c734e05444ef3d68d21ffbe047ced57a378bed8b"
+    },
+    "word-meanings/99:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "c2b144660b5f617f172d6310ab456ae216a70be6683bd5a7100ba2a91d5d74d1"
+    },
+    "word-meanings/99:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/99:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "84f477d1d89ec5dc720f775c1f107d194a28c64684d3b69ce9144ce34c3114fe"
+    },
+    "tafsirs/16/99:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:1",
+      "sha256": "cfd48cf460ae894527d7c4a3be7a6ec74e6546b1f1e02aa8a05029205d9efb43"
+    },
+    "tafsirs/16/99:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:2",
+      "sha256": "cfd48cf460ae894527d7c4a3be7a6ec74e6546b1f1e02aa8a05029205d9efb43"
+    },
+    "tafsirs/16/99:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:3",
+      "sha256": "cfd48cf460ae894527d7c4a3be7a6ec74e6546b1f1e02aa8a05029205d9efb43"
+    },
+    "tafsirs/16/99:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:4",
+      "sha256": "a2bc273d8586a6077ef3d1c67855501adcd0fdcbf9952f49439745a386733eba"
+    },
+    "tafsirs/16/99:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:5",
+      "sha256": "a2bc273d8586a6077ef3d1c67855501adcd0fdcbf9952f49439745a386733eba"
+    },
+    "tafsirs/16/99:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:6",
+      "sha256": "17263de60b4fdc0c4445bf16af579c32bb0937e4530af07b99448d8ab296194f"
+    },
+    "tafsirs/16/99:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:7",
+      "sha256": "7934c64363b1109ed3246b9bf97cce1c19b6a3c790bf3d697d1c9cbe930f6ad2"
+    },
+    "tafsirs/16/99:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/99:8",
+      "sha256": "7934c64363b1109ed3246b9bf97cce1c19b6a3c790bf3d697d1c9cbe930f6ad2"
+    },
+    "tafsirs/16/99.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/99",
+      "sha256": "ff81aaa8e1a9822183a1288f2b04ed0b3b6edb105ecbbc030ff2efccfbd8f0f2"
+    },
+    "word-meanings/100:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5c06b2ec1c1a63cc9a6abcda0db44e8cc46fd5d4f8ae2babe021c4bb70dd6cd2"
+    },
+    "word-meanings/100:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1b8812afe00e331dc1196ba9dd0d2dbc42de02033f5f1a8da9ed943288bd9808"
+    },
+    "word-meanings/100:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "e224a6ae52cca06ace4ee5b0739130abe2cc0bc979006969d6d84de9e9ef99d7"
+    },
+    "word-meanings/100:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "97d669c2007c185248b494c0672fb7a9d5e8056102c6ef58edd0e917b4846909"
+    },
+    "word-meanings/100:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "300362deba298862338e13bf890fe43ec2c385a898b772ae8535624951cbab5d"
+    },
+    "word-meanings/100:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "9d51e177d85c30f17a835665798d08894388b43dbb49db2f01f099c8aa89009c"
+    },
+    "word-meanings/100:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "74b6348732325c3578ae65b2c078fb0fdd417d472473cd393b028181dc6cb443"
+    },
+    "word-meanings/100:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "bc39f3a8afb01ee1015ae7485ad65f14853daab30a9a40a11d4a4f13cdf55d8f"
+    },
+    "word-meanings/100:9.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:9?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "661976eb7c674aa93d621e74d31061d966c076a46638aceb9d29db61eb10e7d7"
+    },
+    "word-meanings/100:10.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:10?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "8d4983de9c147a694e966266309b02fc7e13780dc688dc8baa56ce4e769b6a1c"
+    },
+    "word-meanings/100:11.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/100:11?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "a23a74f5ca8d5c1dff9c7bd11cc3cf0c10fdf072ddaa1c012784ee7c9f9a1568"
+    },
+    "tafsirs/16/100:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:1",
+      "sha256": "b5a41578f8d1a38118f8881025df32e45ded4f77d0e7d3d43cfabecf6ae42329"
+    },
+    "tafsirs/16/100:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:2",
+      "sha256": "192c0bb1f1f66e73d080d410016a88b049b45c6181728bf95cf123ac96ba72bd"
+    },
+    "tafsirs/16/100:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:3",
+      "sha256": "a7056a36cb778b4d37caa3059fc827a35bf58b6ae698fd78f4b53276db64ba8e"
+    },
+    "tafsirs/16/100:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:4",
+      "sha256": "b7794bed5f1af016774f5381bdaa144706caafebf38a8022b5cf070de8c76cb9"
+    },
+    "tafsirs/16/100:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:5",
+      "sha256": "b9c9c9b14d0b5cbe886fe0ca1fe29705f33c89d4bf3421d8ec3c0a913b701917"
+    },
+    "tafsirs/16/100:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:6",
+      "sha256": "9c7429df5ce8900a0ac00c65c269ba51411afa386dd4ff6100c6402c765a87fa"
+    },
+    "tafsirs/16/100:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:7",
+      "sha256": "9c7429df5ce8900a0ac00c65c269ba51411afa386dd4ff6100c6402c765a87fa"
+    },
+    "tafsirs/16/100:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:8",
+      "sha256": "9c7429df5ce8900a0ac00c65c269ba51411afa386dd4ff6100c6402c765a87fa"
+    },
+    "tafsirs/16/100:9.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:9",
+      "sha256": "3801d01bd1d6be19b8525df1a55fed89d7207684aaabb5940ff4d2f425fe9b43"
+    },
+    "tafsirs/16/100:10.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:10",
+      "sha256": "558a13557c429e2f23e21b87243a824b73914775d3fe7d7f215b5846cec9fb44"
+    },
+    "tafsirs/16/100:11.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/100:11",
+      "sha256": "36508fa6e243eb45bae94209807c5415bb8230d84c543308c2fa372251fcb267"
+    },
+    "tafsirs/16/100.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/100",
+      "sha256": "d6ed68b9bfdc57470312de6e24083f8c0e1e12ba4dcae848b51b714041e7f60c"
+    },
+    "word-meanings/101:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4fa5dd4ddf21d1538eab7942da47e403ed16abc9779f9f765da49f76c27a9ac3"
+    },
+    "word-meanings/101:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "6c36a7ed6306a6bc476a0c7137a9c04ed6e92cbb6e7cf44b973a0394389ea4a6"
+    },
+    "word-meanings/101:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "343f729e90cc173526701c2b9d77fb7c23d63574fe80e6c291bf6439ddab3dc4"
+    },
+    "word-meanings/101:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "c5fb70507cc7a2e49b896d7d7d1a110bbac607ba393db386f9584223be3ae926"
+    },
+    "word-meanings/101:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4d11066cfd3bede8e2d1d9ab4b338c43ea7f4286d2add60d80adc5e68618e63b"
+    },
+    "word-meanings/101:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "042a975ff167b6e60173a981eee0340ab5d877fcf61f892063ade7177d303a01"
+    },
+    "word-meanings/101:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "7f64111949ff0d71c660911422c1401c1430301c44539b5b789d4fb77a73e670"
+    },
+    "word-meanings/101:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ef7bab53320a33c522ef6f19f59d84438b396e7b5bfd78ff4ea0f6a26574bca1"
+    },
+    "word-meanings/101:9.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:9?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "21800c4620c41bb36b0fa5d3b920905163bb04adb5f6bd9eb90d90e07478a024"
+    },
+    "word-meanings/101:10.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:10?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "aec5e96665dcb7d17d3fd5f2d431a96499f8e15a8f7af0a98f6d09cd46b0c6c9"
+    },
+    "word-meanings/101:11.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/101:11?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "72fd86d50220f59c2967543bc9d86264714a8265bc350a1998bb4211b3190f90"
+    },
+    "tafsirs/16/101:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:1",
+      "sha256": "37b45fe0a7a42306d21094155b72057d5821435b4c610dcea3519be088a7e6ce"
+    },
+    "tafsirs/16/101:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:2",
+      "sha256": "8a9f0640b82ae33608d24b473ee3bbc41785f3b75bb09976342c42233dc6cfab"
+    },
+    "tafsirs/16/101:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:3",
+      "sha256": "33054e30a583d20274bcf6e00fba7faef033cee620ad75ac699904d70239cf2a"
+    },
+    "tafsirs/16/101:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:4",
+      "sha256": "4c67f13cd58d86ee9a319ddf25e36d92cd330283c65c8600f216c0fb89988e0b"
+    },
+    "tafsirs/16/101:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:5",
+      "sha256": "9757e072e6fe1225498d75c502aa4558db24a84fd46951476e75471bae3003e8"
+    },
+    "tafsirs/16/101:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:6",
+      "sha256": "d2ce02c96ca7975f499f0775b7b2f7e81460d888ea0ced42791f061c70c6d74a"
+    },
+    "tafsirs/16/101:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:7",
+      "sha256": "d2ce02c96ca7975f499f0775b7b2f7e81460d888ea0ced42791f061c70c6d74a"
+    },
+    "tafsirs/16/101:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:8",
+      "sha256": "6e202b631d7d346a5901e0544fe6270dc3cad2c81c6a5d76d62ec30dc12bd363"
+    },
+    "tafsirs/16/101:9.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:9",
+      "sha256": "6e202b631d7d346a5901e0544fe6270dc3cad2c81c6a5d76d62ec30dc12bd363"
+    },
+    "tafsirs/16/101:10.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:10",
+      "sha256": "86b39da790a49a900092cb9ddd44e9692a686d0756526157a726980c5240f6de"
+    },
+    "tafsirs/16/101:11.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/101:11",
+      "sha256": "cf2197d81e360c2afada9cc236585649165f68d467d9ca45987190edb68eeab4"
+    },
+    "tafsirs/16/101.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/101",
+      "sha256": "2cff0278c55df6fc3d8c117ac0a67f28d56080e93127164ba65756e27487f00f"
+    },
+    "word-meanings/102:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "871963906b9f3e5ea82cf09bbbdc4107f983cec02ca89cca6ddc6b49bec16711"
+    },
+    "word-meanings/102:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "2ceadc3c59b429ea5ed7305b96f2945996c8ea59e9d8da3dfa90659cb191d295"
+    },
+    "word-meanings/102:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1cf0e1ccb2f525113397d2f0a269df912751d37965fd414cd12a975839d2a0cf"
+    },
+    "word-meanings/102:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "fa44127a67f7da0aac2801646acaf7e53c45ddb8ca1e37197e15e9680f100b54"
+    },
+    "word-meanings/102:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "df4da89f0f43358bb9632f56ddde4b5cffcdc103bcb60c960ebc6b6a54c4769d"
+    },
+    "word-meanings/102:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "73bf5df9508211a8f5c4833bca267c8c4ffd146a2831f41bcff01c273938b580"
+    },
+    "word-meanings/102:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "57ea5df170116cee3cd7eaf2d2dd19058d335b63640e2c9ab0cdd75a6dbe0fc3"
+    },
+    "word-meanings/102:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/102:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "28227dfe389cae1c78e9d4bd210d6d7f6aec0db98d29ae28bf03578a6c9aaad6"
+    },
+    "tafsirs/16/102:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:1",
+      "sha256": "7401dbe4aca90700ff31ed01c7d98e9d3798c8b34434ff2760e70bbe9f1520d9"
+    },
+    "tafsirs/16/102:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:2",
+      "sha256": "1dcba917641b4a33b5583f8c16e7d19651360f6b0262dd7803316bef975184aa"
+    },
+    "tafsirs/16/102:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:3",
+      "sha256": "2fc5523e6ccc763a71ad7d5f1234d56080fa7d7f5ac97e23a5af74531e773882"
+    },
+    "tafsirs/16/102:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:4",
+      "sha256": "f00708aaa00ade596d0539ffc09f8025d611b4fee294223848c46c0359ec0e15"
+    },
+    "tafsirs/16/102:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:5",
+      "sha256": "3bd649f2e71417ebbebb2bc0789c2d4d2834bcb660989f521e91f36f5d73ebee"
+    },
+    "tafsirs/16/102:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:6",
+      "sha256": "3bd649f2e71417ebbebb2bc0789c2d4d2834bcb660989f521e91f36f5d73ebee"
+    },
+    "tafsirs/16/102:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:7",
+      "sha256": "3bd649f2e71417ebbebb2bc0789c2d4d2834bcb660989f521e91f36f5d73ebee"
+    },
+    "tafsirs/16/102:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/102:8",
+      "sha256": "3bd649f2e71417ebbebb2bc0789c2d4d2834bcb660989f521e91f36f5d73ebee"
+    },
+    "tafsirs/16/102.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/102",
+      "sha256": "e03487f3965c9b0c206b140aab091681eeda9690773e2d50a5e4b38f30bc0ecc"
+    },
+    "word-meanings/103:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/103:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "283c7a5a70cc58f7ff9f39804950f535f219dfaf7487b4a18aecb4fed74bd5cc"
+    },
+    "word-meanings/103:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/103:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "32051b4fb9641d940432088557f63de308ff1dd7a12e283f560dcac16216525f"
+    },
+    "word-meanings/103:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/103:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "14a2251b313ac9882b0b393ee014b482c25908d92d350ac9a0b7cb4babe05006"
+    },
+    "tafsirs/16/103:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/103:1",
+      "sha256": "e7876beb6451341332e2d50f4baadbf671fe208262d85edc8862baa0af0de453"
+    },
+    "tafsirs/16/103:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/103:2",
+      "sha256": "5d6b88adba54546b9323e23e79ab5f8ef1025109c0317102949110f3ca409397"
+    },
+    "tafsirs/16/103:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/103:3",
+      "sha256": "6ef90a12d42532ed9cd5f9601aea26e1e4df7a72dda67277177a9e5ccd6e451c"
+    },
+    "tafsirs/16/103.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/103",
+      "sha256": "bd2c00c02af262497fee3e56148d527bf7f256f27b5ee5d006efe89eb9256c60"
+    },
+    "word-meanings/104:1.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "80cc4d57742415cc474e209c55ef99210c8630729c981e427015f3b48cd9007c"
+    },
+    "word-meanings/104:2.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:2?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "d30a3aea5dba424bfd155a32ad66d80567d14cbf0aaff08bfdaabecdd8cca321"
+    },
+    "word-meanings/104:3.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:3?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "1626aaf60585ceb0b110970f7a9c1caee9147f9c4ba0735b56ee6a9ab61e5a11"
+    },
+    "word-meanings/104:4.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:4?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "c9f7c14ab9a9de0bc41c567572d49593310fa1c2cd3dec4ae7a34baeedfeaaa1"
+    },
+    "word-meanings/104:5.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:5?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "ac11cb18dce4414f6fe74ec2800def7f3c3acd16ac3737024d6b81cc4061c79e"
+    },
+    "word-meanings/104:6.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:6?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "722a6e1fb11c2aa8c754ac5556789cfa6af676c84c62a9d0f78d0678daf5515a"
+    },
+    "word-meanings/104:7.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:7?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "4dc2a9271f9d5bf0d211b06a35b0e3439a0a30c0b5fdc1083d0e4f03c08e36f4"
+    },
+    "word-meanings/104:8.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:8?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "848fb6dc3c30b37b819598ad15333b22dcaa98c06747fc76505f0953fff68312"
+    },
+    "word-meanings/104:9.json": {
+      "url": "https://api.quran.com/api/v4/verses/by_key/104:9?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
+      "sha256": "5e8f70e7735adf63357690cbdf2016f4f6413c4e3f6408d886cc07c22313b81b"
+    },
+    "tafsirs/16/104:1.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:1",
+      "sha256": "8f668b5367353b672df4c41df6babfc1bf181acf6e7e6076e9889da0a13edd20"
+    },
+    "tafsirs/16/104:2.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:2",
+      "sha256": "bf292533a2935c2dec7c1833c01641848b4414c4ba093d1bb1812321ba65312a"
+    },
+    "tafsirs/16/104:3.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:3",
+      "sha256": "45e380899d775eed96bec662e924c8e79c2b2b58e4af489c9600930f89fe7636"
+    },
+    "tafsirs/16/104:4.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:4",
+      "sha256": "d299e4a35b5782414c1193ecb4d928738bd44a61b3d41d8f52336a0d532b3df6"
+    },
+    "tafsirs/16/104:5.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:5",
+      "sha256": "ff2ab286d5fc00ecfbbf30289d8f503b609d1b8483c420b5937902744b95b825"
+    },
+    "tafsirs/16/104:6.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:6",
+      "sha256": "b6978fc8930aa7c1794f20cb33ec772679c4db286d59045b37d0daab96e536dd"
+    },
+    "tafsirs/16/104:7.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:7",
+      "sha256": "52cad4332b9d2a8e2f20b5c972096b9a453085a734289b7572f0a9d2c182a4e8"
+    },
+    "tafsirs/16/104:8.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:8",
+      "sha256": "7d55b8791d112ff25375ca61a067e820880d320761f44975af94c6ba6094df30"
+    },
+    "tafsirs/16/104:9.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/by_ayah/104:9",
+      "sha256": "7d55b8791d112ff25375ca61a067e820880d320761f44975af94c6ba6094df30"
+    },
+    "tafsirs/16/104.json": {
+      "url": "https://api.quran.com/api/v4/tafsirs/16/surah/104",
+      "sha256": "00fca331673fa847aac632e305e4a7daf90d9aa9ffe2343cffadfe69f189a4d0"
+    },
     "word-meanings/105:1.json": {
       "url": "https://api.quran.com/api/v4/verses/by_key/105:1?words=true&word_fields=text_uthmani,position,translation,transliteration,char_type_name",
       "sha256": "dbb4866c34ba11795856e18d2875b355850824b950b52401ef8a07dc4e12fed4"
