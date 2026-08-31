@@ -76,6 +76,19 @@ test('generates source-aware workflows without silently mixing English resources
     expect(ayahLevels.every(level => expectedStepKinds.every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
     expect(ayahLevels.every(level => level.steps.some(step => step.blocks.some(block => block.type === 'audio')))).toBe(true);
     expect(ayahLevels.every(level => level.steps.filter(step => step.required === false && step.blocks.some(block => block.type === 'activity')).length === 2)).toBe(true);
+    if (locale === 'en') {
+      expect(ayahLevels.every(level => {
+        const block = level.steps.find(step => step.kind === 'word_meaning')?.blocks[0];
+        return block?.type === 'word_meaning' && block.wordMeaningIds.length >= 1 && block.wordMeaningIds.length <= 3;
+      })).toBe(true);
+    }
+    const translationMatchActivities = pkg.levels
+      .filter(level => level.metadata?.isFinalReview)
+      .flatMap(level => level.steps)
+      .flatMap(step => step.blocks)
+      .flatMap(block => block.type === 'activity' && block.activity.kind === 'match_ayah_translation' ? [block.activity] : []);
+    expect(translationMatchActivities.every(activity => activity.config.pairs.length <= 4)).toBe(true);
+    expect(translationMatchActivities.length).toBeGreaterThan(0);
     expect(pkg.levels.filter(level => level.metadata?.isFinalReview).every(level => level.steps.some(step => step.blocks.some(block => block.type === 'source_locked' && block.capability === 'verified_recap')))).toBe(true);
     expect(validatePackage(pkg, { mode: 'development' }).valid).toBe(true);
     expect(validatePackage(pkg, { mode: 'production' }).valid).toBe(false);

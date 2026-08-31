@@ -34,12 +34,16 @@ export default function AyahAudioPlayer({
   const [message, setMessage] = useState<string>();
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const player = useAudioPlayer(null, { updateInterval: 250 });
+  const currentTrack = tracks[trackIndex];
+  const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
+  // Let expo-audio own source replacement. Replacing a long-lived null-source
+  // player can leave status from its previous source briefly visible, which made
+  // initial autoplay seek/play before the resolved source was ready.
+  const player = useAudioPlayer(currentUri || null, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const pendingPlay = useRef(autoplay);
   const handledFinish = useRef(false);
-  const currentTrack = tracks[trackIndex];
-  const currentUri = resolution && resolution.status !== 'unavailable' ? resolution.uri : '';
+  const preparedUri = useRef<string | undefined>(undefined);
   const segmentStart = (currentTrack.startMs ?? 0) / 1000;
   const segmentEnd = currentTrack.endMs !== undefined ? currentTrack.endMs / 1000 : undefined;
   const segmentDuration = segmentEnd !== undefined
@@ -61,7 +65,6 @@ export default function AyahAudioPlayer({
     let release: (() => void) | undefined;
     setResolution(undefined);
     setMessage(undefined);
-    pendingPlay.current = autoplay;
     const policy = resolveAudioAccessPolicy(
       contentPackage,
       currentTrack,
@@ -84,15 +87,14 @@ export default function AyahAudioPlayer({
   }, [autoplay, contentPackage, currentTrack, retryKey]);
 
   useEffect(() => {
-    if (currentUri) {
-      player.replace(currentUri);
-      pendingPlay.current = autoplay;
-      handledFinish.current = false;
-    }
-  }, [autoplay, currentUri, player]);
+    if (!currentUri) return;
+    preparedUri.current = undefined;
+    handledFinish.current = false;
+  }, [currentUri]);
 
   useEffect(() => {
-    if (!status.isLoaded || !currentUri) return;
+    if (!status.isLoaded || !currentUri || preparedUri.current === currentUri) return;
+    preparedUri.current = currentUri;
     const shouldPlay = pendingPlay.current;
     pendingPlay.current = false;
     void player.seekTo(segmentStart).then(() => {
@@ -116,6 +118,7 @@ export default function AyahAudioPlayer({
     if (handledFinish.current) return;
     handledFinish.current = true;
     if (trackIndex < tracks.length - 1) {
+      pendingPlay.current = true;
       setTrackIndex(index => index + 1);
       return;
     }

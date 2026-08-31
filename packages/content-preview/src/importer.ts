@@ -45,6 +45,15 @@ const STRUCTURE_SOURCE_ID = 'quran-foundation-structure-v4';
 const WORD_MEANING_SOURCE_ID = 'quran-foundation-word-meanings-v4';
 const EDITION_ID = 'hafs-an-asim';
 type PreviewLocale = 'en' | 'fr' | 'ar';
+type TranslationMatchSegment = {
+  ref: AyahRecord['ref'];
+  ayahSegment: { id: string; tokenIds: string[] };
+  translationSegment: { id: string; text: string; translationEntryId: string };
+};
+
+const FUNCTION_WORD_MEANINGS = new Set([
+  'and', 'or', 'of', 'in', 'on', 'to', 'from', 'with', 'for', 'by', 'at', 'is', 'are', 'was', 'were', 'be', 'then', 'not', 'no', 'if', 'when', 'that', 'this', 'it', 'they', 'he', 'she', 'we', 'you', 'i', 'their', 'his', 'her', 'our', 'your', 'my', 'the', 'a', 'an',
+]);
 
 export function parseTanzilText(input: string): Map<string, string> {
   const sourceLines = input.split(/\r?\n/).filter(line => line.length > 0 && !line.startsWith('#'));
@@ -470,6 +479,18 @@ function buildUnderstandingActivity(
   };
 }
 
+/**
+ * Preview vocabulary is intentionally short. The provider still supplies all
+ * word glosses, but learner steps use no more than three meaningful entries.
+ * This is development-only draft selection; production remains gated on its
+ * existing source and reviewer approvals.
+ */
+function selectImportantWordMeanings(ayah: AyahRecord): WordMeaning[] {
+  const meanings = ayah.wordMeanings ?? [];
+  const substantive = meanings.filter(meaning => !FUNCTION_WORD_MEANINGS.has(meaning.meaning.trim().toLowerCase()));
+  return (substantive.length > 0 ? substantive : meanings).slice(0, 3);
+}
+
 function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRecord[], ayat: AyahRecord[], tokens: WordToken[]): { levels: Level[]; curricula: NonNullable<LearningPath['surahCurricula']> } {
   const levels: Level[] = [];
   const curricula: NonNullable<LearningPath['surahCurricula']> = [];
@@ -523,7 +544,7 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
             id: `${id}-words`,
             kind: 'word_meaning' as const,
             title: 'Word Meanings',
-            blocks: [{ id: `${id}-word-explorer`, type: 'word_explorer', ayahRefs: [ayah.ref] } as any]
+            blocks: [{ id: `${id}-word-explorer`, type: 'word_meaning' as const, wordMeaningIds: selectImportantWordMeanings(ayah).map(meaning => meaning.id) }]
           }] : []),
           ...(locale === 'en' && ayah.tafsirEntries && ayah.tafsirEntries.length > 0 ? [{
             id: `${id}-tafsir`,
@@ -544,16 +565,45 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
     const refs = ayahLessons.map(item => item.ref);
     const reviewId = courseLevelId(surah.surahNumber, 'review');
     const passageId = `${reviewId}-passage`;
-    const matchSegments = locale === 'ar' ? [] : surahAyat.map(ayah => ({
+    const matchSegments: TranslationMatchSegment[] = locale === 'ar' ? [] : surahAyat.map(ayah => ({
+      ref: ayah.ref,
       ayahSegment: { id: `${reviewId}-ayah-${ayah.ref.ayahNumber}`, tokenIds: ayah.wordTokenIds },
       translationSegment: { id: `${reviewId}-translation-${ayah.ref.ayahNumber}`, text: requireTranslation(ayah, locale).text, translationEntryId: requireTranslation(ayah, locale).id },
     }));
+    const translationMatchRounds = chunk(matchSegments, 4);
     levels.push({
       id: reviewId, pathId, surahId: surah.id, title: 'Surah Review', description: 'Order the ayat and match their exact translations.', durationMinutes: 8, ayahRefs: refs, difficulty: 'medium', goals: ['memorize', 'quiz'], metadata: { isFinalReview: true }, completionRules: { requireMemoryActivity: true, requireUnderstandingActivity: locale !== 'ar' },
       steps: [
         { id: `${reviewId}-read`, kind: 'read', title: 'Review the Surah', blocks: [{ id: passageId, type: 'quran_passage', ayahRefs: refs }] },
         { id: `${reviewId}-order-step`, kind: 'memory_practice', title: 'Order the ayat', blocks: [{ id: `${reviewId}-order`, type: 'activity', activity: { id: `${reviewId}-order`, kind: 'order_ayat', placement: 'surah_review', ayahRefs: refs, instruction: 'Put all ayat in Quran order.', required: true, difficulty: 3, knowledgeRefs: [passageId], sourceIds: [TANZIL_SOURCE_ID], reviewerStatus: 'draft', languageIndependent: true, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { correctOrderRefs: refs } } }] },
-        ...(locale !== 'ar' ? [{ id: `${reviewId}-match-step`, kind: 'understanding_practice' as const, title: 'Match translations', blocks: [{ id: `${reviewId}-match`, type: 'activity' as const, activity: { id: `${reviewId}-match`, kind: 'match_ayah_translation' as const, placement: 'surah_review' as const, ayahRefs: refs, instruction: 'Match each ayah to its unchanged translation.', required: true, difficulty: 3 as const, knowledgeRefs: [passageId], sourceIds: [translationSourceId], reviewerStatus: 'draft' as const, reviewSchedule: { intervalDays: [1, 3, 7] }, config: { ayahSegments: matchSegments.map(item => item.ayahSegment), translationSegments: matchSegments.map(item => item.translationSegment), pairs: matchSegments.map(item => ({ ayahSegmentId: item.ayahSegment.id, translationSegmentId: item.translationSegment.id })) } } }] }] : []),
+        ...(locale !== 'ar' ? translationMatchRounds.map((round, index) => ({
+          id: index === 0 ? `${reviewId}-match-step` : `${reviewId}-match-step-${index + 1}`,
+          kind: 'understanding_practice' as const,
+          title: translationMatchRounds.length === 1 ? 'Match translations' : `Match translations ${index + 1} of ${translationMatchRounds.length}`,
+          required: true,
+          blocks: [{
+            id: index === 0 ? `${reviewId}-match` : `${reviewId}-match-${index + 1}`,
+            type: 'activity' as const,
+            activity: {
+              id: index === 0 ? `${reviewId}-match` : `${reviewId}-match-${index + 1}`,
+              kind: 'match_ayah_translation' as const,
+              placement: 'surah_review' as const,
+              ayahRefs: round.map(item => item.ref),
+              instruction: 'Match each ayah to its unchanged translation.',
+              required: true,
+              difficulty: 3 as const,
+              knowledgeRefs: [passageId],
+              sourceIds: [translationSourceId],
+              reviewerStatus: 'draft' as const,
+              reviewSchedule: { intervalDays: [1, 3, 7] },
+              config: {
+                ayahSegments: round.map(item => item.ayahSegment),
+                translationSegments: round.map(item => item.translationSegment),
+                pairs: round.map(item => ({ ayahSegmentId: item.ayahSegment.id, translationSegmentId: item.translationSegment.id })),
+              },
+            },
+          }],
+        })) : []),
         ...(locale !== 'ar' ? [{ id: `${reviewId}-recap-step`, kind: 'summary' as const, title: 'Verified Recap', required: false, blocks: [{ id: `${reviewId}-recap-locked`, type: 'source_locked' as const, capability: 'verified_recap' as const, sourceId: translationSourceId, reason: 'license_restricted' as const, alternativeStepId: `${reviewId}-match-step`, locale }] }] : []),
       ],
     });
@@ -572,6 +622,12 @@ function buildCurriculum(pathId: string, locale: PreviewLocale, surahs: SurahRec
     });
   });
   return { levels, curricula };
+}
+
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const groups: T[][] = [];
+  for (let index = 0; index < items.length; index += size) groups.push([...items.slice(index, index + size)]);
+  return groups;
 }
 
 function sourceRecords(inputs: PreviewSourceInputs, english: QuranEncResourceMetadata, french: QuranEncResourceMetadata, englishMokhtasar: QuranEncResourceMetadata): ContentSource[] {

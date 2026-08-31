@@ -18,6 +18,10 @@ export function resetAudioMock(): void {
   mockAudioStatus = { currentTime: 0, didJustFinish: false, duration: 10, isLoaded: true, playing: false };
 }
 
+export function setMockAudioLoaded(isLoaded: boolean): void {
+  mockAudioStatus = { ...mockAudioStatus, isLoaded };
+}
+
 export function useAudioPlayer() {
   return mockAudioPlayer;
 }
