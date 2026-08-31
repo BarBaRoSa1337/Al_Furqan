@@ -80,6 +80,14 @@ export interface QuranEdition {
   fontProfileId: string;
   version: string;
   checksum?: string;
+  /** Canonical edition-compatible Basmala, rendered separately from numbered ayat. */
+  basmala?: {
+    text: string;
+    sourceId: string;
+    sourceVersion: string;
+    reviewerStatus: ReviewerStatus;
+    checksum: string;
+  };
 }
 
 interface WordMeaningBase {
@@ -341,6 +349,7 @@ export type RoadmapSort = 'mushaf' | 'revelation' | 'difficulty' | 'path';
 
 export type SurahLessonKind =
   | 'introduction'
+  | 'context_section'
   | 'ayah'
   | 'ayah_range'
   | 'segment_review'
@@ -463,6 +472,7 @@ export interface AyahRefBlock {
   type: 'ayah_ref';
   ayahRef: AyahRef;
   translationLocale?: string;
+  showBasmala?: boolean;
 }
 
 export interface QuranPassageBlock {
@@ -594,6 +604,10 @@ export interface SummaryLevelBlock {
   reviewerStatus: ReviewerStatus;
   /** Schema v4 distinguishes source-backed recap from original reflection. */
   variant?: 'verified_recap' | 'reflection';
+  locale?: string;
+  ayahRange?: QuranRange;
+  surahId?: string;
+  fallbackPolicy?: 'omit';
 }
 
 export interface AuthoredSurahSummary {

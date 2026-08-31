@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     bundleSchemaVersion: 1,
     generatedAt,
     contentMode: 'preview',
-    locales: ['en', 'fr'],
+    locales: ['en', 'fr', 'ar'],
     includedSurahs: PREVIEW_SURAH_NUMBERS.map(surah => ({ surah, ayahCount: result.packages.en.surahs.find(item => item.surahNumber === surah)!.ayahCount })),
     sources: [
       { provider: inputs.tanzilMetadata.provider, sourceUrl: TANZIL_SOURCE_URL, downloadUrl: inputs.tanzilMetadata.downloadUrl, licenseUrl: TANZIL_LICENSE_URL, resourceKey: 'quran-uthmani.txt', version: inputs.tanzilMetadata.textVersion, textType: inputs.tanzilMetadata.textType, retrievalDate: inputs.tanzilMetadata.retrievedAt, attributionText: inputs.tanzilMetadata.attributionText, licenseIdentifier: 'CC BY 3.0', modificationAllowed: inputs.tanzilMetadata.modificationAllowed, inputFileSha256: { text: inputs.sourceFileHashes!['tanzil/quran-uthmani.txt'], license: inputs.sourceFileHashes!['tanzil/LICENSE.txt'], metadata: inputs.sourceFileHashes!['tanzil/metadata.json'] } },
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
   const manifestJson = `${stableStringify(manifest)}\n`;
   await writeFile(manifestPath, manifestJson, 'utf8');
   await writeFile(join(GENERATED_ROOT, 'manifest.sha256.json'), `${JSON.stringify({ path: relative(ROOT, manifestPath), sha256: sha256(manifestJson) }, null, 2)}\n`, 'utf8');
-  console.log(`Generated English/French ${PREVIEW_PACKAGE_ID}: ${result.packages.en.surahs.length} Surahs, ${result.packages.en.ayat.length} ayat, ${result.packages.en.levels.length} nodes.`);
+  console.log(`Generated English/French/Arabic ${PREVIEW_PACKAGE_ID}: ${result.packages.en.surahs.length} Surahs, ${result.packages.en.ayat.length} ayat, ${result.packages.en.levels.length} nodes.`);
 }
 
 async function readSourceFiles(): Promise<Map<string, string>> {

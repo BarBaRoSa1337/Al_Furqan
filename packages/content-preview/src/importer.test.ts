@@ -60,7 +60,7 @@ test('generates source-aware workflows without silently mixing English resources
     const pkg = result.packages[locale];
     expect(pkg.surahs.map(surah => surah.surahNumber)).toEqual(PREVIEW_SURAH_NUMBERS);
     expect(pkg.ayat).toHaveLength(157);
-    expect(pkg.levels).toHaveLength(201); // 157 ayahs + 22 intros + 22 reviews
+    expect(pkg.levels).toHaveLength(219); // base lessons plus 18 four-ayah checkpoints
     expect(pkg.learningPaths[0].id).toBe('surah-al-fil-path-v1');
     expect(pkg.levels.map(level => level.id)).toContain('al-fil-level-final-review');
     expect(pkg.learningPaths[0].surahCurricula).toHaveLength(22);
@@ -70,16 +70,17 @@ test('generates source-aware workflows without silently mixing English resources
     expect(pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).some(block => block.type === 'activity' && block.activity.kind === 'match_ayah_translation')).toBe(true);
     const ayahLevels = pkg.levels.filter(level => level.ayahRefs.length === 1 && !level.metadata?.isFinalReview);
     expect(ayahLevels).toHaveLength(157);
-    const expectedStepKinds = locale === 'en'
-      ? ['read', 'word_meaning', 'tafsir', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice']
-      : ['read', 'memory_practice', 'understanding_practice', 'memory_practice', 'memory_practice'];
-    expect(ayahLevels.every(level => expectedStepKinds.every((kind, index) => level.steps[index]?.kind === kind))).toBe(true);
+    expect(ayahLevels.every(level => level.steps[0]?.kind === 'read')).toBe(true);
+    expect(ayahLevels.every(level => level.steps.filter(step => step.kind === 'memory_practice').length === 1)).toBe(true);
+    expect(ayahLevels.every(level => level.steps.filter(step => step.kind === 'understanding_practice').length <= 1)).toBe(true);
+    expect(ayahLevels.every(level => level.steps.some(step => step.blocks.some(block => block.type === 'activity' && block.activity.kind === 'complete_ayah')))).toBe(true);
+    expect(ayahLevels.every(level => !level.steps.some(step => step.blocks.some(block => block.type === 'activity' && block.activity.kind === 'type_missing_text')))).toBe(true);
     expect(ayahLevels.every(level => level.steps.some(step => step.blocks.some(block => block.type === 'audio')))).toBe(true);
-    expect(ayahLevels.every(level => level.steps.filter(step => step.required === false && step.blocks.some(block => block.type === 'activity')).length === 2)).toBe(true);
+    expect(ayahLevels.every(level => level.steps.filter(step => step.required === false && step.blocks.some(block => block.type === 'activity')).length === 0)).toBe(true);
     if (locale === 'en') {
       expect(ayahLevels.every(level => {
         const block = level.steps.find(step => step.kind === 'word_meaning')?.blocks[0];
-        return block?.type === 'word_meaning' && block.wordMeaningIds.length >= 1 && block.wordMeaningIds.length <= 3;
+        return block?.type === 'word_meaning' && block.wordMeaningIds.length >= 2 && block.wordMeaningIds.length <= 5;
       })).toBe(true);
     }
     const translationMatchActivities = pkg.levels
@@ -89,14 +90,15 @@ test('generates source-aware workflows without silently mixing English resources
       .flatMap(block => block.type === 'activity' && block.activity.kind === 'match_ayah_translation' ? [block.activity] : []);
     expect(translationMatchActivities.every(activity => activity.config.pairs.length <= 4)).toBe(true);
     expect(translationMatchActivities.length).toBeGreaterThan(0);
-    expect(pkg.levels.filter(level => level.metadata?.isFinalReview).every(level => level.steps.some(step => step.blocks.some(block => block.type === 'source_locked' && block.capability === 'verified_recap')))).toBe(true);
+    expect(pkg.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).some(block => block.type === 'source_locked')).toBe(false);
+    expect(pkg.learningPaths[0].surahCurricula?.flatMap(curriculum => curriculum.lessons).filter(lesson => lesson.kind === 'segment_review')).toHaveLength(18);
     expect(validatePackage(pkg, { mode: 'development' }).valid).toBe(true);
     expect(validatePackage(pkg, { mode: 'production' }).valid).toBe(false);
-    expect(validatePackage(pkg, { mode: 'production' }).errors).toEqual(expect.arrayContaining([expect.stringContaining('source-locked content cannot ship in production')]));
+    expect(validatePackage(pkg, { mode: 'production' }).errors).toEqual(expect.arrayContaining([expect.stringContaining('reviewerStatus') ]));
   }
   expect(result.packages.en.revisionId).not.toBe(result.packages.fr.revisionId);
   expect(result.packages.en.ayat[0].translations[0].transcriptInfo).toBe('english_rwwad transcript');
-  expect(result.packages.fr.levels.find(level => level.id === 'al-fil-level-2-ayah-2')?.steps.find(step => step.id.endsWith('-understanding'))?.blocks.find(b => b.type === 'activity' && b.activity.kind === 'multiple_choice')).toMatchObject({ type: 'activity', activity: { config: { correctOptionId: 'quranenc-french-rashid:105:2' } } });
+  expect(result.packages.fr.levels.find(level => level.id === 'al-fil-level-2-ayah-2')?.steps.some(step => step.kind === 'understanding_practice')).toBe(false);
 });
 
 test('serializes identical source packages deterministically', () => {
@@ -118,4 +120,7 @@ test('strips basmala from ayah 1 and aligns word meanings by position', () => {
   // Ensure that wordTokens count matches the stripped text
   const tokens = en.wordTokens.filter(t => t.ayahRef.surahNumber === 105 && t.ayahRef.ayahNumber === 1);
   expect(tokens).toHaveLength(2);
+  expect(en.editions[0].basmala?.text).toBe('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ');
+  const studyBlock = en.levels.find(level => level.id === 'al-fil-level-1-context-ayah-1')?.steps[0].blocks[0];
+  expect(studyBlock).toMatchObject({ type: 'ayah_ref', showBasmala: true });
 });

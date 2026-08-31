@@ -11,7 +11,6 @@ import {
   LevelBlock,
   MediaBlock,
   QuranPassageBlock,
-  SourceLockedBlock,
   SurahOverviewBlock,
   TafsirEntry,
   TranslationBlock,
@@ -44,9 +43,6 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
   const contentPackage = repo.getPackageForBlock(block.id);
   if (!isPreviewContentMode() && contentPackage && !isBlockEligibleForProduction(block, contentPackage)) return null;
 
-  const showDraftBadge = isPreviewContentMode() && hasDraftStatus(block);
-
-  const renderInner = () => {
   switch (block.type) {
     case 'surah_overview':
       return <CanonicalSurahOverviewBlock block={block} repo={repo} />;
@@ -58,7 +54,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
       return <SelectedWordMeaningBlock block={block} locale={preferences.contentLocale} repo={repo} />;
     case 'ayah_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
-      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={preferences.contentLocale} repo={repo} showTransliteration={preferences.transliterationPreference === 'show'} /> : null;
+      return ayah ? <CanonicalAyahBlock ayah={ayah} locale={preferences.contentLocale} repo={repo} showBasmala={block.showBasmala === true} showTransliteration={preferences.transliterationPreference === 'show'} /> : null;
     }
     case 'tafsir_ref': {
       const ayah = repo.getAyahByRef(block.ayahRef);
@@ -76,7 +72,7 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     case 'audio':
       return <CanonicalAudioBlock autoplay={preferences.autoplayRecitation} block={block} repo={repo} />;
     case 'source_locked':
-      return <SourceLockedCard block={block} repo={repo} />;
+      return null;
     case 'media':
       return <CanonicalMediaBlock block={block} repo={repo} />;
     case 'question':
@@ -88,8 +84,6 @@ export default function LevelBlockRenderer({ block, onQuestionAnswer, onActivity
     default:
       return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
   }
-  };
-  return <DraftBadge show={showDraftBadge}>{renderInner()}</DraftBadge>;
 }
 
 function CanonicalSurahOverviewBlock({ block, repo }: { block: SurahOverviewBlock; repo: ContentRepository }) {
@@ -163,43 +157,34 @@ function CanonicalAudioBlock({ autoplay, block, repo }: { autoplay: boolean; blo
 function CanonicalMediaBlock({ block, repo }: { block: MediaBlock; repo: ContentRepository }) {
   const asset = repo.getPackageForBlock(block.id)?.mediaAssets.find(candidate => candidate.id === block.assetId);
   if (!asset) return null;
-  return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /><Text style={styles.source}>{asset.altText}</Text></Card>;
+  return <Card><Image source={asset.uri} accessibilityLabel={asset.altText} contentFit="contain" style={styles.media} /></Card>;
 }
 
-function SourceLockedCard({ block, repo }: { block: SourceLockedBlock; repo: ContentRepository }) {
-  const source = repo.getSourceById(block.sourceId);
-  const capability = packageText(repo, `content.capability.${block.capability}`);
-  const reason = packageText(repo, `content.sourceLock.${block.reason}`);
-  return (
-    <Card style={styles.lockedCard}>
-      <Text accessibilityRole="header" style={styles.lockedTitle}>{packageText(repo, 'content.sourceLocked', { capability })}</Text>
-      <Text accessibilityLiveRegion="polite" style={styles.lockedText}>{reason}</Text>
-      <Text style={styles.lockedAlternative}>{packageText(repo, 'content.sourceLockedAlternative')}</Text>
-      <SourceAttribution source={source} unavailable={packageText(repo, 'content.sourceUnavailable')} />
-    </Card>
-  );
-}
-
-function CanonicalAyahBlock({ ayah, locale, repo, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showTransliteration: boolean }) {
+function CanonicalAyahBlock({ ayah, locale, repo, showBasmala, showTransliteration }: { ayah: AyahRecord; locale: string; repo: ContentRepository; showBasmala: boolean; showTransliteration: boolean }) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const translation = ayah.translations.find(entry => entry.locale === locale);
   const arabicSource = repo.getSourceById(ayah.sourceId);
   const translationSource = translation ? repo.getSourceById(translation.sourceId) : undefined;
+  const basmala = showBasmala ? repo.getEdition(ayah.editionId)?.basmala : undefined;
 
   return (
     <Card variant="mushaf" style={styles.mushafAyahCard}>
+      {basmala ? <Text accessibilityRole="text" style={styles.basmala}>{basmala.text}</Text> : null}
       <Text style={styles.arabic}>{ayah.arabicText.text}</Text>
       {showTransliteration && ayah.transliteration ? <Text style={styles.transliteration}>{ayah.transliteration}</Text> : null}
-      <View style={styles.divider} />
-      <Text style={[styles.translation, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation?.text ?? packageText(repo, 'content.translationUnavailable')}</Text>
-      {translation?.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
-      <Pressable accessibilityRole="button" accessibilityLabel={packageText(repo, 'content.showSources')} style={styles.infoButton} onPress={() => setSourcesExpanded(s => !s)}>
+      {translation ? <>
+        <View style={styles.divider} />
+        <Text style={[styles.translation, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.text}</Text>
+        {translation.footnotes ? <Text style={[styles.footnotes, locale === 'ar' ? styles.rtlText : styles.ltrText]}>{translation.footnotes}</Text> : null}
+      </> : null}
+      <Pressable accessibilityRole="button" accessibilityLabel={packageText(repo, 'content.showSources')} style={styles.sourceToggle} onPress={() => setSourcesExpanded(s => !s)}>
         <Ionicons name="information-circle-outline" size={20} color={colors.textMuted} />
+        <Text style={styles.sourceToggleText}>{packageText(repo, 'content.toggleDetails')}</Text>
       </Pressable>
       {sourcesExpanded ? (
         <View style={styles.collapsibleSources}>
           <Text style={styles.sourceLabel}>{packageText(repo, 'content.arabicSource')}: {arabicSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
-          <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}: {translationSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text>
+          {translation ? <Text style={styles.sourceLabel}>{packageText(repo, 'content.translationSource')}: {translationSource?.name ?? packageText(repo, 'content.sourceUnavailable')}</Text> : null}
         </View>
       ) : null}
     </Card>
@@ -214,7 +199,7 @@ function SourceAttribution({ source, unavailable }: { source?: ContentSource; un
       <Text style={styles.sourceValue}>{label} · v{source.version}</Text>
       {source.sourceUrl ? (
         <Pressable accessibilityRole="link" accessibilityLabel={`${source.name} source`} onPress={() => { void Linking.openURL(source.sourceUrl!); }}>
-          <Text style={styles.sourceLink}>{source.sourceUrl}</Text>
+          <Text style={styles.sourceLink}>{source.name}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -288,10 +273,8 @@ function wordMeaningLocale(word: WordMeaning, repo: Pick<ContentRepository, 'get
 }
 
 const styles = StyleSheet.create({
-  draftBadgeContainer: { position: 'relative' },
-  draftBadge: { position: 'absolute', top: -10, end: 10, backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radii.sm, zIndex: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  draftBadgeText: { color: colors.surface, fontFamily: fonts.bold, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoButton: { position: 'absolute', top: 16, end: 16, zIndex: 5, padding: 4, opacity: 0.5 },
+  sourceToggle: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md, minHeight: touch.minimum, paddingHorizontal: spacing.md },
+  sourceToggleText: { color: colors.textMuted, fontFamily: fonts.medium, fontSize: 12 },
   collapsibleSources: { marginTop: spacing.lg, padding: spacing.md, backgroundColor: colors.surfaceMuted, borderRadius: radii.sm },
   overviewCard: { alignItems: 'center', paddingVertical: spacing.xl },
   overviewEyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
@@ -305,6 +288,7 @@ const styles = StyleSheet.create({
   mushafAyahCard: { alignItems: 'center', marginVertical: spacing.xs },
   passageAyah: { paddingVertical: spacing.sm, width: '100%' },
   arabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 30, lineHeight: 52, textAlign: 'center', width: '100%', writingDirection: 'rtl' },
+  basmala: { color: colors.textMuted, fontFamily: fonts.arabic, fontSize: 20, lineHeight: 34, marginBottom: spacing.md, textAlign: 'center', width: '100%', writingDirection: 'rtl' },
   transliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 15, fontStyle: 'italic', lineHeight: 22, marginTop: 10, textAlign: 'center' },
   divider: { backgroundColor: colors.mushafBorderInner, height: 1, marginVertical: 14, width: '100%' },
   translation: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, fontWeight: '500', lineHeight: 25, textAlign: 'center' },
@@ -333,41 +317,11 @@ const styles = StyleSheet.create({
   contextText: { color: colors.text, fontFamily: fonts.regular, fontSize: 16, lineHeight: 26 },
   wordCard: { marginBottom: 16 },
   wordTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 14, fontWeight: '700', letterSpacing: 0.8, marginBottom: 12, textTransform: 'uppercase' },
-  wordRow: { alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 10 },
-  wordArabic: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 24, textAlign: 'right', width: 90 },
-  wordMeaning: { flex: 1, marginStart: 14 },
+  wordRow: { alignItems: 'flex-start', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: 10 },
+  wordArabic: { color: colors.primary, flexGrow: 0, flexShrink: 1, fontFamily: fonts.arabic, fontSize: 24, minWidth: 72, textAlign: 'right', writingDirection: 'rtl' },
+  wordMeaning: { flexBasis: 180, flexGrow: 1, flexShrink: 1 },
   wordTransliteration: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 13, fontStyle: 'italic', marginBottom: 2 },
   wordText: { color: colors.text, fontFamily: fonts.medium, fontSize: 14 },
   media: { width: '100%', minHeight: 180 },
   pressed: { opacity: 0.68 },
-  lockedCard: { borderColor: colors.border, borderWidth: 1 },
-  lockedTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 17, marginBottom: spacing.sm },
-  lockedText: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, lineHeight: 21 },
-  lockedAlternative: { color: colors.success, fontFamily: fonts.bold, fontSize: 13, marginTop: spacing.md },
 });
-
-
-function DraftBadge({ children, show }: { children: React.ReactNode; show: boolean }) {
-  if (!show) return <>{children}</>;
-  return (
-    <View style={styles.draftBadgeContainer}>
-      <View style={styles.draftBadge}>
-        <Text style={styles.draftBadgeText}>{packageText(getContentRepository(), 'content.draftBadge')}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function hasDraftStatus(block: LevelBlock): boolean {
-  if (block.type === 'context' || block.type === 'summary' || block.type === 'question') {
-    return (block as any).reviewerStatus !== 'approved';
-  }
-  if (block.type === 'activity') {
-    return block.activity.reviewerStatus !== 'approved';
-  }
-  if (block.type === 'tafsir_ref' || block.type === 'word_meaning' || block.type === 'word_explorer' || block.type === 'ayah_ref') {
-    return true; // We can assume draft in preview mode for these generated blocks
-  }
-  return false;
-}

@@ -108,7 +108,6 @@ export default function LessonPlayerScreen() {
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
           <Text style={styles.errorTitle}>{text('lesson.progressUnavailable')}</Text>
-          <Text style={styles.errorText}>{session.error}</Text>
           <Button title={text('lesson.backToRoadmap')} onPress={() => router.replace('/roadmap')} style={styles.stateButton} />
         </View>
       </SafeAreaView>
@@ -140,8 +139,8 @@ export default function LessonPlayerScreen() {
       correctFeedbackLabel={text('lesson.correctFeedback')}
       retryFeedbackLabel={text('lesson.retryFeedback')}
       exitLabel={text('lesson.leave')}
-      warning={session.warning?.message}
-      error={session.error ?? undefined}
+      warning={session.warning ? text('lesson.progressRecovered') : undefined}
+      error={session.error ? text('lesson.progressUnavailable') : undefined}
       onExit={confirmExit}
       onAdvance={handleAdvance}
       onQuestionAnswer={session.answerQuestion}

@@ -140,9 +140,9 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     const correct = evaluateQuestion(block, selectedAnswer);
     const saved = await runExclusive(async () => {
       await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer, correct, locale: lessonLocale });
-      setFeedback({ correct });
+      setFeedback(correct ? { correct: true } : null);
     });
-    if (saved) scheduleAutomaticAdvance(correct);
+    if (saved && correct) scheduleAutomaticAdvance();
     return { correct };
   }
 
@@ -153,9 +153,9 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     const correct = evaluateActivity(activity, answer, createActivityEvaluationContext(repo)).correct;
     const saved = await runExclusive(async () => {
       await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
-      setFeedback({ correct });
+      setFeedback(correct ? { correct: true } : null);
     });
-    if (saved) scheduleAutomaticAdvance(correct);
+    if (saved && correct) scheduleAutomaticAdvance();
     return { correct };
   }
 
@@ -168,14 +168,14 @@ export function useLevelSession(levelId: string | undefined, startMode: LevelSta
     return receipt;
   }
 
-  function scheduleAutomaticAdvance(correct: boolean): void {
+  function scheduleAutomaticAdvance(): void {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(() => {
       void runExclusive(async () => {
-        const receipt = await moveToNextStep(correct);
+        const receipt = await moveToNextStep(true);
         if (receipt) setCompletionReceipt(receipt);
       });
-    }, correct ? 500 : 400);
+    }, 500);
   }
 
   async function moveToNextStep(correct: boolean): Promise<CompletionReceipt | null> {

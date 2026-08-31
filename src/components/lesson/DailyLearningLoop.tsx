@@ -6,6 +6,7 @@ import type { Level, LevelStep } from '../../types/content';
 import type { ExerciseSubmissionResult } from '../../types/activities';
 import { colors, fonts, radii, spacing } from '../../theme/tokens';
 import Button from '../ui/Button';
+import Card from '../ui/Card';
 import ProgressBar from '../ui/ProgressBar';
 import StepRenderer from './StepRenderer';
 
@@ -61,7 +62,7 @@ export default function DailyLearningLoop({
   onActivityAnswer,
 }: DailyLearningLoopProps) {
   const scrollRef = useRef<ScrollView>(null);
-  const resolvedTotalSteps = totalSteps ?? level.steps.length;
+  const progress = normalizeLessonProgress(currentStepIndex, totalSteps ?? level.steps.length);
 
   useEffect(() => {
     scrollToStepTop(scrollRef.current);
@@ -82,21 +83,21 @@ export default function DailyLearningLoop({
         <View style={styles.progressWrap}>
           <View style={styles.progressMeta}>
             <Text numberOfLines={1} style={styles.levelTitle}>{level.title}</Text>
-            <Text style={styles.stepCount}>{reviewRoundLabel ?? `${currentStepIndex + 1}/${resolvedTotalSteps}`}</Text>
+            <Text style={styles.stepCount}>{reviewRoundLabel ?? `${progress.current}/${progress.total}`}</Text>
           </View>
           <ProgressBar
-            current={currentStepIndex + 1}
-            total={resolvedTotalSteps}
+            current={progress.current}
+            total={progress.total}
             showLabel={false}
             height={7}
-            accessibilityLabel={`${level.title}: ${currentStepIndex + 1} / ${resolvedTotalSteps}`}
+            accessibilityLabel={`${level.title}: ${progress.current} / ${progress.total}`}
           />
         </View>
       </View>
 
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {warning ? <Text style={styles.warning}>{warning}</Text> : null}
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {warning ? <Card elevated={false} style={styles.warningCard}><Text style={styles.warning}>{warning}</Text></Card> : null}
+        {error ? <Card elevated={false} style={styles.errorCard}><Text style={styles.error}>{error}</Text></Card> : null}
         {/* Feedback banner removed; activities now provide instant inline feedback */}
         <StepRenderer key={stepRenderKey ?? step.id} step={step} onQuestionAnswer={onQuestionAnswer} onActivityAnswer={onActivityAnswer} />
       </ScrollView>
@@ -117,6 +118,12 @@ export default function DailyLearningLoop({
 
 export function scrollToStepTop(scrollView: Pick<ScrollView, 'scrollTo'> | null): void {
   scrollView?.scrollTo({ y: 0, animated: false });
+}
+
+export function normalizeLessonProgress(stepIndex: number, totalSteps: number): { current: number; total: number } {
+  const total = Number.isFinite(totalSteps) ? Math.max(1, Math.floor(totalSteps)) : 1;
+  const safeIndex = Number.isFinite(stepIndex) ? Math.floor(stepIndex) : 0;
+  return { current: Math.min(total, Math.max(1, safeIndex + 1)), total };
 }
 
 const styles = StyleSheet.create({
@@ -145,20 +152,16 @@ const styles = StyleSheet.create({
   levelTitle: { color: colors.text, flex: 1, fontFamily: fonts.bold, fontSize: 13, fontWeight: '800', marginEnd: spacing.sm },
   stepCount: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 12, fontWeight: '700', writingDirection: 'ltr' },
   scroll: { alignSelf: 'center', maxWidth: 720, padding: spacing.lg, paddingBottom: 40, width: '100%' },
+  warningCard: { backgroundColor: colors.warningSoft, borderColor: colors.goldSoft, borderWidth: 1 },
   warning: {
-    backgroundColor: colors.warningSoft,
     color: colors.warning,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    fontFamily: fonts.regular,
     lineHeight: 20,
   },
+  errorCard: { backgroundColor: colors.dangerSoft, borderColor: colors.danger, borderWidth: 1 },
   error: {
-    backgroundColor: colors.dangerSoft,
     color: colors.danger,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    fontFamily: fonts.regular,
     lineHeight: 20,
   },
   feedback: { alignItems: 'center', borderRadius: radii.md, flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, padding: spacing.md },

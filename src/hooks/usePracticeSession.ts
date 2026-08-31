@@ -84,9 +84,9 @@ export function usePracticeSession(levelId: string | undefined) {
     const correct = evaluateQuestion(block, selectedAnswer);
     const saved = await runExclusive(async () => {
       await recordQuestionAttempt({ levelId: level.id, pathId: path.id, questionId: block.id, selectedAnswer, correct, locale: lessonLocale });
-      setFeedback({ correct });
+      setFeedback(correct ? { correct: true } : null);
     });
-    if (saved) scheduleAutomaticAdvance(correct);
+    if (saved && correct) scheduleAutomaticAdvance();
     return { correct };
   }
 
@@ -97,9 +97,9 @@ export function usePracticeSession(levelId: string | undefined) {
     const correct = evaluateActivity(activity, answer, createActivityEvaluationContext(repo)).correct;
     const saved = await runExclusive(async () => {
       await recordActivityAttempt({ levelId: level.id, pathId: path.id, activityId: activity.id, answer, correct, evaluationVersion: '1', locale: lessonLocale, languageIndependent: activity.languageIndependent });
-      setFeedback({ correct });
+      setFeedback(correct ? { correct: true } : null);
     });
-    if (saved) scheduleAutomaticAdvance(correct);
+    if (saved && correct) scheduleAutomaticAdvance();
     return { correct };
   }
 
@@ -112,14 +112,14 @@ export function usePracticeSession(levelId: string | undefined) {
     return saved && sessionFinished;
   }
 
-  function scheduleAutomaticAdvance(correct: boolean): void {
+  function scheduleAutomaticAdvance(): void {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(() => {
       void runExclusive(async () => {
-        const sessionFinished = await moveToNextStep(correct);
+        const sessionFinished = await moveToNextStep(true);
         if (sessionFinished) setFinished(true);
       });
-    }, correct ? 700 : 400);
+    }, 700);
   }
 
   async function moveToNextStep(correct: boolean): Promise<boolean> {

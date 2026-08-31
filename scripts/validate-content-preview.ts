@@ -46,16 +46,17 @@ async function main(): Promise<void> {
   await verifyEvidence(read, frenchRetrieval, 'quranenc/french_rashid');
   await verifyEvidence(read, englishMokhtasarRetrieval, 'quranenc/english_mokhtasar');
   const result = buildPreviewPackages(inputs);
-  for (const locale of ['en', 'fr'] as const) {
+  for (const locale of ['en', 'fr', 'ar'] as const) {
     const pkg = result.packages[locale];
     const development = validatePackage(pkg, { mode: 'development' });
     if (!development.valid) throw new Error(`${locale} preview package invalid: ${development.errors.join('; ')}`);
     if (validatePackage(pkg, { mode: 'production' }).valid) throw new Error(`${locale} preview package unexpectedly passes production validation.`);
     const expectedAyat = PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + EXPECTED_AYAH_COUNTS[surah], 0);
-    const expectedLevels = expectedAyat + (PREVIEW_SURAH_NUMBERS.length * 2);
+    const expectedCheckpoints = PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + (EXPECTED_AYAH_COUNTS[surah] >= 7 ? Math.floor((EXPECTED_AYAH_COUNTS[surah] - 1) / 4) : 0), 0);
+    const expectedLevels = expectedAyat + (PREVIEW_SURAH_NUMBERS.length * 2) + expectedCheckpoints;
     if (pkg.ayat.length !== expectedAyat || pkg.recitationTracks.length !== expectedAyat || pkg.learningPaths[0]?.surahCurricula?.length !== PREVIEW_SURAH_NUMBERS.length || pkg.levels.length !== expectedLevels) throw new Error(`${locale} preview coverage is incomplete.`);
   }
-  console.log(`Validated English/French local preview: ${PREVIEW_SURAH_NUMBERS.length} Surahs, ${PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + EXPECTED_AYAH_COUNTS[surah], 0)} ayat. Production still blocked.`);
+  console.log(`Validated English/French/Arabic local preview: ${PREVIEW_SURAH_NUMBERS.length} Surahs, ${PREVIEW_SURAH_NUMBERS.reduce((total, surah) => total + EXPECTED_AYAH_COUNTS[surah], 0)} ayat. Production still blocked.`);
 }
 
 async function verifyTanzilEvidence(read: (path: string) => Promise<string>, metadata: TanzilSourceMetadata): Promise<void> {

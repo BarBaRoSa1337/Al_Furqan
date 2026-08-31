@@ -17,7 +17,8 @@ test('generated bundle preserves source ayat and covers every manifest output', 
 
   expect(manifest.includedSurahs).toEqual(PREVIEW_SURAH_NUMBERS.map(surah => ({ surah, ayahCount: EXPECTED_AYAH_COUNTS[surah] })));
   expect(manifest.sources[0]).toMatchObject({ provider: 'Tanzil Project', version: '1.1', textType: 'Uthmani', modificationAllowed: false });
-  for (const locale of ['en', 'fr'] as const) {
+  expect(manifest.locales).toEqual(['en', 'fr', 'ar']);
+  for (const locale of ['en', 'fr', 'ar'] as const) {
     expect(bundle.packages[locale].surahs).toHaveLength(22);
     expect(bundle.packages[locale].ayat).toHaveLength(157);
     expect(bundle.packages[locale].recitationTracks).toHaveLength(157);

@@ -4,6 +4,7 @@ export type ActivityKind =
   | 'recall_then_reveal'
   | 'fill_gap'
   | 'complete_missing_token'
+  | 'complete_ayah'
   | 'order_tokens'
   | 'order_segments'
   | 'choose_continuation'
@@ -45,6 +46,16 @@ export interface FillGapActivity extends ActivityBase { kind: 'fill_gap' | 'comp
 /** Backward-compatible name for packages authored before fill_gap. */
 export type CompleteMissingTokenActivity = FillGapActivity;
 export interface ActivitySegment { id: string; tokenIds: string[]; }
+export interface CompleteAyahActivity extends ActivityBase {
+  kind: 'complete_ayah';
+  config: {
+    /** Ordered, contiguous canonical token groups covering the ayah. */
+    segments: ActivitySegment[];
+    visibleSegmentIds: string[];
+    hiddenSegmentIds: string[];
+    optionSegmentIds: string[];
+  };
+}
 export interface OrderActivity extends ActivityBase { kind: 'order_tokens' | 'order_segments'; config: { itemIds: string[]; correctOrderIds: string[]; segments?: ActivitySegment[] }; }
 export interface ChooseContinuationActivity extends ActivityBase {
   kind: 'choose_continuation';
@@ -73,7 +84,7 @@ export interface TypeMissingTextActivity extends ActivityBase { kind: 'type_miss
 export interface OrderAyatActivity extends ActivityBase { kind: 'order_ayat'; config: { correctOrderRefs: AyahRef[] }; }
 export interface MultipleChoiceActivity extends ActivityBase { kind: 'multiple_choice'; config: { options: { id: string; text: string }[]; correctOptionId: string }; }
 
-export type LearningActivity = RecallThenRevealActivity | FillGapActivity | OrderActivity | ChooseContinuationActivity | MatchWordMeaningActivity | MatchAyahTranslationActivity | TypeMissingTextActivity | OrderAyatActivity | MultipleChoiceActivity;
+export type LearningActivity = RecallThenRevealActivity | FillGapActivity | CompleteAyahActivity | OrderActivity | ChooseContinuationActivity | MatchWordMeaningActivity | MatchAyahTranslationActivity | TypeMissingTextActivity | OrderAyatActivity | MultipleChoiceActivity;
 
 export interface ActivityEvaluation { correct: boolean; normalizedAnswer?: unknown; expectedAnswerRef?: unknown; feedbackKey: string; }
 export interface ExerciseSubmissionResult { correct: boolean; }

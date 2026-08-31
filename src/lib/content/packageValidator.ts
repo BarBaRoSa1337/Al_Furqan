@@ -50,7 +50,7 @@ export function validatePackage(
 
   if (!pkg.id) errors.push('Package missing id');
   if (!pkg.version) errors.push('Package missing version');
-  if (![1, 2, 3, 4].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
+  if (![1, 2, 3, 4, 5].includes(pkg.schemaVersion)) errors.push(`Unsupported package schemaVersion "${pkg.schemaVersion}"`);
   if (!pkg.revisionId) errors.push('Package missing revisionId');
   validateUniqueIds('previous package revision', pkg.previousRevisionIds ?? [], errors);
   if (pkg.previousRevisionIds?.includes(pkg.revisionId)) errors.push('Package revision cannot migrate from itself');
@@ -99,6 +99,11 @@ export function validatePackage(
   pkg.editions.forEach(edition => {
     validateSourceIds(`Edition "${edition.id}"`, [edition.textSourceId], pkg, errors);
     if (!edition.version) errors.push(`Edition "${edition.id}" missing version`);
+    if (edition.basmala) {
+      validateSourceIds(`Edition "${edition.id}" Basmala`, [edition.basmala.sourceId], pkg, errors);
+      validateReviewStatus(`Edition "${edition.id}" Basmala`, edition.basmala.reviewerStatus, mode, errors, warnings);
+      if (!edition.basmala.text.trim() || !edition.basmala.sourceVersion || !edition.basmala.checksum) errors.push(`Edition "${edition.id}" has incomplete Basmala data`);
+    }
   });
   pkg.surahs.forEach(surah => validateSurah(surah, pkg, mode, errors, warnings));
   pkg.ayat.forEach(ayah => validateAyah(ayah, pkg, mode, errors, warnings));
@@ -529,7 +534,7 @@ function validateLevel(
   if (level.steps.length === 0) errors.push(`${label} has no steps`);
   const curriculumLesson = path?.surahCurricula?.flatMap(item => item.lessons).find(item => item.levelId === level.id);
   const isIntroduction = curriculumLesson?.kind === 'introduction';
-  if (pkg.schemaVersion >= 2 && !isIntroduction && (!level.completionRules?.requireMemoryActivity || (!level.completionRules.requireUnderstandingActivity && pkg.metadata?.language !== 'ar'))) errors.push(`${label} schema v2 requires memory and understanding completion rules (unless language is ar)`);
+  if (pkg.schemaVersion >= 2 && !isIntroduction && !level.completionRules?.requireMemoryActivity) errors.push(`${label} schema v2 requires one memory completion rule`);
   validateUniqueIds(`step in ${label}`, level.steps.map(step => step.id), errors);
   validateUniqueIds(`block in ${label}`, level.steps.flatMap(step => step.blocks.map(block => block.id)), errors);
   validateUniqueIds(`ayah ref in ${label}`, level.ayahRefs.map(refKey), errors);
@@ -560,6 +565,12 @@ function validateLevel(
       if (pkg.schemaVersion >= 2 && !isBlockAllowedInStep(stepKind, block.type)) errors.push(`${blockLabel} is incompatible with step kind "${stepKind}"`);
       if (block.type === 'ayah_ref' || block.type === 'tafsir_ref') {
         validateBlockAyahRef(blockLabel, block.ayahRef, level, pkg, errors);
+      }
+      if (block.type === 'ayah_ref' && block.showBasmala) {
+        const ayah = findAyah(pkg, block.ayahRef);
+        const edition = ayah ? pkg.editions.find(candidate => candidate.id === ayah.editionId) : undefined;
+        if (block.ayahRef.ayahNumber !== 1 || block.ayahRef.surahNumber === 9 || block.ayahRef.surahNumber === 1) errors.push(`${blockLabel} has an invalid Basmala position`);
+        if (!edition?.basmala) errors.push(`${blockLabel} requests unavailable canonical Basmala data`);
       }
       if (block.type === 'quran_passage' || block.type === 'translation' || block.type === 'audio') {
         if (block.ayahRefs.length === 0) errors.push(`${blockLabel} has no ayah refs`);
@@ -602,6 +613,7 @@ function validateLevel(
         }
       }
       if (block.type === 'media' && !pkg.mediaAssets.some(asset => asset.id === block.assetId)) errors.push(`${blockLabel} references missing media asset "${block.assetId}"`);
+      if (pkg.schemaVersion >= 5 && block.type === 'word_meaning' && (block.wordMeaningIds.length < 2 || block.wordMeaningIds.length > 5)) errors.push(`${blockLabel} must select two to five word meanings`);
       if (block.type === 'surah_overview' && block.surahId !== level.surahId) errors.push(`${blockLabel} references a different surah`);
       if (block.type === 'context' || block.type === 'question' || block.type === 'summary') {
         validateSourceIds(blockLabel, block.sourceIds, pkg, errors);
@@ -648,6 +660,8 @@ function validateLevel(
     .flatMap(step => step.blocks.filter(block => block.type === 'activity' || block.type === 'question'));
   if (level.completionRules?.requireMemoryActivity && memoryActivities.length === 0) errors.push(`${label} requires at least one memory activity`);
   if (level.completionRules?.requireUnderstandingActivity && understandingActivities.length === 0) errors.push(`${label} requires at least one understanding activity`);
+  if (pkg.schemaVersion >= 5 && curriculumLesson?.kind === 'ayah' && memoryActivities.length !== 1) errors.push(`${label} ayah lesson must contain exactly one required Hifz activity`);
+  if (pkg.schemaVersion >= 5 && curriculumLesson?.kind === 'ayah' && understandingActivities.length > 1) errors.push(`${label} ayah lesson may contain at most one required understanding activity`);
 }
 
 function validateSurahCurricula(path: ContentPackage['learningPaths'][number], pkg: ContentPackage, errors: string[]): void {
@@ -677,7 +691,7 @@ function validateSurahCurricula(path: ContentPackage['learningPaths'][number], p
       if (!level) errors.push(`${label} references missing level "${lesson.levelId}"`);
       if (level && (level.pathId !== path.id || level.surahId !== curriculum.surahId)) errors.push(`${label} lesson "${lesson.levelId}" belongs to another path or surah`);
       if (lesson.kind === 'introduction' && level?.ayahRefs.length) errors.push(`${label} introduction must not own ayah references`);
-      if ((lesson.kind === 'ayah' || lesson.kind === 'ayah_range') && !lesson.ayahRange) errors.push(`${label} lesson "${lesson.levelId}" has no ayah range`);
+      if ((lesson.kind === 'ayah' || lesson.kind === 'ayah_range' || lesson.kind === 'context_section') && !lesson.ayahRange) errors.push(`${label} lesson "${lesson.levelId}" has no ayah range`);
       if (lesson.ayahRange && level) {
         const first = level.ayahRefs[0];
         const last = level.ayahRefs.at(-1);

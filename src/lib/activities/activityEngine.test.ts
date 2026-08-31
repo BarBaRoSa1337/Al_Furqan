@@ -1,4 +1,4 @@
-import { ChooseContinuationActivity, CompleteMissingTokenActivity, MatchAyahTranslationActivity, MatchWordMeaningActivity, OrderActivity, OrderAyatActivity, TypeMissingTextActivity } from '../../types/activities';
+import { ChooseContinuationActivity, CompleteAyahActivity, CompleteMissingTokenActivity, MatchAyahTranslationActivity, MatchWordMeaningActivity, OrderActivity, OrderAyatActivity, TypeMissingTextActivity } from '../../types/activities';
 import type { QuestionBlock } from '../../types/content';
 import { evaluateActivity, evaluateQuestion, validateActivity } from './activityEngine';
 
@@ -7,6 +7,24 @@ const missing: CompleteMissingTokenActivity = { id: 'missing', kind: 'complete_m
 test('evaluates stable token IDs, not display order', () => {
   expect(evaluateActivity(missing, ['token-1']).correct).toBe(true);
   expect(evaluateActivity(missing, ['token-2']).correct).toBe(false);
+});
+
+test('validates and evaluates Complete the Ayah with canonical phrase segments', () => {
+  const activity: CompleteAyahActivity = {
+    ...missing,
+    id: 'complete-ayah',
+    kind: 'complete_ayah',
+    config: {
+      segments: [{ id: 'phrase-1', tokenIds: ['token-1'] }, { id: 'phrase-2', tokenIds: ['token-2'] }],
+      visibleSegmentIds: ['phrase-1'],
+      hiddenSegmentIds: ['phrase-2'],
+      optionSegmentIds: ['phrase-2', 'phrase-1'],
+    },
+  };
+  const context = { availableAyahRefs: missing.ayahRefs, availableTokenIds: ['token-1', 'token-2'], availableMeaningIds: [], availableTranslationEntryIds: [], taughtKnowledgeRefs: ['token-1'] };
+  expect(validateActivity(activity, context).valid).toBe(true);
+  expect(evaluateActivity(activity, ['phrase-2']).correct).toBe(true);
+  expect(evaluateActivity(activity, ['phrase-1']).correct).toBe(false);
 });
 
 test('normalizes only configured typed comparison copies', () => {

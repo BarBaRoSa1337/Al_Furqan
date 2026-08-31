@@ -6,6 +6,7 @@ export function evaluateActivity(activity: LearningActivity, answer: unknown, co
     case 'recall_then_reveal': return { correct: answer === 'hard' || answer === 'remembered', normalizedAnswer: answer, feedbackKey: 'self_rated_recall' };
     case 'fill_gap':
     case 'complete_missing_token': return orderedEqual(answer, activity.config.correctTokenIds, 'token_answer');
+    case 'complete_ayah': return orderedEqual(answer, activity.config.hiddenSegmentIds, 'segment_answer');
     case 'order_tokens':
     case 'order_segments': return orderedEqual(answer, activity.config.correctOrderIds, 'order_answer');
     case 'choose_continuation':
@@ -50,6 +51,20 @@ export function validateActivity(activity: LearningActivity, context: ActivityVa
   if (activity.required && activity.knowledgeRefs.some(ref => !context.taughtKnowledgeRefs.includes(ref))) errors.push('Required activity references untaught knowledge');
   if (activity.ayahRefs.some(ref => !context.availableAyahRefs.some(candidate => refKey(candidate) === refKey(ref)))) errors.push('Activity references unavailable ayah');
   if ((activity.kind === 'fill_gap' || activity.kind === 'complete_missing_token') && activity.config.correctTokenIds.some(id => !context.availableTokenIds.includes(id))) errors.push('Activity references unavailable token');
+  if (activity.kind === 'complete_ayah') {
+    const { segments, visibleSegmentIds, hiddenSegmentIds, optionSegmentIds } = activity.config;
+    const segmentIds = segments.map(segment => segment.id);
+    validateSegments(segments, segmentIds, context.availableTokenIds, errors);
+    validateUnique('complete-ayah option', optionSegmentIds, errors);
+    if (hiddenSegmentIds.length === 0) errors.push('Complete Ayah requires at least one hidden segment');
+    if (optionSegmentIds.length < 1 || optionSegmentIds.length > 4) errors.push('Complete Ayah requires one to four options');
+    if (!sameSet([...visibleSegmentIds, ...hiddenSegmentIds], segmentIds)) errors.push('Complete Ayah visible and hidden segments must partition the ayah');
+    if (hiddenSegmentIds.some(id => !optionSegmentIds.includes(id))) errors.push('Complete Ayah options must include every hidden segment');
+    const canonicalIds = segments.flatMap(segment => segment.tokenIds);
+    if (canonicalIds.length !== context.availableTokenIds.length || canonicalIds.some((id, index) => id !== context.availableTokenIds[index])) {
+      errors.push('Complete Ayah segments must cover canonical tokens in order');
+    }
+  }
   if ('itemIds' in activity.config && !sameSet(activity.config.itemIds, activity.config.correctOrderIds)) errors.push('Order activity item IDs must match correct order IDs');
   if (activity.kind === 'order_tokens' && activity.config.itemIds.some(id => !context.availableTokenIds.includes(id))) errors.push('Order activity references unavailable token');
   if (activity.kind === 'order_segments') validateSegments(activity.config.segments, activity.config.itemIds, context.availableTokenIds, errors);
@@ -61,6 +76,7 @@ export function validateActivity(activity: LearningActivity, context: ActivityVa
     if (activity.config.pairs.some(pair => !context.availableMeaningIds.includes(pair.meaningId))) errors.push('Word match references unavailable meaning');
   }
   if (activity.kind === 'match_ayah_translation') {
+    if (activity.config.pairs.length > 4) errors.push('Ayah translation match supports at most four pairs');
     validateSegments(activity.config.ayahSegments, activity.config.pairs.map(pair => pair.ayahSegmentId), context.availableTokenIds, errors);
     validateUnique('translation segment', activity.config.translationSegments.map(segment => segment.id), errors);
     validateUnique('ayah-translation prompt', activity.config.pairs.map(pair => pair.ayahSegmentId), errors);
@@ -73,6 +89,7 @@ export function validateActivity(activity: LearningActivity, context: ActivityVa
   if (activity.kind === 'choose_continuation') {
     const { optionIds, correctOptionId, promptTokenIds, segments } = activity.config;
     if (optionIds.length < 2) errors.push('Continuation activity requires at least two options');
+    if (optionIds.length > 4) errors.push('Continuation activity supports at most four options');
     validateUnique('continuation option', optionIds, errors);
     if (!optionIds.includes(correctOptionId)) errors.push('Continuation answer references unavailable option');
     if (promptTokenIds && (promptTokenIds.length === 0 || promptTokenIds.some(id => !context.availableTokenIds.includes(id)))) {
@@ -86,6 +103,7 @@ export function validateActivity(activity: LearningActivity, context: ActivityVa
     }
   }
   if (activity.kind === 'multiple_choice') {
+    if (activity.config.options.length < 2 || activity.config.options.length > 4) errors.push('Multiple choice requires two to four options');
     validateUnique('multiple-choice option', activity.config.options.map(option => option.id), errors);
     if (!activity.config.options.some(option => option.id === activity.config.correctOptionId)) errors.push('Multiple-choice answer references unavailable option');
   }

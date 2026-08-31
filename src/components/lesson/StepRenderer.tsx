@@ -4,6 +4,7 @@ import { LevelStep } from '../../types/content';
 import type { ExerciseSubmissionResult } from '../../types/activities';
 import { colors, fonts } from '../../theme/tokens';
 import LevelBlockRenderer from './LevelBlockRenderer';
+import Card from '../ui/Card';
 
 interface StepRendererProps {
   step: LevelStep;
@@ -14,7 +15,9 @@ interface StepRendererProps {
 export default function StepRenderer({ step, onQuestionAnswer, onActivityAnswer }: StepRendererProps) {
   return (
     <View>
-      <Text style={styles.stepTitle}>{step.title}</Text>
+      <Card elevated={false} style={styles.titleCard}>
+        <Text accessibilityRole="header" style={styles.stepTitle}>{step.title}</Text>
+      </Card>
       {step.blocks.map(block => (
         <LevelBlockRenderer
           key={block.id}
@@ -33,6 +36,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontWeight: '800',
     color: colors.primary,
-    marginBottom: 16,
   },
+  titleCard: { backgroundColor: 'transparent', marginBottom: 8, padding: 0 },
 });

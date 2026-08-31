@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import surahAlFilPackage from '../../content/packages/surah-al-fil/v1';
 import { getCoreLevelSteps } from '../../lib/content/lessonSteps';
-import DailyLearningLoop, { scrollToStepTop } from './DailyLearningLoop';
+import DailyLearningLoop, { normalizeLessonProgress, scrollToStepTop } from './DailyLearningLoop';
 
 test('renders package-authored step content with session progress', () => {
   const level = surahAlFilPackage.levels[0];
@@ -37,6 +37,11 @@ test('resets the lesson scroll position for a new step', () => {
 
   scrollToStepTop({ scrollTo } as never);
   expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: false });
+});
+
+test('clamps stale lesson counters to a valid range', () => {
+  expect(normalizeLessonProgress(1, 1)).toEqual({ current: 1, total: 1 });
+  expect(normalizeLessonProgress(-4, 0)).toEqual({ current: 1, total: 1 });
 });
 
 test('does not render a footer action for an interactive exercise step', () => {

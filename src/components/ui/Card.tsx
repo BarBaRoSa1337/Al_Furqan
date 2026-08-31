@@ -27,7 +27,7 @@ const Card: React.FC<CardProps> = ({ children, style, elevated = true, variant =
       style={[
         styles.card,
         elevated && styles.elevated,
-        isMushaf ? styles.mushafCard : (variant !== 'default' && { borderLeftWidth: 4, borderLeftColor: accent }),
+        isMushaf ? styles.mushafCard : (variant !== 'default' && { borderStartWidth: 4, borderStartColor: accent }),
         style,
       ]}
     >

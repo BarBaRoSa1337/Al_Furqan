@@ -1,7 +1,7 @@
 // Root layout for Expo Router
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SourceSans3_400Regular, SourceSans3_600SemiBold, SourceSans3_700Bold } from '@expo-google-fonts/source-sans-3';
@@ -37,6 +37,7 @@ export default function RootLayout() {
 }
 
 function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const pathname = usePathname();
   const { direction, preferences, ready: preferencesReady, t } = useLocalization();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string>();
@@ -48,6 +49,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const runtimeApiBaseUrl = getRuntimeApiBaseUrl();
   const contentMode = resolveContentMode();
   const previewContent = contentMode === 'preview';
+  const showPreviewIndicator = previewContent && !isFocusedLearningRoute(pathname);
   const localPreviewRequested = isLocalPreviewRequested();
   const localPreviewEnabled = isLocalPreviewEnabled(contentMode);
 
@@ -86,7 +88,8 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
       if (!repo.getActivePackage()) throw new Error(`${contentMode} content package could not be activated.`);
       setState('ready');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t('app.contentUnavailable'));
+      console.error('[content] Content bootstrap failed.', cause);
+      setError(t('app.contentUnavailable'));
       setState('error');
     }
   }, [bootstrapLocale, contentMode, localPreviewEnabled, localPreviewRequested, packageId, previewContent, runtimeApiBaseUrl, t]);
@@ -117,7 +120,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   return (
     <View style={[styles.root, { direction }]}>
       <StatusBar style="dark" />
-      <View style={[styles.stack, previewContent && styles.previewInset]}>
+      <View style={[styles.stack, showPreviewIndicator && styles.previewInset]}>
         <Stack screenOptions={{ headerShown: false, animation: direction === 'rtl' ? 'slide_from_left' : 'slide_from_right', contentStyle: { backgroundColor: colors.background } }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="roadmap" />
@@ -134,9 +137,13 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="terms" />
         </Stack>
       </View>
-      {previewContent && previewProvider ? <PreviewContentIndicator label={previewProvider === 'local' ? 'Local preview' : undefined} /> : null}
+      {showPreviewIndicator && previewProvider ? <PreviewContentIndicator label={previewProvider === 'local' ? 'Local preview' : undefined} /> : null}
     </View>
   );
+}
+
+function isFocusedLearningRoute(pathname: string): boolean {
+  return pathname.startsWith('/lesson/') || pathname.startsWith('/practice/');
 }
 
 function tryLocalPreview(packageId: string, locale: Parameters<typeof tryLoadBundledLocalPreviewPackage>[1], enabled: boolean): boolean {

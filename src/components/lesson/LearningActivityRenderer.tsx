@@ -26,6 +26,7 @@ interface Props {
 
 export default function LearningActivityRenderer({ activity, onAnswer }: Props) {
   if (activity.kind === 'fill_gap' || activity.kind === 'complete_missing_token') return <SequenceActivity activity={activity} ids={activity.config.tokenBankIds} answerLength={activity.config.correctTokenIds.length} onAnswer={onAnswer} />;
+  if (activity.kind === 'complete_ayah') return <CompleteAyahActivity activity={activity} onAnswer={onAnswer} />;
   if (activity.kind === 'order_tokens' || activity.kind === 'order_segments') return <SequenceActivity activity={activity} ids={activity.config.itemIds} answerLength={activity.config.correctOrderIds.length} onAnswer={onAnswer} />;
   if (activity.kind === 'match_word_meaning') return <WordMeaningMatch activity={activity} onAnswer={onAnswer} />;
   if (activity.kind === 'match_ayah_translation') return <AyahTranslationMatch activity={activity} onAnswer={onAnswer} />;
@@ -35,6 +36,42 @@ export default function LearningActivityRenderer({ activity, onAnswer }: Props) 
   if (activity.kind === 'type_missing_text') return <TypedActivity activity={activity} onAnswer={onAnswer} />;
   const repo = getContentRepository();
   return <Card><Text style={styles.unsupported}>{packageText(repo, 'content.unsupported')}</Text></Card>;
+}
+
+function CompleteAyahActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'complete_ayah' }>; onAnswer?: Props['onAnswer'] }) {
+  const repo = getContentRepository();
+  const { segments, visibleSegmentIds, hiddenSegmentIds, optionSegmentIds } = activity.config;
+  const [options] = useState(() => shuffle(optionSegmentIds));
+  const [answer, setAnswer] = useState<string[]>([]);
+  const [result, setResult] = useState<boolean>();
+  const [submitting, setSubmitting] = useState(false);
+  const shakeStyle = useIncorrectShake(result === false);
+  const labels = new Map(segments.map(segment => [segment.id, segment.tokenIds.map(id => repo.getWordToken(id)?.arabicText ?? id).join(' ')]));
+
+  const choose = async (id: string) => {
+    if (submitting || result === true || answer.includes(id)) return;
+    const next = [...answer, id];
+    setAnswer(next);
+    if (next.length !== hiddenSegmentIds.length) return;
+    setSubmitting(true);
+    const submission = await onAnswer?.(next, false);
+    if (submission) {
+      setResult(submission.correct);
+      quizHaptic(submission.correct);
+      AccessibilityInfo.announceForAccessibility(packageText(repo, submission.correct ? 'activity.correctFeedback' : 'activity.incorrectFeedback'));
+      if (!submission.correct) setTimeout(() => { setAnswer([]); setResult(undefined); }, 500);
+    }
+    setSubmitting(false);
+  };
+
+  return <Animated.View style={shakeStyle}><ActivityCard instruction={activity.instruction}>
+    <View style={styles.completePhrase}>
+      {segments.map(segment => visibleSegmentIds.includes(segment.id)
+        ? <Text key={segment.id} style={styles.completeSegment}>{labels.get(segment.id)}</Text>
+        : <View key={segment.id} accessibilityLabel="Missing Quran phrase" style={[styles.completeBlank, result === false && styles.completeBlankIncorrect]}><Text style={styles.completeBlankText}>•••</Text></View>)}
+    </View>
+    <View style={styles.choiceList}>{options.map(id => <Option key={id} label={labels.get(id) ?? id} fullWidth disabled={submitting || result === true || answer.includes(id)} selected={answer.includes(id) && result === undefined} correct={answer.includes(id) && result === true} incorrect={answer.includes(id) && result === false} onPress={() => { void choose(id); }} />)}</View>
+  </ActivityCard></Animated.View>;
 }
 
 function SequenceActivity({ activity, ids, answerLength, onAnswer }: Props & { ids: string[]; answerLength: number }) {
@@ -54,7 +91,8 @@ function SequenceActivity({ activity, ids, answerLength, onAnswer }: Props & { i
       const submission = await onAnswer(nextAnswer, false);
       setResult(submission.correct);
       quizHaptic(submission.correct);
-      AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
+      AccessibilityInfo.announceForAccessibility(packageText(repo, submission.correct ? 'activity.correctFeedback' : 'activity.incorrectFeedback'));
+      if (!submission.correct) setTimeout(() => { setAnswer([]); setResult(undefined); }, 500);
     }
   };
   const remove = (index: number) => {
@@ -114,6 +152,8 @@ function ContinuationActivity({ activity, onAnswer }: { activity: Extract<Learni
     if (submission) {
       setResult(submission.correct);
       quizHaptic(submission.correct);
+      AccessibilityInfo.announceForAccessibility(packageText(repo, submission.correct ? 'activity.correctFeedback' : 'activity.incorrectFeedback'));
+      if (!submission.correct) setTimeout(() => { setAnswer(undefined); setResult(undefined); }, 500);
     }
     setSubmitting(false);
   };
@@ -189,6 +229,7 @@ function MatchActivity({ activity, prompts, choices, hint, promptLabel, onAnswer
 }
 
 function ChoiceActivity({ activity, onAnswer }: { activity: Extract<LearningActivity, { kind: 'multiple_choice' }>; onAnswer?: Props['onAnswer'] }) {
+  const repo = getContentRepository();
   const [options] = useState(() => shuffle(activity.config.options));
   const [answer, setAnswer] = useState<string>();
   const [result, setResult] = useState<boolean>();
@@ -202,7 +243,8 @@ function ChoiceActivity({ activity, onAnswer }: { activity: Extract<LearningActi
     if (submission) {
       setResult(submission.correct);
       quizHaptic(submission.correct);
-      AccessibilityInfo.announceForAccessibility(submission.correct ? 'Correct' : 'Incorrect. This exercise will return later.');
+      AccessibilityInfo.announceForAccessibility(packageText(repo, submission.correct ? 'activity.correctFeedback' : 'activity.incorrectFeedback'));
+      if (!submission.correct) setTimeout(() => { setAnswer(undefined); setResult(undefined); }, 500);
     }
     setSubmitting(false);
   };
@@ -341,8 +383,13 @@ const styles = StyleSheet.create({
   rtlText: { fontFamily: fonts.arabic, fontSize: 22, lineHeight: 32, textAlign: 'right', writingDirection: 'rtl' },
   optionMarker: { color: colors.success, fontSize: 11, fontWeight: '800' },
   matchProgress: { color: colors.primary, fontSize: 13, fontWeight: '800', marginBottom: spacing.md },
-  matchColumns: { flexDirection: 'row-reverse', gap: spacing.sm, marginBottom: spacing.md },
-  matchColumn: { flex: 1, gap: spacing.sm },
+  matchColumns: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  matchColumn: { flexBasis: 180, flexGrow: 1, gap: spacing.sm },
+  completePhrase: { alignItems: 'center', flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center', marginBottom: spacing.lg },
+  completeSegment: { color: colors.primary, fontFamily: fonts.arabic, fontSize: 24, lineHeight: 38, writingDirection: 'rtl' },
+  completeBlank: { alignItems: 'center', backgroundColor: colors.surfaceMuted, borderColor: colors.primary, borderRadius: radii.md, borderStyle: 'dashed', borderWidth: 1, justifyContent: 'center', minHeight: 42, minWidth: 72, paddingHorizontal: spacing.md },
+  completeBlankIncorrect: { backgroundColor: colors.dangerSoft, borderColor: colors.danger },
+  completeBlankText: { color: colors.textMuted, fontSize: 18, letterSpacing: 3 },
   columnLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
   typedInput: { minHeight: 96, borderWidth: 2, borderColor: colors.border, borderRadius: radii.md, padding: spacing.md, color: colors.text, backgroundColor: colors.surface, fontFamily: fonts.arabic, fontSize: 26, lineHeight: 40, writingDirection: 'rtl' },
   typedCorrect: { backgroundColor: colors.successSoft, borderColor: colors.success },

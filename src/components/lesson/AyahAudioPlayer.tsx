@@ -26,7 +26,10 @@ export default function AyahAudioPlayer({
   contentPackage: ContentPackage;
 }) {
   const localization = useOptionalLocalization();
-  const t = localization?.t ?? ((key: string, values?: Record<string, string | number>) => appText(getCurrentInterfaceLocale(), key, values));
+  const t = React.useMemo(
+    () => localization?.t ?? ((key: string, values?: Record<string, string | number>) => appText(getCurrentInterfaceLocale(), key, values)),
+    [localization?.t],
+  );
   const [trackIndex, setTrackIndex] = useState(0);
   const [repeatCount, setRepeatCount] = useState<RepeatCount>(1);
   const [round, setRound] = useState(1);
@@ -78,13 +81,16 @@ export default function AyahAudioPlayer({
       }
       release = result.status === 'verified_offline' ? result.release : undefined;
       setResolution(result);
-      if ('reason' in result && result.reason) setMessage(result.reason);
+      if ('reason' in result && result.reason) {
+        console.warn('[audio] Recitation unavailable.', result.reason);
+        setMessage(t('content.audioUnavailable'));
+      }
     });
     return () => {
       cancelled = true;
       release?.();
     };
-  }, [autoplay, contentPackage, currentTrack, retryKey]);
+  }, [autoplay, contentPackage, currentTrack, retryKey, t]);
 
   useEffect(() => {
     if (!currentUri) return;
@@ -158,18 +164,6 @@ export default function AyahAudioPlayer({
     setAutoplayBlocked(false);
   };
 
-  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 0.75>(1);
-
-  const toggleSpeed = () => {
-    const nextSpeed = playbackSpeed === 1 ? 0.75 : 1;
-    setPlaybackSpeed(nextSpeed);
-    try {
-      player.playbackRate = nextSpeed;
-    } catch {
-      // safe fallback
-    }
-  };
-
   const cycleRepeat = () => {
     const nextRepeat: Record<RepeatCount, RepeatCount> = { 1: 3, 3: 5, 5: 1 };
     setRepeatCount(nextRepeat[repeatCount]);
@@ -192,15 +186,6 @@ export default function AyahAudioPlayer({
             <Ionicons name={status.playing ? 'pause' : 'play'} size={20} color={colors.surface} />
           </Pressable>
 
-          <Pressable
-            accessibilityLabel={t('audio.restart')}
-            accessibilityRole="button"
-            onPress={() => { void player.seekTo(segmentStart); }}
-            style={({ pressed }) => [styles.restartButton, pressed && styles.pressed]}
-          >
-            <Ionicons name="refresh" size={16} color={colors.textMuted} />
-          </Pressable>
-
           <View style={styles.trackInfo}>
             <View accessibilityLabel={`${formatTime(elapsed)} of ${formatTime(segmentDuration)}`} accessibilityRole="progressbar" style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -212,17 +197,6 @@ export default function AyahAudioPlayer({
           </View>
 
           <Pressable
-            accessibilityLabel={t('audio.speed', { speed: `${playbackSpeed}x` })}
-            accessibilityRole="button"
-            onPress={toggleSpeed}
-            style={({ pressed }) => [styles.repeatPill, playbackSpeed !== 1 && styles.repeatPillActive, pressed && styles.pressed]}
-          >
-            <Text style={[styles.repeatPillText, playbackSpeed !== 1 && styles.repeatPillTextActive]}>
-              {playbackSpeed === 1 ? '1.0×' : '0.75×'}
-            </Text>
-          </Pressable>
-
-          <Pressable
             accessibilityLabel={t('audio.repeat', { count: repeatCount })}
             accessibilityRole="button"
             onPress={cycleRepeat}
@@ -230,18 +204,18 @@ export default function AyahAudioPlayer({
           >
             <Ionicons name="repeat" size={14} color={repeatCount > 1 ? colors.surface : colors.primary} />
             <Text style={[styles.repeatPillText, repeatCount > 1 && styles.repeatPillTextActive]}>
-              {repeatCount > 1 ? `${round}/${repeatCount}` : '1×'}
+              {repeatCount > 1 ? `${Math.min(round, repeatCount)}/${repeatCount}` : '1×'}
             </Text>
           </Pressable>
         </View>
+        {autoplayBlocked && !status.playing ? <Text style={styles.messageText}>{t('audio.tapToPlay')}</Text> : null}
+        {message ? <Text accessibilityLiveRegion="polite" style={styles.messageText}>{message}</Text> : null}
+        {resolution?.status === 'unavailable' ? (
+          <Pressable accessibilityLabel={t('audio.retry')} accessibilityRole="button" onPress={() => setRetryKey(value => value + 1)} style={styles.retryButton}>
+            <Text style={styles.retryText}>{t('audio.retry')}</Text>
+          </Pressable>
+        ) : null}
       </Card>
-      {autoplayBlocked && !status.playing ? <Text style={styles.messageText}>{t('audio.tapToPlay')}</Text> : null}
-      {message ? <Text accessibilityLiveRegion="polite" style={styles.messageText}>{message}</Text> : null}
-      {resolution?.status === 'unavailable' ? (
-        <Pressable accessibilityLabel={t('audio.retry')} accessibilityRole="button" onPress={() => setRetryKey(value => value + 1)} style={styles.retryButton}>
-          <Text style={styles.retryText}>{t('audio.retry')}</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -261,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceWarm,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.pill,
+    borderRadius: radii.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.xs,
@@ -269,7 +243,8 @@ const styles = StyleSheet.create({
   playerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
+    flexWrap: 'wrap',
+    gap: spacing.md,
   },
   playButton: {
     alignItems: 'center',
@@ -279,17 +254,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 42,
   },
-  restartButton: {
-    alignItems: 'center',
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
-  },
   trackInfo: {
-    flex: 1,
+    flexBasis: 180,
+    flexGrow: 1,
+    flexShrink: 1,
     paddingHorizontal: spacing.xs,
   },
   progressTrack: {
@@ -308,12 +276,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: spacing.sm,
     marginTop: 4,
   },
   reciterName: {
     color: colors.textMuted,
     fontFamily: fonts.medium,
     fontSize: 11,
+    flex: 1,
   },
   timeText: {
     color: colors.textMuted,
@@ -348,7 +318,7 @@ const styles = StyleSheet.create({
     color: colors.warning,
     fontFamily: fonts.regular,
     fontSize: 11,
-    marginTop: 2,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
   retryButton: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },

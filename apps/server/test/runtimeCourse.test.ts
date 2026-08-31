@@ -97,7 +97,7 @@ test('assembles a validated ten-Surah Quran Foundation practice course', async (
   const contentPackage = built.package;
   assert.equal(contentPackage.ayat.length, 48);
   assert.equal(contentPackage.learningPaths[0].surahCurricula?.length, 10);
-  assert.equal(contentPackage.levels.length, 68);
+  assert.equal(contentPackage.levels.length, 69);
   assert.equal(contentPackage.ayat.every(ayah => ayah.wordMeanings?.length === ayah.wordTokenIds.length), true);
   assert.equal(contentPackage.ayat.every(ayah => ayah.tafsirEntries.length === 1), true);
   assert.equal(contentPackage.recitationTracks.length, 48);
@@ -106,6 +106,9 @@ test('assembles a validated ten-Surah Quran Foundation practice course', async (
   assert.equal(contentPackage.ayat[0].translations[0].providerText, '<p>Translation 105:1<sup foot_note=1>1</sup></p>');
   assert.deepEqual(contentPackage.ayat[0].translations[0].providerFootnotes, { '1': 'Footnote 105:1' });
   assert.equal(contentPackage.levels.some(level => level.steps.some(step => step.blocks.some(block => block.type === 'context'))), true);
+  assert.equal(contentPackage.levels.some(level => level.steps.some(step => step.blocks.some(block => block.type === 'activity' && block.activity.kind === 'complete_ayah'))), true);
+  assert.equal(contentPackage.levels.some(level => level.steps.some(step => step.blocks.some(block => block.type === 'activity' && block.activity.kind === 'type_missing_text'))), false);
+  assert.equal(contentPackage.learningPaths[0].surahCurricula?.flatMap(curriculum => curriculum.lessons).filter(lesson => lesson.kind === 'segment_review').length, 1);
   assert.deepEqual(contentPackage.learningPaths[0].surahIds.at(-1), 'surah-114');
   assert.deepEqual(contentPackage.learningPaths[0].surahCurricula?.[0].lessons.map(item => item.levelId), [
     'al-fil-level-introduction', 'al-fil-level-1-context-ayah-1', 'al-fil-level-2-ayah-2',
@@ -114,7 +117,7 @@ test('assembles a validated ten-Surah Quran Foundation practice course', async (
   assert.deepEqual(validatePackage(contentPackage, { mode: 'development' }).errors, []);
 });
 
-test('locks unavailable optional QF resources without fabricating content', async () => {
+test('omits unavailable optional QF resources without fabricating learner locks', async () => {
   const unavailable = async () => { throw new Error('Resource unavailable'); };
   const built = await buildShortSurahRuntimeCourse('en', {
     resources,
@@ -126,9 +129,9 @@ test('locks unavailable optional QF resources without fabricating content', asyn
   });
   assert.ok(built);
   const locked = built.package.levels.flatMap(level => level.steps.flatMap(step => step.blocks)).filter(block => block.type === 'source_locked');
-  assert.equal(locked.filter(block => block.type === 'source_locked' && block.capability === 'tafsir').length, 48);
+  assert.equal(locked.length, 0);
   assert.equal(built.package.levels.some(level => level.steps.some(step => step.blocks.some(block => block.type === 'context'))), false);
-  assert.equal(locked.some(block => block.type === 'source_locked' && block.capability === 'audio'), true);
+  assert.equal(built.package.levels.some(level => level.steps.some(step => step.blocks.some(block => block.type === 'audio'))), false);
   assert.deepEqual(validatePackage(built.package, { mode: 'development' }).errors, []);
 });
 
