@@ -1,28 +1,38 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../../packages/api-contracts/src';
-import BottomNavigation from '../components/furqan/BottomNavigation';
 import { CourseArtwork, MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
 import Screen from '../components/ui/Screen';
 import { useFurqanDashboard } from '../hooks/useFurqanDashboard';
 import { getSourceHash, grantCovers } from '../lib/content/governance';
 import { getContentRepository } from '../lib/content/repository';
-import { colors, fonts, radii, shadows, spacing } from '../theme/tokens';
+import { colors, fonts, radii, shadows, spacing, touch } from '../theme/tokens';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
 
 export default function ProfileScreen() {
+  const params = useLocalSearchParams<{ section?: string | string[] }>();
+  const section = Array.isArray(params.section) ? params.section[0] : params.section;
   const dashboard = useFurqanDashboard();
   const router = useRouter();
-  const { preferences, setContentLocale, setInterfaceLocale, setLessonLocale, t, updatePreferences } = useLocalization();
+  const { direction, preferences, setContentLocale, setInterfaceLocale, setLessonLocale, t, updatePreferences } = useLocalization();
+  const scrollRef = useRef<ScrollView>(null);
+  const [settingsY, setSettingsY] = useState<number>();
   const contentPackage = getContentRepository().getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const completedCount = dashboard.progress.completedLevelIds.length;
+  useEffect(() => {
+    if (section === 'settings' && settingsY !== undefined) scrollRef.current?.scrollTo({ animated: true, y: settingsY });
+  }, [section, settingsY]);
   return (
     <Screen>
       <MoroccanBackdrop />
-      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+      <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic" ref={scrollRef}>
+        <Pressable accessibilityLabel={t('surah.backHome')} accessibilityRole="button" onPress={() => router.replace('/roadmap')} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+          <Ionicons name={direction === 'rtl' ? 'arrow-forward' : 'arrow-back'} size={23} color={colors.primary} />
+        </Pressable>
         <View style={styles.intro}>
           <CourseArtwork variant="profile" size={82} />
           <View style={styles.introCopy}>
@@ -50,7 +60,7 @@ export default function ProfileScreen() {
           <Detail label={t('profile.readyReview')} value={String(dashboard.dueReviewCount)} />
           <Detail label={t('profile.dailyGoal')} value={dashboard.dailyGoalComplete ? t('profile.complete') : t('profile.incomplete')} />
         </View>
-        <View style={styles.detailCard}>
+        <View onLayout={event => setSettingsY(event.nativeEvent.layout.y)} style={styles.detailCard}>
           <Text style={styles.detailTitle}>{t('profile.languageSettings')}</Text>
           <PreferenceLabel>{t('profile.interfaceLanguage')}</PreferenceLabel>
           <LocaleSelector value={preferences.interfaceLocale} onSelect={locale => { void setInterfaceLocale(locale); }} t={t} />
@@ -157,7 +167,6 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
       </ScrollView>
-      <BottomNavigation active="profile" reviewCount={dashboard.dueReviewCount} />
     </Screen>
   );
 }
@@ -194,6 +203,8 @@ function LocaleSelector({ value, onSelect, t }: { value: SupportedLocale; onSele
 
 const styles = StyleSheet.create({
   content: { alignSelf: 'center', maxWidth: 600, padding: spacing.lg, paddingBottom: spacing.xxl, width: '100%' },
+  back: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, height: touch.minimum, justifyContent: 'center', marginBottom: spacing.md, width: touch.minimum },
+  pressed: { opacity: 0.7 },
   intro: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg },
   introCopy: { flex: 1 },
   title: { color: colors.primary, fontFamily: fonts.bold, fontSize: 27 },

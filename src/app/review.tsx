@@ -1,27 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import BottomNavigation from '../components/furqan/BottomNavigation';
 import { CourseArtwork, MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
 import PracticeActivityRenderer from '../components/lesson/PracticeActivityRenderer';
 import Button from '../components/ui/Button';
 import ProgressBar from '../components/ui/ProgressBar';
 import Screen from '../components/ui/Screen';
-import { useFurqanDashboard } from '../hooks/useFurqanDashboard';
 import { createActivityEvaluationContext } from '../lib/activities/activityContext';
 import { evaluateActivity } from '../lib/activities/activityEngine';
 import { getContentRepository } from '../lib/content/repository';
 import { packageText } from '../lib/content/text';
 import { getDueReviewStates, recordReviewAttempt, syncCompletedLevelReviews } from '../lib/progress/storage';
 import { DueReviewItem, resolveDueReviewItems } from '../lib/progress/reviewQueue';
-import { colors, fonts, spacing } from '../theme/tokens';
+import { colors, fonts, radii, spacing, touch } from '../theme/tokens';
 import type { RecallRating, ReviewOutcome } from '../types/activities';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 
 export default function ReviewScreen() {
   const router = useRouter();
-  const dashboard = useFurqanDashboard();
-  const { preferences } = useLocalization();
+  const { direction, preferences } = useLocalization();
   const lessonLocale = preferences.lessonLocale;
   const repo = getContentRepository();
   const text = (key: Parameters<typeof packageText>[1]) => packageText(repo, key, {}, preferences.interfaceLocale);
@@ -50,16 +48,16 @@ export default function ReviewScreen() {
   }, [lessonLocale, repo]);
 
   if (loading) {
-    return <ReviewShell reviewCount={dashboard.dueReviewCount}><View style={styles.center}><ActivityIndicator color={colors.success} /></View></ReviewShell>;
+    return <ReviewShell><View style={styles.center}><ActivityIndicator color={colors.success} /></View></ReviewShell>;
   }
   if (error) {
-    return <ReviewState message={error} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} reviewCount={dashboard.dueReviewCount} />;
+    return <ReviewState message={error} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} />;
   }
   if (items.length === 0) {
-    return <ReviewState message={text('review.noneDue')} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} reviewCount={0} />;
+    return <ReviewState message={text('review.noneDue')} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} />;
   }
   if (index >= items.length) {
-    return <ReviewState message={text('review.complete')} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} reviewCount={0} complete />;
+    return <ReviewState message={text('review.complete')} button={text('review.backToRoadmap')} onPress={() => router.replace('/roadmap')} complete />;
   }
 
   const item = items[index];
@@ -93,6 +91,9 @@ export default function ReviewScreen() {
     <Screen>
       <View style={styles.page}>
         <View style={styles.header}>
+          <Pressable accessibilityLabel={text('review.backToRoadmap')} accessibilityRole="button" onPress={() => router.replace('/roadmap')} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+            <Ionicons name={direction === 'rtl' ? 'arrow-forward' : 'arrow-back'} size={22} color={colors.primary} />
+          </Pressable>
           <View>
             <Text style={styles.eyebrow}>Keep it fresh</Text>
             <Text accessibilityRole="header" style={styles.title}>{text('review.title')}</Text>
@@ -104,18 +105,17 @@ export default function ReviewScreen() {
           <PracticeActivityRenderer activity={item.activity} onAnswer={answerActivity} />
         </ScrollView>
       </View>
-      <BottomNavigation active="reviews" reviewCount={Math.max(items.length - index, 0)} />
     </Screen>
   );
 }
 
-function ReviewShell({ children, reviewCount }: { children: React.ReactNode; reviewCount: number }) {
-  return <Screen><View style={styles.page}>{children}</View><BottomNavigation active="reviews" reviewCount={reviewCount} /></Screen>;
+function ReviewShell({ children }: { children: React.ReactNode }) {
+  return <Screen><View style={styles.page}>{children}</View></Screen>;
 }
 
-function ReviewState({ message, button, onPress, reviewCount, complete = false }: { message: string; button: string; onPress: () => void; reviewCount: number; complete?: boolean }) {
+function ReviewState({ message, button, onPress, complete = false }: { message: string; button: string; onPress: () => void; complete?: boolean }) {
   return (
-    <ReviewShell reviewCount={reviewCount}>
+    <ReviewShell>
       <MoroccanBackdrop />
       <View style={styles.center}>
         <CourseArtwork variant={complete ? 'lantern' : 'quran'} size={92} />
@@ -134,7 +134,9 @@ function toReviewOutcome(answer: unknown, correct: boolean): ReviewOutcome {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  header: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  header: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  back: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.pill, borderWidth: 1, height: touch.minimum, justifyContent: 'center', width: touch.minimum },
+  pressed: { opacity: 0.7 },
   eyebrow: { color: colors.success, fontFamily: fonts.bold, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' },
   title: { color: colors.primary, fontFamily: fonts.bold, fontSize: 24 },
   count: { color: colors.gold, fontFamily: fonts.bold, fontSize: 14 },

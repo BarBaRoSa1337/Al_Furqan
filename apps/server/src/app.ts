@@ -1,4 +1,4 @@
-import type { ApiErrorResponse, ContentMode, SourceAttribution, SupportedLocale } from '../../../packages/api-contracts/src';
+import type { ApiErrorResponse, ContentMode, QuranSearchResult, SourceAttribution, SupportedLocale } from '../../../packages/api-contracts/src';
 import { isSupportedLocale } from '../../../packages/api-contracts/src';
 import type { ContentPackage } from '../../../src/types/content';
 import { validatePackage } from '../../../src/lib/content/packageValidator';
@@ -34,6 +34,12 @@ export function createApp(dependencies: ServerDependencies): (request: Request) 
     const url = new URL(request.url);
     try {
       if (url.pathname === '/health') return json({ status: 'ok' }, 200, origin);
+      if (url.pathname === '/v1/quran/search') {
+        const query = searchQuery(url.searchParams.get('q'));
+        const language = locale(url.searchParams.get('language'));
+        const result = await dependencies.quranFoundation.searchQuran(query, language);
+        return json({ query, source: 'quran-foundation', results: normalizeSearchResults(result.data) }, 200, origin, 'no-store');
+      }
       if (url.pathname === '/v1/quran/chapters') {
         const language = locale(url.searchParams.get('language'));
         const result = await dependencies.quranFoundation.listChapters(language);
@@ -123,6 +129,43 @@ function locale(raw: string | null): SupportedLocale {
 function contentMode(raw: string | null): ContentMode {
   if (raw === 'preview' || raw === 'production') return raw;
   return 'production';
+}
+
+function searchQuery(raw: string | null): string {
+  const value = raw?.trim() ?? '';
+  if (value.length < 1 || value.length > 120) throw new Error('Invalid search query');
+  return value;
+}
+
+function normalizeSearchResults(response: Awaited<ReturnType<QuranContentProvider['searchQuran']>>['data']): QuranSearchResult[] {
+  const entries = [...(response.result?.navigation ?? []), ...(response.result?.verses ?? [])];
+  const results = entries.flatMap((entry): QuranSearchResult[] => {
+    const kind = entry.resultType === 'surah' || entry.resultType === 'ayah' || entry.resultType === 'juz' || entry.resultType === 'hizb' ? entry.resultType : undefined;
+    if (!kind) return [];
+    const key = String(entry.key);
+    const [surahNumber, ayahNumber] = kind === 'ayah' ? key.split(':').map(Number) : [kind === 'surah' ? Number(key) : undefined, undefined];
+    const displayName = kind === 'surah' && entry.isTransliteration
+      ? plainSearchText(entry.name)
+      : kind === 'juz' || kind === 'hizb'
+        ? `${kind === 'juz' ? 'Juz' : 'Hizb'} ${key}`
+        : undefined;
+    const arabicText = plainSearchText(entry.arabic) ?? (entry.isArabic ? plainSearchText(entry.name) : undefined);
+    return [{
+      id: `${kind}:${key}`,
+      kind,
+      key,
+      ...(displayName ? { displayName } : {}),
+      ...(arabicText ? { arabicText } : {}),
+      ...(Number.isInteger(surahNumber) ? { surahNumber } : {}),
+      ...(Number.isInteger(ayahNumber) ? { ayahNumber } : {}),
+    }];
+  });
+  return results.filter((item, index) => results.findIndex(candidate => candidate.id === item.id) === index).slice(0, 20);
+}
+
+function plainSearchText(value?: string): string | undefined {
+  const text = value?.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return text || undefined;
 }
 
 function json(value: unknown, status: number, origin?: string | null, cacheControl = 'no-store'): Response {

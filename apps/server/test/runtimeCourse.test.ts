@@ -26,6 +26,7 @@ function ayahCount(surah: number): number {
 
 function provider(overrides: Partial<QuranContentProvider> = {}): QuranContentProvider {
   const base: QuranContentProvider = {
+    searchQuran: async () => result({ result: { navigation: [], verses: [] } }),
     listChapters: async () => result(selected.map(surah => ({
       id: surah.surahNumber,
       versesCount: surah.ayahCount,

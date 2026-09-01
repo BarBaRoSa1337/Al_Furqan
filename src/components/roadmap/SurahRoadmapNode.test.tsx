@@ -1,33 +1,20 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import SurahRoadmapNode from './SurahRoadmapNode';
-import type { SurahRoadmapItem } from './surahRoadmapModel';
 
-const item: SurahRoadmapItem = {
-  id: 'surah-114',
-  surahNumber: 114,
-  arabicName: 'النَّاس',
-  englishName: 'Mankind',
-  transliteratedName: 'An-Nas',
-  ayahCount: 6,
-  revelationType: 'Makki',
-  state: 'future',
-  illustrationKey: 'shield',
-  completedLessons: 0,
-  totalLessons: 8,
-  progress: 0,
-};
+jest.mock('../../lib/localization/LocalizationProvider', () => ({
+  useLocalization: () => ({ t: (key: string) => key }),
+}));
 
-test('renders complete Surah metadata and keeps future nodes selectable without locks', () => {
+test('renders only Arabic and Latin-script Surah names and stays selectable', () => {
   const onPress = jest.fn();
-  const screen = render(<SurahRoadmapNode item={item} onPress={onPress} />);
+  const screen = render(<SurahRoadmapNode arabicName="النَّاس" englishName="An-Nas" id="surah-114" onPress={onPress} state="upcoming" />);
 
   expect(screen.getByText('النَّاس')).toBeTruthy();
   expect(screen.getByText('An-Nas')).toBeTruthy();
-  expect(screen.getByText('Mankind')).toBeTruthy();
-  expect(screen.getByText('6 ayat · Makki')).toBeTruthy();
-  const button = screen.getByRole('button', { name: /future in the suggested path, open/ });
-  fireEvent.press(button);
+  expect(screen.queryByText('Mankind')).toBeNull();
+  expect(screen.queryByText(/ayat|Makki|0\/8/i)).toBeNull();
+  fireEvent.press(screen.getByRole('button'));
   expect(onPress).toHaveBeenCalledWith('surah-114');
   expect(JSON.stringify(screen.toJSON())).not.toContain('lock');
 });

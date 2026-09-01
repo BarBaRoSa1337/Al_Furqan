@@ -6,6 +6,7 @@ import { QuranFoundationProvider } from '../src/quranFoundation';
 
 function sdk(chapterCalls: { count: number }) {
   return {
+    search: { v1: { query: async (_value: Record<string, unknown>) => ({ result: { navigation: [], verses: [] } }) } },
     content: { v4: {
       chapters: {
         list: async () => {
@@ -78,6 +79,27 @@ test('QF provider rejects malformed identifiers and exposes no generic proxy met
   assert.throws(() => provider.getVerse(115, 1, 'en'), /chapter identifier/);
   assert.throws(() => provider.getTafsir(105, 1, 0), /resource identifier/);
   assert.equal('get' in provider, false);
+});
+
+test('QF provider performs bounded uncached quick search', async () => {
+  let input: Record<string, unknown> | undefined;
+  const mock = sdk({ count: 0 });
+  mock.search.v1.query = async (value: Record<string, unknown>) => {
+    input = value;
+    return { result: { navigation: [], verses: [] } };
+  };
+  const provider = new QuranFoundationProvider(
+    { environment: 'prelive', clientId: 'client', clientSecret: 'secret' },
+    new MemoryServerCache(),
+    fetch,
+    undefined,
+    mock as never,
+  );
+  const response = await provider.searchQuran('نور', 'ar');
+  assert.equal(response.cacheStatus, 'no-store');
+  assert.equal(response.sourceVersion, 'search-api-v1');
+  assert.deepEqual(input, { query: 'نور', language: 'ar', mode: 'quick', getText: '1', highlight: '0', navigationalResultsNumber: 8, versesResultsNumber: 12, size: 20 });
+  assert.throws(() => provider.searchQuran('', 'ar'), /search query/);
 });
 
 test('QF provider hydrates referenced translation footnotes without rewriting them', async () => {

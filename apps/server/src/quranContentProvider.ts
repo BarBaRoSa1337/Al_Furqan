@@ -5,8 +5,24 @@ export interface QuranProviderResult<T> {
   fetchedAt: string;
   expiresAt?: string;
   provider: 'quran-foundation';
-  sourceVersion: 'content-api-v4';
+  sourceVersion: 'content-api-v4' | 'search-api-v1';
   cacheStatus: 'hit' | 'miss' | 'no-store';
+}
+
+export interface QuranProviderSearchEntry {
+  resultType: string;
+  key: number | string;
+  name: string;
+  arabic?: string;
+  isArabic?: boolean;
+  isTransliteration?: boolean;
+}
+
+export interface QuranProviderSearchResponse {
+  result?: {
+    navigation: QuranProviderSearchEntry[];
+    verses: QuranProviderSearchEntry[];
+  };
 }
 
 export interface QuranProviderResourceConfig {
@@ -104,6 +120,7 @@ export interface QuranProviderResourceCatalog {
 }
 
 export interface QuranContentProvider {
+  searchQuran(query: string, locale: QuranProviderLocale): Promise<QuranProviderResult<QuranProviderSearchResponse>>;
   listChapters(locale: QuranProviderLocale): Promise<QuranProviderResult<QuranProviderChapter[]>>;
   getVerse(chapter: number, ayah: number, locale: QuranProviderLocale): Promise<QuranProviderResult<QuranProviderVerse>>;
   getChapterVerses(

@@ -1,100 +1,60 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, StyleSheet, View } from 'react-native';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
-import SurahIllustration from './SurahIllustration';
-import RoadmapConnectorPath from './RoadmapConnectorPath';
+import React, { useCallback } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { colors, spacing } from '../../theme/tokens';
+import RoadmapPath from './RoadmapPath';
 import SurahRoadmapNode from './SurahRoadmapNode';
 import type { SurahRoadmapItem } from './surahRoadmapModel';
 
 interface SurahRoadmapProps {
   items: readonly SurahRoadmapItem[];
   onSelectSurah: (id: string) => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  header?: React.ReactElement | null;
+  direction?: 'ltr' | 'rtl';
 }
 
-export default function SurahRoadmap({ items, onSelectSurah }: SurahRoadmapProps) {
-  const [width, setWidth] = useState(320);
-  const reducedMotion = useReducedMotion();
-  const wide = width >= 700;
-  const rowHeight = wide ? 226 : 210;
-  const nodeWidth = wide ? 172 : 148;
-  const centers = wide ? [width * 0.27, width * 0.73] : [width * 0.34, width * 0.66];
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    const nextWidth = Math.round(event.nativeEvent.layout.width);
-    if (nextWidth > 0 && nextWidth !== width) setWidth(nextWidth);
-  };
+export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshing = false, header, direction = 'ltr' }: SurahRoadmapProps) {
+  const renderItem = useCallback(({ item, index }: { item: SurahRoadmapItem; index: number }) => {
+    const offset = [0, 7, -3, 5][index % 4];
+    const mirroredOffset = direction === 'rtl' ? -offset : offset;
+    const pathX = direction === 'rtl' ? 82 - offset / 5 : 18 + offset / 5;
+    const nextOffset = [0, 7, -3, 5][(index + 1) % 4];
+    const nextPathX = direction === 'rtl' ? 82 - nextOffset / 5 : 18 + nextOffset / 5;
+    return (
+      <View style={styles.row}>
+        {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} showLeaves={index % 2 === 0} state={item.state} toX={nextPathX} /></View> : null}
+        <View style={[styles.node, direction === 'rtl' && styles.nodeRtl, { transform: [{ translateX: mirroredOffset }] }]}>
+          <SurahRoadmapNode arabicName={item.arabicName} englishName={item.englishName} id={item.id} onPress={onSelectSurah} state={item.state} />
+        </View>
+      </View>
+    );
+  }, [direction, items.length, onSelectSurah]);
 
   return (
-    <View onLayout={handleLayout} style={[styles.roadmap, { minHeight: items.length * rowHeight + 20 }]}>
-      {items.map((item, index) => {
-        const lane = index % 2;
-        const nextLane = (index + 1) % 2;
-        const centerX = centers[lane];
-        const illustrationSize = wide ? 84 : 64;
-        const illustrationLeft = lane === 0
-          ? Math.min(width - illustrationSize, centerX + nodeWidth / 2 + 14)
-          : Math.max(0, centerX - nodeWidth / 2 - illustrationSize - 14);
-        return (
-          <View key={item.id} style={[styles.row, { height: rowHeight, top: index * rowHeight, width }]}>
-            {index < items.length - 1 ? (
-              <RoadmapConnectorPath
-                decorative={index % 3 !== 1}
-                fromX={centerX}
-                height={rowHeight}
-                toX={centers[nextLane]}
-                tone={item.state}
-                width={width}
-              />
-            ) : null}
-            <AnimatedRoadmapItem delay={Math.min(index * 35, 245)} reducedMotion={reducedMotion}>
-              <View style={[styles.nodePosition, { left: centerX - nodeWidth / 2 }]}>
-                <SurahRoadmapNode item={item} onPress={onSelectSurah} width={nodeWidth} />
-              </View>
-              <View style={[styles.illustrationPosition, { left: illustrationLeft, top: wide ? 68 : 72 }]}>
-                <SurahIllustration illustrationKey={item.illustrationKey} muted={item.state === 'future'} size={illustrationSize} />
-              </View>
-            </AnimatedRoadmapItem>
-          </View>
-        );
-      })}
-    </View>
+    <FlatList
+      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      data={items as SurahRoadmapItem[]}
+      initialNumToRender={7}
+      keyExtractor={keyExtractor}
+      ListHeaderComponent={header}
+      maxToRenderPerBatch={8}
+      refreshControl={onRefresh ? <RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={colors.success} /> : undefined}
+      removeClippedSubviews
+      renderItem={renderItem}
+      showsVerticalScrollIndicator={false}
+      windowSize={7}
+    />
   );
 }
 
-function AnimatedRoadmapItem({ children, delay, reducedMotion }: { children: React.ReactNode; delay: number; reducedMotion: boolean }) {
-  const progress = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
-  useEffect(() => {
-    if (reducedMotion) {
-      progress.setValue(1);
-      return;
-    }
-    const animation = Animated.timing(progress, {
-      delay,
-      duration: 220,
-      toValue: 1,
-      useNativeDriver: true,
-    });
-    animation.start();
-    return () => animation.stop();
-  }, [delay, progress, reducedMotion]);
-  return (
-    <Animated.View
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          opacity: progress,
-          transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [7, 0] }) }],
-        },
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
-}
+function keyExtractor(item: SurahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
-  roadmap: { alignSelf: 'stretch', position: 'relative' },
-  row: { left: 0, position: 'absolute' },
-  nodePosition: { position: 'absolute', top: 18, zIndex: 2 },
-  illustrationPosition: { position: 'absolute', zIndex: 1 },
+  content: { alignSelf: 'center', maxWidth: 680, paddingBottom: spacing.xxl, paddingHorizontal: spacing.lg, width: '100%' },
+  row: { justifyContent: 'center', minHeight: 128, position: 'relative' },
+  connector: { bottom: -47, left: 0, position: 'absolute', right: 0, top: 76 },
+  node: { alignSelf: 'stretch', paddingEnd: spacing.xl, zIndex: 1 },
+  nodeRtl: { paddingEnd: 0, paddingStart: spacing.xl },
 });

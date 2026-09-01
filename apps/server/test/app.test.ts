@@ -14,6 +14,7 @@ const result = <T>(data: T) => ({
 
 const dependencies = {
   quranFoundation: {
+    searchQuran: async () => result({ result: { navigation: [{ resultType: 'surah', key: 105, name: '<b>Al-Fil</b>', arabic: 'الفيل', isTransliteration: true }], verses: [] } }),
     listChapters: async () => result([]),
     getVerse: async () => result({ id: 1, verseNumber: 1, verseKey: '105:1' }),
     getChapterVerses: async () => result([]),
@@ -31,6 +32,16 @@ test('server rejects unapproved origins and malformed identifiers', async () => 
   const app = createApp(dependencies as never);
   assert.equal((await app(new Request('https://server.test/health', { headers: { origin: 'https://evil.example' } }))).status, 403);
   assert.equal((await app(new Request('https://server.test/v1/quran/verses/115/1'))).status, 400);
+});
+
+test('server exposes normalized Quran search without markup or translations', async () => {
+  const app = createApp(dependencies as never);
+  const response = await app(new Request('https://server.test/v1/quran/search?q=Al-Fil&language=en'));
+  const body = await response.json() as { results: Array<Record<string, unknown>> };
+  assert.equal(response.status, 200);
+  assert.deepEqual(body.results, [{ id: 'surah:105', kind: 'surah', key: '105', displayName: 'Al-Fil', arabicText: 'الفيل', surahNumber: 105 }]);
+  assert.equal(JSON.stringify(body).includes('translation'), false);
+  assert.equal((await app(new Request('https://server.test/v1/quran/search?q=&language=en'))).status, 400);
 });
 
 test('runtime package endpoint returns explicit unavailable state', async () => {

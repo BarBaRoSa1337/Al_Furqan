@@ -11,6 +11,7 @@ import type {
   QuranProviderResourceCatalog,
   QuranProviderResourceConfig,
   QuranProviderResult,
+  QuranProviderSearchResponse,
   QuranProviderTafsir,
   QuranProviderVerse,
 } from './quranContentProvider';
@@ -18,6 +19,11 @@ import type {
 type ApiParams = Record<string, string | number | boolean | unknown[] | undefined | Record<string, boolean>>;
 
 interface QuranFoundationSdk {
+  search: {
+    v1: {
+      query(input: ApiParams & { query: string }): Promise<QuranProviderSearchResponse>;
+    };
+  };
   content: {
     v4: {
       chapters: {
@@ -83,6 +89,21 @@ export class QuranFoundationProvider implements QuranContentProvider {
         },
       } : {}),
     }) as unknown as QuranFoundationSdk;
+  }
+
+  searchQuran(query: string, locale: QuranProviderLocale): Promise<QuranProviderResult<QuranProviderSearchResponse>> {
+    const normalized = query.trim();
+    if (normalized.length < 1 || normalized.length > 120) throw new Error('Invalid Quran Foundation search query');
+    return this.uncached(() => this.sdk.search.v1.query({
+      query: normalized,
+      language: locale,
+      mode: 'quick',
+      getText: '1',
+      highlight: '0',
+      navigationalResultsNumber: 8,
+      versesResultsNumber: 12,
+      size: 20,
+    }), 'search-api-v1');
   }
 
   listChapters(locale: QuranProviderLocale): Promise<QuranProviderResult<QuranProviderChapter[]>> {
@@ -192,6 +213,11 @@ export class QuranFoundationProvider implements QuranContentProvider {
       sourceVersion: 'content-api-v4',
     });
     return this.result(data, fetchedAt.toISOString(), expiresAt, 'miss');
+  }
+
+  private async uncached<T>(operation: () => Promise<T>, sourceVersion: QuranProviderResult<T>['sourceVersion']): Promise<QuranProviderResult<T>> {
+    const data = await this.policyContext.run({ cacheSeconds: 0, noStore: true }, operation);
+    return { ...this.result(data, this.now().toISOString(), undefined, 'no-store'), sourceVersion };
   }
 
   private readonly policyAwareFetch: typeof fetch = async (input, init) => {

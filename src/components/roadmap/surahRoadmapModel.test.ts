@@ -3,25 +3,19 @@ import { buildSurahRoadmapItems } from './surahRoadmapModel';
 
 const authored = [105, 106, 107, 108].map((surahNumber, index) => makeAuthored(surahNumber, index));
 
-test('derives completed, current, available, and future states without restricting access', () => {
+test('derives three visual states and keeps progress internal', () => {
   const items = buildSurahRoadmapItems(authored, ['105-a', '105-b'], '106-a');
 
-  expect(items.map(item => item.state)).toEqual(['completed', 'current', 'available', 'future']);
-  expect(items[0]).toMatchObject({ completedLessons: 2, progress: 1, illustrationKey: 'elephant' });
-  expect(items[3].illustrationKey).toBe('water');
+  expect(items.map(item => item.state)).toEqual(['completed', 'current', 'upcoming', 'upcoming']);
+  expect(items[0]).toMatchObject({ progress: 1, englishName: 'Surah 105' });
+  expect(items[0]).not.toHaveProperty('ayahCount');
+  expect(items[0]).not.toHaveProperty('illustrationKey');
 });
 
-test('keeps jumped-ahead partial Surahs visually available', () => {
-  const items = buildSurahRoadmapItems(authored, ['108-a'], '106-a');
-
-  expect(items.map(item => item.state)).toEqual(['available', 'current', 'available', 'available']);
-  expect(items[3]).toMatchObject({ completedLessons: 1, progress: 0.5 });
-});
-
-test('uses a generic illustration for authored Surahs outside the preview catalog', () => {
-  const items = buildSurahRoadmapItems([makeAuthored(1, 0)], [], '1-a');
-
-  expect(items[0]).toMatchObject({ illustrationKey: 'quran', state: 'current' });
+test('never maps canonical English meaning into visible roadmap name', () => {
+  const [item] = buildSurahRoadmapItems([makeAuthored(1, 0)], [], '1-a');
+  expect(item.englishName).toBe('Surah 1');
+  expect(item.englishName).not.toBe('Chapter 1');
 });
 
 function makeAuthored(surahNumber: number, index: number): AuthoredSurahSummary {
