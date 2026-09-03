@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { colors, spacing } from '../../theme/tokens';
 import RoadmapPath from './RoadmapPath';
@@ -20,14 +20,25 @@ interface SurahRoadmapProps {
   header?: React.ReactElement | null;
   direction?: 'ltr' | 'rtl';
   showLocalizedName?: boolean;
+  focusSurahId?: string;
 }
 
-export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshing = false, header, direction = 'ltr', showLocalizedName = true }: SurahRoadmapProps) {
+export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshing = false, header, direction = 'ltr', showLocalizedName = true, focusSurahId }: SurahRoadmapProps) {
   const listRef = useRef<FlatList<SurahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
   const { t } = useLocalization();
+  const [highlightedId, setHighlightedId] = useState<string>();
   const scrubberItems = useMemo(() => items.map((item, listIndex) => ({ id: item.id, label: showLocalizedName ? item.localizedName : item.arabicName, listIndex })), [items, showLocalizedName]);
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.2 }), []);
+  useEffect(() => {
+    if (!focusSurahId) return;
+    const index = items.findIndex(item => item.id === focusSurahId);
+    if (index < 0) return;
+    setHighlightedId(focusSurahId);
+    const scrollTimer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.3 }), 60);
+    const highlightTimer = setTimeout(() => setHighlightedId(current => current === focusSurahId ? undefined : current), 1600);
+    return () => { clearTimeout(scrollTimer); clearTimeout(highlightTimer); };
+  }, [focusSurahId, items]);
   const renderItem = useCallback(({ item, index }: { item: SurahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'surah');
     const nextPathX = roadmapNodeX(index + 1, width, 'surah');
@@ -38,11 +49,11 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
       <View style={styles.row}>
         {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
         <View style={[styles.node, { left: Math.max(0, Math.min(nodeLeft, width - renderedWidth)), width: renderedWidth }]}>
-          <SurahRoadmapNode arabicName={item.arabicName} direction={direction} id={item.id} localizedName={item.localizedName} nameSide={nameSide} onPress={onSelectSurah} showLocalizedName={showLocalizedName} state={item.state} />
+          <SurahRoadmapNode arabicName={item.arabicName} direction={direction} highlighted={highlightedId === item.id} id={item.id} localizedName={item.localizedName} nameSide={nameSide} onPress={onSelectSurah} showLocalizedName={showLocalizedName} state={item.state} />
         </View>
       </View>
     );
-  }, [direction, items.length, onSelectSurah, showLocalizedName, width]);
+  }, [direction, highlightedId, items.length, onSelectSurah, showLocalizedName, width]);
 
   return <View style={styles.root}>
     <FlatList

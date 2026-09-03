@@ -18,9 +18,10 @@ import { DEFAULT_PROGRESS } from '../../types/progress';
 import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 export default function SurahPathScreen() {
-  const params = useLocalSearchParams<{ id?: string | string[]; ayah?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; ayah?: string | string[]; focusAyah?: string | string[] }>();
   const surahId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const focusRaw = Array.isArray(params.ayah) ? params.ayah[0] : params.ayah;
+  const rawFocus = params.focusAyah ?? params.ayah;
+  const focusRaw = Array.isArray(rawFocus) ? rawFocus[0] : rawFocus;
   const focusAyah = Number.isInteger(Number(focusRaw)) ? Number(focusRaw) : undefined;
   const router = useRouter();
   const { direction, preferences, t } = useLocalization();

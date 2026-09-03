@@ -7,6 +7,7 @@ import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
 import Screen from '../components/ui/Screen';
 import { getContentRepository } from '../lib/content/repository';
 import { searchQuran } from '../lib/content/quranSearch';
+import { resolveRoadmapSearchTarget } from '../lib/content/searchRoadmapTarget';
 import { colors, fonts, radii, spacing, touch } from '../theme/tokens';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 
@@ -22,7 +23,7 @@ export default function SearchScreen() {
   const [remoteUnavailable, setRemoteUnavailable] = useState(false);
   const authored = useMemo(() => {
     const path = repo.getCurrentLearningPath();
-    return new Map((path ? repo.listAuthoredSurahs(path.id) : []).map(item => [item.surah.surahNumber, item.surah.id]));
+    return path ? repo.listAuthoredSurahs(path.id) : [];
   }, [repo]);
 
   useEffect(() => setQuery(initialQuery), [initialQuery]);
@@ -51,15 +52,13 @@ export default function SearchScreen() {
   }, [preferences.interfaceLocale, query]);
 
   const openResult = useCallback((result: QuranSearchResult) => {
-    if (!result.surahNumber) return;
-    const surahId = authored.get(result.surahNumber);
-    if (!surahId) return;
-    router.push(result.ayahNumber ? `/surah/${surahId}?ayah=${result.ayahNumber}` : `/surah/${surahId}`);
+    const target = resolveRoadmapSearchTarget(result, authored, repo);
+    if (target) router.push(target as never);
   }, [authored, router]);
 
   const renderItem = useCallback(({ item }: { item: QuranSearchResult }) => (
-    <SearchResultRow item={item} onPress={openResult} pressable={Boolean(item.surahNumber && authored.has(item.surahNumber))} />
-  ), [authored, openResult]);
+    <SearchResultRow item={item} onPress={openResult} pressable={Boolean(resolveRoadmapSearchTarget(item, authored, repo))} />
+  ), [authored, openResult, repo]);
 
   return (
     <Screen>
@@ -110,11 +109,13 @@ export default function SearchScreen() {
 }
 
 const SearchResultRow = memo(function SearchResultRow({ item, onPress, pressable }: { item: QuranSearchResult; onPress: (item: QuranSearchResult) => void; pressable: boolean }) {
+  const { t } = useLocalization();
+  const displayName = item.kind === 'hizb' || item.kind === 'juz' ? t(`search.result.${item.kind}`, { number: item.key }) : item.displayName;
   const content = (
     <View style={styles.resultContent}>
       {item.arabicText ? <Text style={styles.arabic}>{item.arabicText}</Text> : null}
       <View style={styles.resultFooter}>
-        {item.displayName ? <Text numberOfLines={1} style={styles.resultName}>{item.displayName}</Text> : <View />}
+        {displayName ? <Text numberOfLines={2} style={styles.resultName}>{displayName}</Text> : <View />}
         <Text style={styles.reference}>{item.kind === 'ayah' ? item.key : `${item.kind.toUpperCase()} ${item.key}`}</Text>
       </View>
     </View>

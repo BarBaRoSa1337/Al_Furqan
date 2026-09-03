@@ -44,7 +44,7 @@ export function searchLocalQuran(repo: ContentRepository, query: string): QuranS
 
   const normalized = normalizeSearchValue(query);
   const arabicQuery = /[\u0600-\u06FF]/.test(normalized);
-  const surahs = pkg.surahs.filter(surah => [surah.arabicName, surah.transliteratedName].some(name => {
+  const surahs = pkg.surahs.filter(surah => [surah.arabicName, surah.transliteratedName, surah.englishName].some(name => {
     const candidate = normalizeSearchValue(name);
     return arabicQuery ? candidate === normalized : candidate.includes(normalized);
   })).map(surah => ({
@@ -76,8 +76,9 @@ function lookupResult(repo: ContentRepository, lookup: QuranLookup, scope: Param
     return ayah ? [{ id: `ayah:${ayah.ref.surahNumber}:${ayah.ref.ayahNumber}`, kind: 'ayah', key: `${ayah.ref.surahNumber}:${ayah.ref.ayahNumber}`, arabicText: ayah.arabicText.text, surahNumber: ayah.ref.surahNumber, ayahNumber: ayah.ref.ayahNumber }] : [];
   }
   if (lookup.type === 'juz' || lookup.type === 'hizb') {
-    const refs = repo.listAyahRefsInDivision(lookup.type, lookup.number, 'hafs-an-asim', scope);
-    return refs.length > 0 ? [{ id: `${lookup.type}:${lookup.number}`, kind: lookup.type, key: String(lookup.number), displayName: `${lookup.type === 'juz' ? 'Juz' : 'Hizb'} ${lookup.number}` }] : [];
+    const refs = repo.listAyahRefsInDivision(lookup.type, lookup.number, 'hafs-an-asim');
+    const first = refs[0];
+    return first ? [{ id: `${lookup.type}:${lookup.number}`, kind: lookup.type, key: String(lookup.number), surahNumber: first.surahNumber, ayahNumber: first.ayahNumber }] : [];
   }
   return [];
 }

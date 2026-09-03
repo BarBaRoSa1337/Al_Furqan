@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import FurqanHeader from '../components/furqan/FurqanHeader';
 import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
 import SurahRoadmap from '../components/roadmap/SurahRoadmap';
@@ -15,6 +15,8 @@ import Button from '../components/ui/Button';
 
 export default function RoadmapScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ focusSurah?: string | string[] }>();
+  const focusSurahId = Array.isArray(params.focusSurah) ? params.focusSurah[0] : params.focusSurah;
   const repo = getContentRepository();
   const dashboard = useFurqanDashboard();
   const { direction, preferences, setLessonLocale, t } = useLocalization();
@@ -61,7 +63,7 @@ export default function RoadmapScreen() {
         streak={dashboard.progress.streak.currentStreak}
         xp={dashboard.progress.xp}
       />
-      <SurahRoadmap direction={direction} header={statusHeader} items={lessonLocaleAvailable ? roadmapItems : []} onRefresh={refresh} onSelectSurah={openSurah} refreshing={refreshing} showLocalizedName={preferences.interfaceLocale !== 'ar'} />
+      <SurahRoadmap direction={direction} focusSurahId={focusSurahId} header={statusHeader} items={lessonLocaleAvailable ? roadmapItems : []} onRefresh={refresh} onSelectSurah={openSurah} refreshing={refreshing} showLocalizedName={preferences.interfaceLocale !== 'ar'} />
     </Screen>
   );
 }

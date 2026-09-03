@@ -24,6 +24,7 @@ interface AyahRoadmapProps {
 export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, selectedAyahId, header, focusAyah }: AyahRoadmapProps) {
   const listRef = useRef<FlatList<AyahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
+  const [highlightedAyahId, setHighlightedAyahId] = useState<string>();
   const { t } = useLocalization();
   const scrubberItems = useMemo(() => items.flatMap((item, listIndex) => item.kind === 'ayah' ? [{ id: item.id, label: t('roadmap.preview.ayah', { number: item.ayahNumber }), listIndex }] : []), [items, t]);
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.25 }), []);
@@ -31,8 +32,11 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
     if (!focusAyah || focusAyah < 1) return;
     const index = findAyahRoadmapIndex(items, focusAyah);
     if (index < 0) return;
+    const item = items[index];
+    setHighlightedAyahId(item.id);
     const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.35 }), 60);
-    return () => clearTimeout(timer);
+    const highlightTimer = setTimeout(() => setHighlightedAyahId(current => current === item.id ? undefined : current), 1600);
+    return () => { clearTimeout(timer); clearTimeout(highlightTimer); };
   }, [focusAyah, items.length]);
 
   const renderItem = useCallback(({ item, index }: { item: AyahRoadmapItem; index: number }) => {
@@ -43,12 +47,12 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
         {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
         <View style={[styles.node, item.kind === 'milestone' && styles.milestoneNode, { left: item.kind === 'ayah' ? pathX - NODE_SIZE / 2 : Math.max(0, Math.min(pathX - 102, width - 204)) }]}>
           {item.kind === 'ayah'
-            ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={() => onSelectAyah ? onSelectAyah(item) : onSelectLevel(item.targetLevelId)} selected={selectedAyahId === item.id} state={item.state} targetLevelId={item.targetLevelId} />
+            ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={() => onSelectAyah ? onSelectAyah(item) : onSelectLevel(item.targetLevelId)} selected={selectedAyahId === item.id || highlightedAyahId === item.id} state={item.state} targetLevelId={item.targetLevelId} />
             : <RoadmapMilestoneNode kind={item.milestoneKind} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />}
         </View>
       </View>
     );
-  }, [items.length, onSelectAyah, onSelectLevel, selectedAyahId, width]);
+  }, [highlightedAyahId, items.length, onSelectAyah, onSelectLevel, selectedAyahId, width]);
 
   return <View style={styles.root}>
     <FlatList
