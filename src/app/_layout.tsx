@@ -1,7 +1,7 @@
 // Root layout for Expo Router
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Stack, usePathname } from 'expo-router';
+import { Stack } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SourceSans3_400Regular, SourceSans3_600SemiBold, SourceSans3_700Bold } from '@expo-google-fonts/source-sans-3';
@@ -14,7 +14,6 @@ import { getRuntimeApiBaseUrl, loadRuntimePackage } from '../lib/content/runtime
 import { LocalizationProvider, useLocalization } from '../lib/localization/LocalizationProvider';
 import { colors, fonts, radii, spacing } from '../theme/tokens';
 import { isLocalPreviewEnabled, isLocalPreviewRequested, resolveContentMode } from '../lib/content/contentMode';
-import PreviewContentIndicator, { PREVIEW_INDICATOR_HEIGHT } from '../components/furqan/PreviewContentIndicator';
 import { tryLoadBundledLocalPreviewPackage } from '../lib/content/localPreviewProvider';
 
 export default function RootLayout() {
@@ -37,11 +36,9 @@ export default function RootLayout() {
 }
 
 function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
-  const pathname = usePathname();
   const { direction, preferences, ready: preferencesReady, t } = useLocalization();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string>();
-  const [previewProvider, setPreviewProvider] = useState<'backend' | 'local' | 'built_in'>();
   const [bootstrapLocale, setBootstrapLocale] = useState<typeof preferences.contentLocale>();
   // The development runtime course contains the generic Surah/ayah node
   // workflow for Al-Fil through An-Nas. Deployments can override this ID.
@@ -49,14 +46,12 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   const runtimeApiBaseUrl = getRuntimeApiBaseUrl();
   const contentMode = resolveContentMode();
   const previewContent = contentMode === 'preview';
-  const showPreviewIndicator = previewContent && !isFocusedLearningRoute(pathname);
   const localPreviewRequested = isLocalPreviewRequested();
   const localPreviewEnabled = isLocalPreviewEnabled(contentMode);
 
   const loadContent = useCallback(async () => {
     setState('loading');
     setError(undefined);
-    setPreviewProvider(undefined);
     try {
       const repo = getContentRepository();
       if (localPreviewRequested && !localPreviewEnabled) {
@@ -65,25 +60,21 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
       if (runtimeApiBaseUrl) {
         try {
           await loadRuntimePackage(packageId, bootstrapLocale!, contentMode);
-          if (previewContent) setPreviewProvider('backend');
         } catch (cause) {
           if (!previewContent) throw cause;
           console.warn('[content] Preview backend unavailable; trying local preview fallback.', cause);
           const localLoaded = tryLocalPreview(packageId, bootstrapLocale!, localPreviewEnabled);
-          if (localLoaded) setPreviewProvider('local');
-          else if (bootstrapLocale === 'en' && repo.getActivePackage()) setPreviewProvider('built_in');
-          else {
-            throw cause;
-          }
+          if (!localLoaded && bootstrapLocale !== 'en') throw cause;
+          else if (!localLoaded && !repo.getActivePackage()) throw cause;
         }
-      } else if (tryLocalPreview(packageId, bootstrapLocale!, localPreviewEnabled)) {
-        setPreviewProvider('local');
-      } else if (previewContent && bootstrapLocale === 'en' && repo.getActivePackage()) {
-        setPreviewProvider('built_in');
       } else {
-        throw new Error(previewContent
-          ? 'Preview content is unavailable for this lesson locale. Configure a backend or provide the local preview package.'
-          : 'No production content backend is configured.');
+        const localLoaded = tryLocalPreview(packageId, bootstrapLocale!, localPreviewEnabled);
+        const builtInAvailable = previewContent && bootstrapLocale === 'en' && Boolean(repo.getActivePackage());
+        if (!localLoaded && !builtInAvailable) {
+          throw new Error(previewContent
+            ? 'Preview content is unavailable for this lesson locale. Configure a backend or provide the local preview package.'
+            : 'No production content backend is configured.');
+        }
       }
       if (!repo.getActivePackage()) throw new Error(`${contentMode} content package could not be activated.`);
       setState('ready');
@@ -120,7 +111,7 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
   return (
     <View style={[styles.root, { direction }]}>
       <StatusBar style="dark" />
-      <View style={[styles.stack, showPreviewIndicator && styles.previewInset]}>
+      <View style={styles.stack}>
         <Stack screenOptions={{ headerShown: false, animation: direction === 'rtl' ? 'slide_from_left' : 'slide_from_right', contentStyle: { backgroundColor: colors.background } }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="roadmap" />
@@ -137,13 +128,8 @@ function AppBootstrap({ fontsLoaded }: { fontsLoaded: boolean }) {
           <Stack.Screen name="terms" />
         </Stack>
       </View>
-      {showPreviewIndicator && previewProvider ? <PreviewContentIndicator label={previewProvider === 'local' ? 'Local preview' : undefined} /> : null}
     </View>
   );
-}
-
-function isFocusedLearningRoute(pathname: string): boolean {
-  return pathname.startsWith('/lesson/') || pathname.startsWith('/practice/');
 }
 
 function tryLocalPreview(packageId: string, locale: Parameters<typeof tryLoadBundledLocalPreviewPackage>[1], enabled: boolean): boolean {
@@ -159,7 +145,6 @@ function tryLocalPreview(packageId: string, locale: Parameters<typeof tryLoadBun
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   stack: { flex: 1 },
-  previewInset: { paddingTop: PREVIEW_INDICATOR_HEIGHT },
   center: { alignItems: 'center', backgroundColor: colors.background, flex: 1, justifyContent: 'center', padding: spacing.xl },
   errorTitle: { color: colors.primary, fontFamily: fonts.bold, fontSize: 22, textAlign: 'center' },
   message: { color: colors.textMuted, fontFamily: fonts.regular, fontSize: 14, marginTop: spacing.sm, textAlign: 'center' },

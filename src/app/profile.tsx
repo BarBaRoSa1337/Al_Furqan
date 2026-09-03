@@ -11,6 +11,7 @@ import { getContentRepository } from '../lib/content/repository';
 import { colors, fonts, radii, shadows, spacing, touch } from '../theme/tokens';
 import { useLocalization } from '../lib/localization/LocalizationProvider';
 import { isLessonLocaleAvailable } from '../lib/content/publication';
+import { resolveContentMode } from '../lib/content/contentMode';
 
 export default function ProfileScreen() {
   const params = useLocalSearchParams<{ section?: string | string[] }>();
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
   const contentPackage = getContentRepository().getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const completedCount = dashboard.progress.completedLevelIds.length;
+  const showDevelopmentStatus = __DEV__ && resolveContentMode() === 'preview';
   useEffect(() => {
     if (section === 'settings' && settingsY !== undefined) scrollRef.current?.scrollTo({ animated: true, y: settingsY });
   }, [section, settingsY]);
@@ -100,6 +102,10 @@ export default function ProfileScreen() {
             ))}
           </View>
         </View>
+        {showDevelopmentStatus ? <View style={styles.detailCard}>
+          <Text style={styles.detailTitle}>{t('profile.development')}</Text>
+          <Text style={styles.rightsIntro}>{t('profile.previewMode')}</Text>
+        </View> : null}
         {contentPackage ? (
           <View style={styles.detailCard}>
             <Text style={styles.detailTitle}>{t('profile.sourcesRights')}</Text>
