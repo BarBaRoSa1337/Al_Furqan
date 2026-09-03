@@ -7,6 +7,12 @@ test('surah geometry uses broad, bounded, non-zigzag horizontal movement', () =>
   expect(ratios.some((value, index) => index > 1 && (value - ratios[index - 1]) * (ratios[index - 1] - ratios[index - 2]) > 0)).toBe(true);
 });
 
+test('ayah geometry follows a broad curve instead of a straight timeline', () => {
+  const ratios = Array.from({ length: 16 }, (_, index) => roadmapNodeRatio(index, 'ayah'));
+  expect(Math.max(...ratios) - Math.min(...ratios)).toBeGreaterThan(0.58);
+  expect(new Set(ratios.map(value => value.toFixed(2))).size).toBeGreaterThan(8);
+});
+
 test('node x positions remain inside compact screen edges', () => {
   const values = Array.from({ length: 20 }, (_, index) => roadmapNodeX(index, 296, 'surah'));
   expect(Math.min(...values)).toBeGreaterThanOrEqual(54);

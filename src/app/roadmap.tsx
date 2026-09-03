@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import FurqanHeader from '../components/furqan/FurqanHeader';
@@ -24,12 +24,12 @@ export default function RoadmapScreen() {
   const contentPackage = repo.getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const localeAlternatives = contentPackage ? availableLessonLocales(contentPackage) : [];
-  const roadmapItems = useMemo(() => buildSurahRoadmapItems(
+  const roadmapItems = buildSurahRoadmapItems(
     dashboard.authoredSurahs,
     dashboard.progress.completedLevelIds,
     dashboard.activeLevel?.id,
     surah => resolveSurahRoadmapName(surah, preferences.interfaceLocale, (key, locale) => repo.getText(key, locale)),
-  ), [dashboard.activeLevel?.id, dashboard.authoredSurahs, dashboard.progress.completedLevelIds, preferences.interfaceLocale, repo]);
+  );
 
   const openSurah = useCallback((surahId: string) => router.push(`/surah/${surahId}`), [router]);
   const refresh = useCallback(() => {

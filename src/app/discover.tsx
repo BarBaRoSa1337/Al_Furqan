@@ -26,14 +26,15 @@ export default function SearchScreen() {
     return path ? repo.listAuthoredSurahs(path.id) : [];
   }, [repo]);
 
-  useEffect(() => setQuery(initialQuery), [initialQuery]);
   useEffect(() => {
     const normalized = query.trim();
     if (!normalized) {
-      setResults([]);
-      setRemoteUnavailable(false);
-      setLoading(false);
-      return;
+      const resetTimer = setTimeout(() => {
+        setResults([]);
+        setRemoteUnavailable(false);
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
     }
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -54,7 +55,7 @@ export default function SearchScreen() {
   const openResult = useCallback((result: QuranSearchResult) => {
     const target = resolveRoadmapSearchTarget(result, authored, repo);
     if (target) router.push(target as never);
-  }, [authored, router]);
+  }, [authored, repo, router]);
 
   const renderItem = useCallback(({ item }: { item: QuranSearchResult }) => (
     <SearchResultRow item={item} onPress={openResult} pressable={Boolean(resolveRoadmapSearchTarget(item, authored, repo))} />
@@ -113,7 +114,7 @@ const SearchResultRow = memo(function SearchResultRow({ item, onPress, pressable
   const displayName = item.kind === 'hizb' || item.kind === 'juz' ? t(`search.result.${item.kind}`, { number: item.key }) : item.displayName;
   const content = (
     <View style={styles.resultContent}>
-      {item.arabicText ? <Text style={styles.arabic}>{item.arabicText}</Text> : null}
+      {item.arabicText ? <Text accessibilityLanguage="ar" style={styles.arabic}>{item.arabicText}</Text> : null}
       <View style={styles.resultFooter}>
         {displayName ? <Text numberOfLines={2} style={styles.resultName}>{displayName}</Text> : <View />}
         <Text style={styles.reference}>{item.kind === 'ayah' ? item.key : `${item.kind.toUpperCase()} ${item.key}`}</Text>

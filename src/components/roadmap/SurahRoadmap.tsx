@@ -33,10 +33,10 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.2 }), []);
   useEffect(() => {
     if (!focusSurahId || focusIndex < 0) return;
-    setHighlightedId(focusSurahId);
+    const highlightStartTimer = setTimeout(() => setHighlightedId(focusSurahId), 0);
     const scrollTimer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusIndex, viewPosition: 0.3 }), 60);
     const highlightTimer = setTimeout(() => setHighlightedId(current => current === focusSurahId ? undefined : current), 1600);
-    return () => { clearTimeout(scrollTimer); clearTimeout(highlightTimer); };
+    return () => { clearTimeout(highlightStartTimer); clearTimeout(scrollTimer); clearTimeout(highlightTimer); };
   }, [focusIndex, focusSurahId]);
   const renderItem = useCallback(({ item, index }: { item: SurahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'surah');

@@ -30,15 +30,15 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
   const { t } = useLocalization();
   const scrubberItems = useMemo(() => items.flatMap((item, listIndex) => item.kind === 'ayah' ? [{ id: item.id, label: t('roadmap.preview.ayah', { number: item.ayahNumber }), listIndex }] : []), [items, t]);
   const focusIndex = useMemo(() => focusAyah && focusAyah > 0 ? findAyahRoadmapIndex(items, focusAyah) : -1, [focusAyah, items]);
+  const focusItemId = focusIndex >= 0 ? items[focusIndex]?.id : undefined;
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.25 }), []);
   useEffect(() => {
-    if (focusIndex < 0) return;
-    const item = items[focusIndex];
-    setHighlightedAyahId(item.id);
+    if (focusIndex < 0 || !focusItemId) return;
+    const highlightStartTimer = setTimeout(() => setHighlightedAyahId(focusItemId), 0);
     const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusIndex, viewPosition: 0.35 }), 60);
-    const highlightTimer = setTimeout(() => setHighlightedAyahId(current => current === item.id ? undefined : current), 1600);
-    return () => { clearTimeout(timer); clearTimeout(highlightTimer); };
-  }, [focusIndex, items]);
+    const highlightTimer = setTimeout(() => setHighlightedAyahId(current => current === focusItemId ? undefined : current), 1600);
+    return () => { clearTimeout(highlightStartTimer); clearTimeout(timer); clearTimeout(highlightTimer); };
+  }, [focusIndex, focusItemId]);
 
   const renderItem = useCallback(({ item, index }: { item: AyahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'ayah');
