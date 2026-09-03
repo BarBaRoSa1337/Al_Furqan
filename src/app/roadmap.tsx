@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import FurqanHeader from '../components/furqan/FurqanHeader';
 import { MoroccanBackdrop } from '../components/furqan/FurqanArtwork';
 import SurahRoadmap from '../components/roadmap/SurahRoadmap';
-import { buildSurahRoadmapItems } from '../components/roadmap/surahRoadmapModel';
+import { buildSurahRoadmapItems, resolveSurahRoadmapName } from '../components/roadmap/surahRoadmapModel';
 import Screen from '../components/ui/Screen';
 import { useFurqanDashboard } from '../hooks/useFurqanDashboard';
 import { getContentRepository } from '../lib/content/repository';
@@ -22,7 +22,12 @@ export default function RoadmapScreen() {
   const contentPackage = repo.getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const localeAlternatives = contentPackage ? availableLessonLocales(contentPackage) : [];
-  const roadmapItems = buildSurahRoadmapItems(dashboard.authoredSurahs, dashboard.progress.completedLevelIds, dashboard.activeLevel?.id);
+  const roadmapItems = buildSurahRoadmapItems(
+    dashboard.authoredSurahs,
+    dashboard.progress.completedLevelIds,
+    dashboard.activeLevel?.id,
+    surah => resolveSurahRoadmapName(surah, preferences.interfaceLocale, (key, locale) => repo.getText(key, locale)),
+  );
 
   const openSurah = useCallback((surahId: string) => router.push(`/surah/${surahId}`), [router]);
   const refresh = useCallback(() => {
@@ -56,7 +61,7 @@ export default function RoadmapScreen() {
         streak={dashboard.progress.streak.currentStreak}
         xp={dashboard.progress.xp}
       />
-      <SurahRoadmap direction={direction} header={statusHeader} items={lessonLocaleAvailable ? roadmapItems : []} onRefresh={refresh} onSelectSurah={openSurah} refreshing={refreshing} />
+      <SurahRoadmap direction={direction} header={statusHeader} items={lessonLocaleAvailable ? roadmapItems : []} onRefresh={refresh} onSelectSurah={openSurah} refreshing={refreshing} showLocalizedName={preferences.interfaceLocale !== 'ar'} />
     </Screen>
   );
 }

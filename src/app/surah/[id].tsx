@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MoroccanBackdrop } from '../../components/furqan/FurqanArtwork';
 import AyahRoadmap from '../../components/roadmap/AyahRoadmap';
 import { buildAyahRoadmapModel } from '../../components/roadmap/ayahRoadmapModel';
+import { resolveSurahRoadmapName } from '../../components/roadmap/surahRoadmapModel';
 import Screen from '../../components/ui/Screen';
 import { getContentRepository } from '../../lib/content/repository';
 import { getAppProgress, reconcileCurriculumProgress } from '../../lib/progress/storage';
@@ -19,7 +20,7 @@ export default function SurahPathScreen() {
   const focusRaw = Array.isArray(params.ayah) ? params.ayah[0] : params.ayah;
   const focusAyah = Number.isInteger(Number(focusRaw)) ? Number(focusRaw) : undefined;
   const router = useRouter();
-  const { direction, t } = useLocalization();
+  const { direction, preferences, t } = useLocalization();
   const repo = getContentRepository();
   const path = repo.getCurrentLearningPath();
   const authored = path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined;
@@ -36,6 +37,7 @@ export default function SurahPathScreen() {
   }, [path]));
 
   const roadmap = useMemo(() => authored ? buildAyahRoadmapModel(authored, progress.completedLevelIds) : undefined, [authored, progress.completedLevelIds]);
+  const localizedName = authored ? resolveSurahRoadmapName(authored.surah, preferences.interfaceLocale, (key, locale) => repo.getText(key, locale)) : '';
   const openLevel = useCallback((levelId: string) => {
     if (levelId) router.push(`/level/${levelId}`);
   }, [router]);
@@ -51,12 +53,12 @@ export default function SurahPathScreen() {
           <Ionicons color={colors.primary} name={direction === 'rtl' ? 'arrow-forward' : 'arrow-back'} size={23} />
         </Pressable>
         <View
-          accessibilityLabel={`${authored.surah.arabicName}, ${authored.surah.transliteratedName}`}
+          accessibilityLabel={[authored.surah.arabicName, preferences.interfaceLocale === 'ar' ? undefined : localizedName].filter(Boolean).join(', ')}
           accessibilityRole="header"
           style={styles.identity}
         >
           <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.arabic}>{authored.surah.arabicName}</Text>
-          <Text numberOfLines={2} style={styles.english}>{authored.surah.transliteratedName}</Text>
+          {preferences.interfaceLocale !== 'ar' ? <Text numberOfLines={2} style={styles.english}>{localizedName}</Text> : null}
         </View>
         <View style={styles.topSpacer} />
       </View>

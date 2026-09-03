@@ -8,21 +8,22 @@ import type { RoadmapState } from './surahRoadmapModel';
 interface SurahRoadmapNodeProps {
   id: string;
   arabicName: string;
-  englishName: string;
+  localizedName: string;
+  showLocalizedName?: boolean;
   direction?: 'ltr' | 'rtl';
   nameSide?: 'left' | 'right';
   state: RoadmapState;
   onPress: (id: string) => void;
 }
 
-const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, englishName, direction = 'ltr', nameSide = 'right', state, onPress }: SurahRoadmapNodeProps) {
+const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, localizedName, showLocalizedName = true, direction = 'ltr', nameSide = 'right', state, onPress }: SurahRoadmapNodeProps) {
   const { t } = useLocalization();
   const handlePress = useCallback(() => onPress(id), [id, onPress]);
   const statusKey = state === 'current' ? 'active' : state === 'upcoming' ? 'available' : 'completed';
   return (
     <Pressable
       accessibilityHint={t('roadmap.openSurah')}
-      accessibilityLabel={`${arabicName}, ${englishName}, ${t(`roadmap.status.${statusKey}`)}`}
+      accessibilityLabel={[arabicName, showLocalizedName ? localizedName : undefined, t(`roadmap.status.${statusKey}`)].filter(Boolean).join(', ')}
       accessibilityRole="button"
       accessibilityState={{ selected: state === 'current' }}
       onPress={handlePress}
@@ -31,9 +32,9 @@ const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, englis
       <IslamicNodeFrame size={88} state={state}>
         <Text adjustsFontSizeToFit minimumFontScale={0.62} numberOfLines={2} style={[styles.arabic, { color: roadmapForeground(state) }]}>{arabicName}</Text>
       </IslamicNodeFrame>
-      <View style={styles.nameWrap}>
-        <Text numberOfLines={2} style={[styles.name, direction === 'rtl' && styles.nameRtl, state === 'upcoming' && styles.upcomingName]}>{englishName}</Text>
-      </View>
+      {showLocalizedName ? <View style={styles.nameWrap}>
+        <Text numberOfLines={2} style={[styles.name, direction === 'rtl' && styles.nameRtl, state === 'upcoming' && styles.upcomingName]}>{localizedName}</Text>
+      </View> : null}
     </Pressable>
   );
 });

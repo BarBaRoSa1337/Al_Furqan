@@ -13,7 +13,7 @@ interface FurqanHeaderProps {
 }
 
 export default function FurqanHeader({ streak, xp, onSearch, onProfile, onSettings }: FurqanHeaderProps) {
-  const { t } = useLocalization();
+  const { direction, t } = useLocalization();
   const [menuOpen, setMenuOpen] = useState(false);
   const choose = (action: () => void) => {
     setMenuOpen(false);
@@ -36,7 +36,7 @@ export default function FurqanHeader({ streak, xp, onSearch, onProfile, onSettin
       <Modal animationType="fade" onRequestClose={() => setMenuOpen(false)} transparent visible={menuOpen}>
         <View style={styles.modalRoot}>
           <Pressable accessibilityLabel={t('nav.closeMenu')} accessibilityRole="button" onPress={() => setMenuOpen(false)} style={styles.backdrop} />
-          <View accessibilityViewIsModal style={styles.menuCard}>
+          <View accessibilityViewIsModal style={[styles.menuCard, direction === 'rtl' && styles.menuCardRtl]}>
             <MenuItem icon="search-outline" label={t('nav.search')} onPress={() => choose(onSearch)} />
             <MenuItem icon="person-outline" label={t('nav.profile')} onPress={() => choose(onProfile)} />
             <MenuItem icon="settings-outline" label={t('nav.settings')} onPress={() => choose(onSettings)} />
@@ -77,6 +77,7 @@ const styles = StyleSheet.create({
   modalRoot: { flex: 1 },
   backdrop: { backgroundColor: 'rgba(18,63,58,0.18)', bottom: 0, left: 0, position: 'absolute', right: 0, top: 0 },
   menuCard: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg, borderWidth: 1, boxShadow: shadows.raised, left: spacing.lg, minWidth: 190, overflow: 'hidden', padding: spacing.xs, position: 'absolute', top: 68 },
+  menuCardRtl: { left: undefined, right: spacing.lg },
   menuItem: { alignItems: 'center', borderRadius: radii.md, flexDirection: 'row', gap: spacing.md, minHeight: touch.minimum, paddingHorizontal: spacing.md },
   menuItemPressed: { backgroundColor: colors.successSoft },
   menuLabel: { color: colors.primary, fontFamily: fonts.bold, fontSize: 15 },

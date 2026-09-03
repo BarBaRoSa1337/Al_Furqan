@@ -8,7 +8,7 @@ jest.mock('../../lib/localization/LocalizationProvider', () => ({
 
 test('renders only Arabic and Latin-script Surah names and stays selectable', () => {
   const onPress = jest.fn();
-  const screen = render(<SurahRoadmapNode arabicName="النَّاس" englishName="An-Nas" id="surah-114" onPress={onPress} state="upcoming" />);
+  const screen = render(<SurahRoadmapNode arabicName="النَّاس" id="surah-114" localizedName="An-Nas" onPress={onPress} state="upcoming" />);
 
   expect(screen.getByText('النَّاس')).toBeTruthy();
   expect(screen.getByText('An-Nas')).toBeTruthy();
@@ -17,4 +17,10 @@ test('renders only Arabic and Latin-script Surah names and stays selectable', ()
   fireEvent.press(screen.getByRole('button'));
   expect(onPress).toHaveBeenCalledWith('surah-114');
   expect(JSON.stringify(screen.toJSON())).not.toContain('lock');
+});
+
+test('Arabic roadmap hides redundant localized Surah name', () => {
+  const screen = render(<SurahRoadmapNode arabicName="النَّاس" id="surah-114" localizedName="An-Nas" onPress={jest.fn()} showLocalizedName={false} state="upcoming" />);
+  expect(screen.getByText('النَّاس')).toBeTruthy();
+  expect(screen.queryByText('An-Nas')).toBeNull();
 });
