@@ -6,7 +6,7 @@ export type RoadmapGeometryKind = 'surah' | 'ayah';
  */
 export function roadmapNodeX(index: number, width: number, kind: RoadmapGeometryKind): number {
   const safeWidth = Math.max(width, 1);
-  const edge = kind === 'surah' ? Math.min(54, safeWidth * 0.2) : Math.min(42, safeWidth * 0.16);
+  const edge = kind === 'surah' ? Math.min(88, safeWidth * 0.28) : Math.min(78, safeWidth * 0.25);
   const usable = Math.max(safeWidth - edge * 2, 0);
   return edge + usable * roadmapNodeRatio(index, kind);
 }

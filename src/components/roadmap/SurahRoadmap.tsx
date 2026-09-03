@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { colors, spacing } from '../../theme/tokens';
 import RoadmapPath from './RoadmapPath';
 import SurahRoadmapNode from './SurahRoadmapNode';
 import type { SurahRoadmapItem } from './surahRoadmapModel';
 import { roadmapNodeX } from './roadmapGeometry';
+import RoadmapScrubber from './RoadmapScrubber';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 const ROW_HEIGHT = 112;
 const NODE_SIZE = 88;
@@ -21,7 +23,11 @@ interface SurahRoadmapProps {
 }
 
 export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshing = false, header, direction = 'ltr', showLocalizedName = true }: SurahRoadmapProps) {
+  const listRef = useRef<FlatList<SurahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
+  const { t } = useLocalization();
+  const scrubberItems = useMemo(() => items.map((item, listIndex) => ({ id: item.id, label: showLocalizedName ? item.localizedName : item.arabicName, listIndex })), [items, showLocalizedName]);
+  const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.2 }), []);
   const renderItem = useCallback(({ item, index }: { item: SurahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'surah');
     const nextPathX = roadmapNodeX(index + 1, width, 'surah');
@@ -38,7 +44,7 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
     );
   }, [direction, items.length, onSelectSurah, showLocalizedName, width]);
 
-  return (
+  return <View style={styles.root}>
     <FlatList
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
@@ -48,18 +54,22 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
       ListHeaderComponent={header}
       maxToRenderPerBatch={8}
       onLayout={event => setWidth(event.nativeEvent.layout.width)}
+      onScrollToIndexFailed={({ index }) => listRef.current?.scrollToOffset({ animated: false, offset: Math.max(index * ROW_HEIGHT, 0) })}
       refreshControl={onRefresh ? <RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={colors.success} /> : undefined}
       removeClippedSubviews
+      ref={listRef}
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       windowSize={7}
     />
-  );
+    <RoadmapScrubber accessibilityLabel={t('roadmap.scrubber.surah')} items={scrubberItems} onSelect={scrubTo} />
+  </View>;
 }
 
 function keyExtractor(item: SurahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: { alignSelf: 'center', maxWidth: 680, paddingBottom: spacing.xxl, paddingHorizontal: spacing.sm, width: '100%' },
   row: { height: ROW_HEIGHT, position: 'relative' },
   connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { spacing } from '../../theme/tokens';
 import { findAyahRoadmapIndex, type AyahRoadmapItem } from './ayahRoadmapModel';
@@ -6,6 +6,8 @@ import AyahRoadmapNode from './AyahRoadmapNode';
 import RoadmapPath from './RoadmapPath';
 import { roadmapNodeX } from './roadmapGeometry';
 import RoadmapMilestoneNode from './RoadmapMilestoneNode';
+import RoadmapScrubber from './RoadmapScrubber';
+import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 const ROW_HEIGHT = 86;
 const NODE_SIZE = 68;
@@ -22,6 +24,9 @@ interface AyahRoadmapProps {
 export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, selectedAyahId, header, focusAyah }: AyahRoadmapProps) {
   const listRef = useRef<FlatList<AyahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
+  const { t } = useLocalization();
+  const scrubberItems = useMemo(() => items.flatMap((item, listIndex) => item.kind === 'ayah' ? [{ id: item.id, label: t('roadmap.preview.ayah', { number: item.ayahNumber }), listIndex }] : []), [items, t]);
+  const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.25 }), []);
   useEffect(() => {
     if (!focusAyah || focusAyah < 1) return;
     const index = findAyahRoadmapIndex(items, focusAyah);
@@ -45,7 +50,7 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
     );
   }, [items.length, onSelectAyah, onSelectLevel, selectedAyahId, width]);
 
-  return (
+  return <View style={styles.root}>
     <FlatList
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
@@ -62,12 +67,14 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
       showsVerticalScrollIndicator={false}
       windowSize={7}
     />
-  );
+    <RoadmapScrubber accessibilityLabel={t('roadmap.scrubber.ayah')} items={scrubberItems} onSelect={scrubTo} />
+  </View>;
 }
 
 function keyExtractor(item: AyahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: { alignSelf: 'center', maxWidth: 560, paddingBottom: spacing.xxl, paddingHorizontal: spacing.sm, width: '100%' },
   row: { height: ROW_HEIGHT, position: 'relative' },
   connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },
