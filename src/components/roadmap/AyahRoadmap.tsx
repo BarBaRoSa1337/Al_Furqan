@@ -13,11 +13,13 @@ const NODE_SIZE = 68;
 interface AyahRoadmapProps {
   items: readonly AyahRoadmapItem[];
   onSelectLevel: (levelId: string) => void;
+  onSelectAyah?: (item: Extract<AyahRoadmapItem, { kind: 'ayah' }>) => void;
+  selectedAyahId?: string;
   header: React.ReactElement;
   focusAyah?: number;
 }
 
-export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }: AyahRoadmapProps) {
+export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, selectedAyahId, header, focusAyah }: AyahRoadmapProps) {
   const listRef = useRef<FlatList<AyahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
   useEffect(() => {
@@ -36,12 +38,12 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
         {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
         <View style={[styles.node, item.kind === 'milestone' && styles.milestoneNode, { left: item.kind === 'ayah' ? pathX - NODE_SIZE / 2 : Math.max(0, Math.min(pathX - 102, width - 204)) }]}>
           {item.kind === 'ayah'
-            ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />
+            ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={() => onSelectAyah ? onSelectAyah(item) : onSelectLevel(item.targetLevelId)} selected={selectedAyahId === item.id} state={item.state} targetLevelId={item.targetLevelId} />
             : <RoadmapMilestoneNode kind={item.milestoneKind} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />}
         </View>
       </View>
     );
-  }, [items.length, onSelectLevel, width]);
+  }, [items.length, onSelectAyah, onSelectLevel, selectedAyahId, width]);
 
   return (
     <FlatList

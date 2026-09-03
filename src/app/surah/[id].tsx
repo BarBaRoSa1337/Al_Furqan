@@ -5,10 +5,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MoroccanBackdrop } from '../../components/furqan/FurqanArtwork';
 import AyahRoadmap from '../../components/roadmap/AyahRoadmap';
 import { buildAyahRoadmapModel } from '../../components/roadmap/ayahRoadmapModel';
+import type { AyahNumberRoadmapItem } from '../../components/roadmap/ayahRoadmapModel';
+import AyahPreviewSheet from '../../components/roadmap/AyahPreviewSheet';
+import { buildAyahPreviewData, type AyahPreviewData } from '../../components/roadmap/ayahPreviewModel';
 import { resolveSurahRoadmapName } from '../../components/roadmap/surahRoadmapModel';
 import Screen from '../../components/ui/Screen';
 import { getContentRepository } from '../../lib/content/repository';
-import { getAppProgress, reconcileCurriculumProgress } from '../../lib/progress/storage';
+import { getAppProgress, getLevelProgress, reconcileCurriculumProgress } from '../../lib/progress/storage';
 import { colors, fonts, spacing, touch } from '../../theme/tokens';
 import type { AppProgress } from '../../types/progress';
 import { DEFAULT_PROGRESS } from '../../types/progress';
@@ -25,6 +28,7 @@ export default function SurahPathScreen() {
   const path = repo.getCurrentLearningPath();
   const authored = path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined;
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
+  const [preview, setPreview] = useState<{ itemId: string; data: AyahPreviewData; continuing: boolean }>();
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -41,6 +45,19 @@ export default function SurahPathScreen() {
   const openLevel = useCallback((levelId: string) => {
     if (levelId) router.push(`/level/${levelId}`);
   }, [router]);
+  const selectAyah = useCallback((item: AyahNumberRoadmapItem) => {
+    if (preview?.itemId === item.id) {
+      openLevel(item.targetLevelId);
+      return;
+    }
+    if (!authored) return;
+    const data = buildAyahPreviewData(repo, authored, item, preferences.contentLocale);
+    if (!data) return;
+    setPreview({ itemId: item.id, data, continuing: false });
+    void getLevelProgress(item.targetLevelId).then(value => {
+      setPreview(current => current?.itemId === item.id ? { ...current, continuing: Boolean(value && !value.completed) } : current);
+    });
+  }, [authored, openLevel, preferences.contentLocale, preview?.itemId, repo]);
 
   if (!authored || !roadmap) {
     return <Screen style={styles.center}><Text accessibilityRole="header" style={styles.notFound}>{t('surah.notFound')}</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/roadmap')}><Text style={styles.link}>{t('surah.backHome')}</Text></Pressable></Screen>;
@@ -68,7 +85,8 @@ export default function SurahPathScreen() {
   return (
     <Screen>
       <MoroccanBackdrop />
-      <AyahRoadmap focusAyah={focusAyah} header={header} items={roadmap.items} onSelectLevel={openLevel} />
+      <AyahRoadmap focusAyah={focusAyah} header={header} items={roadmap.items} onSelectAyah={selectAyah} onSelectLevel={openLevel} selectedAyahId={preview?.itemId} />
+      <AyahPreviewSheet continuing={preview?.continuing} data={preview?.data} onClose={() => setPreview(undefined)} onStart={openLevel} />
     </Screen>
   );
 }
