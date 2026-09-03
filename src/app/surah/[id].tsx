@@ -27,7 +27,7 @@ export default function SurahPathScreen() {
   const { direction, preferences, t } = useLocalization();
   const repo = getContentRepository();
   const path = repo.getCurrentLearningPath();
-  const authored = path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined;
+  const authored = useMemo(() => path && surahId ? repo.listAuthoredSurahs(path.id).find(item => item.surah.id === surahId) : undefined, [path, repo, surahId]);
   const [progress, setProgress] = useState<AppProgress>(DEFAULT_PROGRESS);
   const [preview, setPreview] = useState<{ itemId: string; data: AyahPreviewData; continuing: boolean }>();
 
@@ -75,7 +75,7 @@ export default function SurahPathScreen() {
           accessibilityRole="header"
           style={styles.identity}
         >
-          <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.arabic}>{authored.surah.arabicName}</Text>
+          <Text accessibilityLanguage="ar" adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.arabic}>{authored.surah.arabicName}</Text>
           {preferences.interfaceLocale !== 'ar' ? <Text numberOfLines={2} style={styles.english}>{localizedName}</Text> : null}
         </View>
         <View style={styles.topSpacer} />
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   notFound: { color: colors.primary, fontFamily: fonts.bold, fontSize: 22, textAlign: 'center' },
   link: { color: colors.success, fontFamily: fonts.bold, marginTop: spacing.lg },
-  headerArea: { paddingBottom: spacing.md },
+  headerArea: { paddingBottom: spacing.md, paddingHorizontal: spacing.sm },
   topRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.xs },
   back: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 999, borderWidth: 1, height: touch.minimum, justifyContent: 'center', width: touch.minimum },
   topSpacer: { width: touch.minimum },

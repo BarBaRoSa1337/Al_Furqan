@@ -29,16 +29,15 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
   const { t } = useLocalization();
   const [highlightedId, setHighlightedId] = useState<string>();
   const scrubberItems = useMemo(() => items.map((item, listIndex) => ({ id: item.id, label: showLocalizedName ? item.localizedName : item.arabicName, listIndex })), [items, showLocalizedName]);
+  const focusIndex = useMemo(() => focusSurahId ? items.findIndex(item => item.id === focusSurahId) : -1, [focusSurahId, items]);
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.2 }), []);
   useEffect(() => {
-    if (!focusSurahId) return;
-    const index = items.findIndex(item => item.id === focusSurahId);
-    if (index < 0) return;
+    if (!focusSurahId || focusIndex < 0) return;
     setHighlightedId(focusSurahId);
-    const scrollTimer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.3 }), 60);
+    const scrollTimer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusIndex, viewPosition: 0.3 }), 60);
     const highlightTimer = setTimeout(() => setHighlightedId(current => current === focusSurahId ? undefined : current), 1600);
     return () => { clearTimeout(scrollTimer); clearTimeout(highlightTimer); };
-  }, [focusSurahId, items]);
+  }, [focusIndex, focusSurahId]);
   const renderItem = useCallback(({ item, index }: { item: SurahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'surah');
     const nextPathX = roadmapNodeX(index + 1, width, 'surah');
@@ -57,6 +56,7 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
 
   return <View style={styles.root}>
     <FlatList
+      style={styles.list}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       data={items as SurahRoadmapItem[]}
@@ -65,7 +65,10 @@ export default function SurahRoadmap({ items, onSelectSurah, onRefresh, refreshi
       ListHeaderComponent={header}
       maxToRenderPerBatch={8}
       onLayout={event => setWidth(event.nativeEvent.layout.width)}
-      onScrollToIndexFailed={({ index }) => listRef.current?.scrollToOffset({ animated: false, offset: Math.max(index * ROW_HEIGHT, 0) })}
+      onScrollToIndexFailed={({ averageItemLength, index }) => {
+        listRef.current?.scrollToOffset({ animated: false, offset: Math.max(index * averageItemLength, 0) });
+        setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.25 }), 80);
+      }}
       refreshControl={onRefresh ? <RefreshControl onRefresh={onRefresh} refreshing={refreshing} tintColor={colors.success} /> : undefined}
       removeClippedSubviews
       ref={listRef}
@@ -81,7 +84,8 @@ function keyExtractor(item: SurahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { alignSelf: 'center', maxWidth: 680, paddingBottom: spacing.xxl, paddingHorizontal: spacing.sm, width: '100%' },
+  list: { alignSelf: 'center', maxWidth: 680, width: '100%' },
+  content: { paddingBottom: spacing.xxl },
   row: { height: ROW_HEIGHT, position: 'relative' },
   connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },
   node: { position: 'absolute', top: 0, width: NODE_WIDTH, zIndex: 1 },

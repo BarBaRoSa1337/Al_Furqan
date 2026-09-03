@@ -31,7 +31,7 @@ const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, locali
       style={({ pressed }) => [styles.pressable, nameSide === 'left' && styles.nameLeft, highlighted && styles.highlighted, pressed && styles.pressed]}
     >
       <IslamicNodeFrame size={88} state={state}>
-        <Text adjustsFontSizeToFit minimumFontScale={0.62} numberOfLines={2} style={[styles.arabic, { color: roadmapForeground(state) }]}>{arabicName}</Text>
+        <Text accessibilityLanguage="ar" adjustsFontSizeToFit minimumFontScale={0.62} numberOfLines={2} style={[styles.arabic, { color: roadmapForeground(state) }]}>{arabicName}</Text>
       </IslamicNodeFrame>
       {showLocalizedName ? <View style={styles.nameWrap}>
         <Text numberOfLines={2} style={[styles.name, direction === 'rtl' && styles.nameRtl, state === 'upcoming' && styles.upcomingName]}>{localizedName}</Text>

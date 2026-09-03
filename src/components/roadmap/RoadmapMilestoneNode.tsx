@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   marker: { alignItems: 'center', backgroundColor: colors.surfaceWarm, borderColor: colors.borderStrong, borderWidth: 1, justifyContent: 'center', minHeight: 38, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs },
   intro: { borderRadius: radii.pill },
-  context: { borderLeftWidth: 4, borderRadius: radii.sm },
+  context: { borderRadius: radii.sm, borderStartWidth: 4 },
   checkpoint: { borderRadius: radii.md, transform: [{ rotate: '-1deg' }] },
   final_review: { borderColor: colors.gold, borderRadius: radii.pill, borderWidth: 2, minHeight: 44 },
   completedMarker: { backgroundColor: colors.success, borderColor: colors.success },

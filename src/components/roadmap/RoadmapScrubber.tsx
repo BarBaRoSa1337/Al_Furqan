@@ -50,6 +50,8 @@ const RoadmapScrubber = memo(function RoadmapScrubber({ accessibilityLabel, item
   }, [items, onSelect, scheduleFade]);
 
   const responder = useMemo(() => PanResponder.create({
+    // This responder exists only in the dedicated 44 px edge target. The
+    // remaining screen stays available to the normal roadmap scroller.
     onStartShouldSetPanResponder: () => items.length > 0,
     onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 2,
     onPanResponderGrant: event => { setActive(true); show(); updateAt(event.nativeEvent.locationY); },

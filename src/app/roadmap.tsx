@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import FurqanHeader from '../components/furqan/FurqanHeader';
@@ -24,12 +24,12 @@ export default function RoadmapScreen() {
   const contentPackage = repo.getActivePackage();
   const lessonLocaleAvailable = Boolean(contentPackage && isLessonLocaleAvailable(contentPackage, preferences.lessonLocale));
   const localeAlternatives = contentPackage ? availableLessonLocales(contentPackage) : [];
-  const roadmapItems = buildSurahRoadmapItems(
+  const roadmapItems = useMemo(() => buildSurahRoadmapItems(
     dashboard.authoredSurahs,
     dashboard.progress.completedLevelIds,
     dashboard.activeLevel?.id,
     surah => resolveSurahRoadmapName(surah, preferences.interfaceLocale, (key, locale) => repo.getText(key, locale)),
-  );
+  ), [dashboard.activeLevel?.id, dashboard.authoredSurahs, dashboard.progress.completedLevelIds, preferences.interfaceLocale, repo]);
 
   const openSurah = useCallback((surahId: string) => router.push(`/surah/${surahId}`), [router]);
   const refresh = useCallback(() => {
@@ -69,7 +69,7 @@ export default function RoadmapScreen() {
 }
 
 const styles = StyleSheet.create({
-  statusArea: { gap: spacing.sm, paddingBottom: spacing.md },
+  statusArea: { gap: spacing.sm, paddingBottom: spacing.md, paddingHorizontal: spacing.sm },
   warning: { backgroundColor: colors.warningSoft, borderRadius: radii.md, color: colors.warning, fontFamily: fonts.medium, lineHeight: 20, padding: spacing.md },
   error: { backgroundColor: colors.dangerSoft, borderRadius: radii.md, color: colors.danger, fontFamily: fonts.medium, lineHeight: 20, padding: spacing.md },
   loading: { color: colors.textMuted, fontFamily: fonts.regular, textAlign: 'center' },

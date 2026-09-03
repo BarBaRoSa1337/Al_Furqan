@@ -11,6 +11,8 @@ import { useLocalization } from '../../lib/localization/LocalizationProvider';
 
 const ROW_HEIGHT = 86;
 const NODE_SIZE = 68;
+const MILESTONE_WIDTH = 204;
+const SCRUBBER_CLEARANCE = 44;
 
 interface AyahRoadmapProps {
   items: readonly AyahRoadmapItem[];
@@ -27,17 +29,16 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
   const [highlightedAyahId, setHighlightedAyahId] = useState<string>();
   const { t } = useLocalization();
   const scrubberItems = useMemo(() => items.flatMap((item, listIndex) => item.kind === 'ayah' ? [{ id: item.id, label: t('roadmap.preview.ayah', { number: item.ayahNumber }), listIndex }] : []), [items, t]);
+  const focusIndex = useMemo(() => focusAyah && focusAyah > 0 ? findAyahRoadmapIndex(items, focusAyah) : -1, [focusAyah, items]);
   const scrubTo = useCallback((index: number) => listRef.current?.scrollToIndex({ animated: false, index, viewPosition: 0.25 }), []);
   useEffect(() => {
-    if (!focusAyah || focusAyah < 1) return;
-    const index = findAyahRoadmapIndex(items, focusAyah);
-    if (index < 0) return;
-    const item = items[index];
+    if (focusIndex < 0) return;
+    const item = items[focusIndex];
     setHighlightedAyahId(item.id);
-    const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.35 }), 60);
+    const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusIndex, viewPosition: 0.35 }), 60);
     const highlightTimer = setTimeout(() => setHighlightedAyahId(current => current === item.id ? undefined : current), 1600);
     return () => { clearTimeout(timer); clearTimeout(highlightTimer); };
-  }, [focusAyah, items.length]);
+  }, [focusIndex, items]);
 
   const renderItem = useCallback(({ item, index }: { item: AyahRoadmapItem; index: number }) => {
     const pathX = roadmapNodeX(index, width, 'ayah');
@@ -45,7 +46,7 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
     return (
       <View style={styles.row}>
         {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
-        <View style={[styles.node, item.kind === 'milestone' && styles.milestoneNode, { left: item.kind === 'ayah' ? pathX - NODE_SIZE / 2 : Math.max(0, Math.min(pathX - 102, width - 204)) }]}>
+        <View style={[styles.node, item.kind === 'milestone' && styles.milestoneNode, { left: item.kind === 'ayah' ? pathX - NODE_SIZE / 2 : Math.max(0, Math.min(pathX - MILESTONE_WIDTH / 2, width - MILESTONE_WIDTH - SCRUBBER_CLEARANCE)) }]}>
           {item.kind === 'ayah'
             ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={() => onSelectAyah ? onSelectAyah(item) : onSelectLevel(item.targetLevelId)} selected={selectedAyahId === item.id || highlightedAyahId === item.id} state={item.state} targetLevelId={item.targetLevelId} />
             : <RoadmapMilestoneNode kind={item.milestoneKind} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />}
@@ -56,6 +57,7 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
 
   return <View style={styles.root}>
     <FlatList
+      style={styles.list}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       data={items as AyahRoadmapItem[]}
@@ -64,7 +66,10 @@ export default function AyahRoadmap({ items, onSelectLevel, onSelectAyah, select
       ListHeaderComponent={header}
       maxToRenderPerBatch={12}
       onLayout={event => setWidth(event.nativeEvent.layout.width)}
-      onScrollToIndexFailed={({ index }) => listRef.current?.scrollToOffset({ animated: true, offset: Math.max(index * 98, 0) })}
+      onScrollToIndexFailed={({ averageItemLength, index }) => {
+        listRef.current?.scrollToOffset({ animated: false, offset: Math.max(index * averageItemLength, 0) });
+        setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.25 }), 80);
+      }}
       ref={listRef}
       removeClippedSubviews
       renderItem={renderItem}
@@ -79,9 +84,10 @@ function keyExtractor(item: AyahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { alignSelf: 'center', maxWidth: 560, paddingBottom: spacing.xxl, paddingHorizontal: spacing.sm, width: '100%' },
+  list: { alignSelf: 'center', maxWidth: 560, width: '100%' },
+  content: { paddingBottom: spacing.xxl },
   row: { height: ROW_HEIGHT, position: 'relative' },
   connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },
   node: { position: 'absolute', top: 0, zIndex: 1 },
-  milestoneNode: { alignItems: 'center', height: NODE_SIZE, justifyContent: 'center', width: 204 },
+  milestoneNode: { alignItems: 'center', height: NODE_SIZE, justifyContent: 'center', width: MILESTONE_WIDTH },
 });
