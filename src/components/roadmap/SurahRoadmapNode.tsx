@@ -9,11 +9,13 @@ interface SurahRoadmapNodeProps {
   id: string;
   arabicName: string;
   englishName: string;
+  direction?: 'ltr' | 'rtl';
+  nameSide?: 'left' | 'right';
   state: RoadmapState;
   onPress: (id: string) => void;
 }
 
-const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, englishName, state, onPress }: SurahRoadmapNodeProps) {
+const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, englishName, direction = 'ltr', nameSide = 'right', state, onPress }: SurahRoadmapNodeProps) {
   const { t } = useLocalization();
   const handlePress = useCallback(() => onPress(id), [id, onPress]);
   const statusKey = state === 'current' ? 'active' : state === 'upcoming' ? 'available' : 'completed';
@@ -24,13 +26,13 @@ const SurahRoadmapNode = memo(function SurahRoadmapNode({ id, arabicName, englis
       accessibilityRole="button"
       accessibilityState={{ selected: state === 'current' }}
       onPress={handlePress}
-      style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.pressable, nameSide === 'left' && styles.nameLeft, pressed && styles.pressed]}
     >
       <IslamicNodeFrame size={88} state={state}>
         <Text adjustsFontSizeToFit minimumFontScale={0.62} numberOfLines={2} style={[styles.arabic, { color: roadmapForeground(state) }]}>{arabicName}</Text>
       </IslamicNodeFrame>
       <View style={styles.nameWrap}>
-        <Text numberOfLines={2} style={[styles.name, state === 'upcoming' && styles.upcomingName]}>{englishName}</Text>
+        <Text numberOfLines={2} style={[styles.name, direction === 'rtl' && styles.nameRtl, state === 'upcoming' && styles.upcomingName]}>{englishName}</Text>
       </View>
     </Pressable>
   );
@@ -40,9 +42,11 @@ export default SurahRoadmapNode;
 
 const styles = StyleSheet.create({
   pressable: { alignItems: 'center', flexDirection: 'row', gap: 16, minHeight: touch.minimum, minWidth: touch.minimum },
+  nameLeft: { flexDirection: 'row-reverse' },
   pressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
   arabic: { fontFamily: fonts.arabicMedium, fontSize: 19, lineHeight: 28, maxWidth: 59, textAlign: 'center', writingDirection: 'rtl' },
   nameWrap: { flex: 1, minWidth: 0 },
   name: { color: colors.primary, fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, textAlign: 'left', writingDirection: 'ltr' },
+  nameRtl: { textAlign: 'right' },
   upcomingName: { color: colors.textMuted },
 });
