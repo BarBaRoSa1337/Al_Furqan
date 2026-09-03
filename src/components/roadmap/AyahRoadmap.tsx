@@ -1,9 +1,13 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { spacing } from '../../theme/tokens';
 import type { AyahRoadmapItem } from './ayahRoadmapModel';
 import AyahRoadmapNode from './AyahRoadmapNode';
 import RoadmapPath from './RoadmapPath';
+import { roadmapNodeX } from './roadmapGeometry';
+
+const ROW_HEIGHT = 86;
+const NODE_SIZE = 68;
 
 interface AyahRoadmapProps {
   items: readonly AyahRoadmapItem[];
@@ -14,6 +18,7 @@ interface AyahRoadmapProps {
 
 export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }: AyahRoadmapProps) {
   const listRef = useRef<FlatList<AyahRoadmapItem>>(null);
+  const [width, setWidth] = useState(320);
   useEffect(() => {
     if (!focusAyah || focusAyah < 1 || focusAyah > items.length) return;
     const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusAyah - 1, viewPosition: 0.35 }), 60);
@@ -21,17 +26,17 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
   }, [focusAyah, items.length]);
 
   const renderItem = useCallback(({ item, index }: { item: AyahRoadmapItem; index: number }) => {
-    const offset = [-10, 7, -5, 10][index % 4];
-    const nextOffset = [-10, 7, -5, 10][(index + 1) % 4];
+    const pathX = roadmapNodeX(index, width, 'ayah');
+    const nextPathX = roadmapNodeX(index + 1, width, 'ayah');
     return (
       <View style={styles.row}>
-        {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={50 + offset / 4} showLeaves={index % 2 === 1} state={item.state} toX={50 + nextOffset / 4} /></View> : null}
-        <View style={[styles.node, { transform: [{ translateX: offset }] }]}>
+        {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
+        <View style={[styles.node, { left: pathX - NODE_SIZE / 2 }]}>
           <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />
         </View>
       </View>
     );
-  }, [items.length, onSelectLevel]);
+  }, [items.length, onSelectLevel, width]);
 
   return (
     <FlatList
@@ -42,6 +47,7 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
       keyExtractor={keyExtractor}
       ListHeaderComponent={header}
       maxToRenderPerBatch={12}
+      onLayout={event => setWidth(event.nativeEvent.layout.width)}
       onScrollToIndexFailed={({ index }) => listRef.current?.scrollToOffset({ animated: true, offset: Math.max(index * 98, 0) })}
       ref={listRef}
       removeClippedSubviews
@@ -55,8 +61,8 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
 function keyExtractor(item: AyahRoadmapItem): string { return item.id; }
 
 const styles = StyleSheet.create({
-  content: { alignSelf: 'center', maxWidth: 560, paddingBottom: spacing.xxl, paddingHorizontal: spacing.lg, width: '100%' },
-  row: { alignItems: 'center', justifyContent: 'center', minHeight: 98, position: 'relative' },
-  connector: { bottom: -38, left: 0, position: 'absolute', right: 0, top: 57 },
-  node: { zIndex: 1 },
+  content: { alignSelf: 'center', maxWidth: 560, paddingBottom: spacing.xxl, paddingHorizontal: spacing.sm, width: '100%' },
+  row: { height: ROW_HEIGHT, position: 'relative' },
+  connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },
+  node: { position: 'absolute', top: 0, zIndex: 1 },
 });

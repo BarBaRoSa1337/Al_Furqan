@@ -5,7 +5,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MoroccanBackdrop } from '../../components/furqan/FurqanArtwork';
 import AyahRoadmap from '../../components/roadmap/AyahRoadmap';
 import { buildAyahRoadmapModel } from '../../components/roadmap/ayahRoadmapModel';
-import IslamicNodeFrame, { roadmapForeground } from '../../components/roadmap/IslamicNodeFrame';
 import Screen from '../../components/ui/Screen';
 import { getContentRepository } from '../../lib/content/repository';
 import { getAppProgress, reconcileCurriculumProgress } from '../../lib/progress/storage';
@@ -51,20 +50,18 @@ export default function SurahPathScreen() {
         <Pressable accessibilityLabel={t('surah.backHome')} accessibilityRole="button" onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
           <Ionicons color={colors.primary} name={direction === 'rtl' ? 'arrow-forward' : 'arrow-back'} size={23} />
         </Pressable>
+        <Pressable
+          accessibilityLabel={`${authored.surah.arabicName}, ${authored.surah.transliteratedName}`}
+          accessibilityRole={roadmap.header.targetLevelId ? 'button' : undefined}
+          disabled={!roadmap.header.targetLevelId}
+          onPress={() => roadmap.header.targetLevelId && openLevel(roadmap.header.targetLevelId)}
+          style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
+        >
+          <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.arabic}>{authored.surah.arabicName}</Text>
+          <Text numberOfLines={2} style={styles.english}>{authored.surah.transliteratedName}</Text>
+        </Pressable>
         <View style={styles.topSpacer} />
       </View>
-      <Pressable
-        accessibilityLabel={`${authored.surah.arabicName}, ${authored.surah.transliteratedName}`}
-        accessibilityRole={roadmap.header.targetLevelId ? 'button' : undefined}
-        disabled={!roadmap.header.targetLevelId}
-        onPress={() => roadmap.header.targetLevelId && openLevel(roadmap.header.targetLevelId)}
-        style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
-      >
-        <IslamicNodeFrame size={104} state={roadmap.header.state}>
-          <Text adjustsFontSizeToFit minimumFontScale={0.62} numberOfLines={2} style={[styles.arabic, { color: roadmapForeground(roadmap.header.state) }]}>{authored.surah.arabicName}</Text>
-        </IslamicNodeFrame>
-        <Text numberOfLines={2} style={styles.english}>{authored.surah.transliteratedName}</Text>
-      </Pressable>
     </View>
   );
 
@@ -80,12 +77,12 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   notFound: { color: colors.primary, fontFamily: fonts.bold, fontSize: 22, textAlign: 'center' },
   link: { color: colors.success, fontFamily: fonts.bold, marginTop: spacing.lg },
-  headerArea: { paddingBottom: spacing.xl },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.xs },
+  headerArea: { paddingBottom: spacing.md },
+  topRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.xs },
   back: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 999, borderWidth: 1, height: touch.minimum, justifyContent: 'center', width: touch.minimum },
   topSpacer: { width: touch.minimum },
   pressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
-  identity: { alignItems: 'center', alignSelf: 'center', gap: spacing.sm, minHeight: touch.minimum, paddingHorizontal: spacing.md },
-  arabic: { fontFamily: fonts.arabicMedium, fontSize: 25, lineHeight: 35, maxWidth: 69, textAlign: 'center', writingDirection: 'rtl' },
-  english: { color: colors.primary, fontFamily: fonts.bold, fontSize: 23, lineHeight: 29, maxWidth: 260, textAlign: 'center', writingDirection: 'ltr' },
+  identity: { alignItems: 'center', flex: 1, gap: 1, minHeight: touch.minimum, paddingHorizontal: spacing.sm },
+  arabic: { color: colors.primary, fontFamily: fonts.arabicMedium, fontSize: 25, lineHeight: 34, maxWidth: 210, textAlign: 'center', writingDirection: 'rtl' },
+  english: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, maxWidth: 230, textAlign: 'center', writingDirection: 'ltr' },
 });
