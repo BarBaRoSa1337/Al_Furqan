@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { spacing } from '../../theme/tokens';
-import type { AyahRoadmapItem } from './ayahRoadmapModel';
+import { findAyahRoadmapIndex, type AyahRoadmapItem } from './ayahRoadmapModel';
 import AyahRoadmapNode from './AyahRoadmapNode';
 import RoadmapPath from './RoadmapPath';
 import { roadmapNodeX } from './roadmapGeometry';
+import RoadmapMilestoneNode from './RoadmapMilestoneNode';
 
 const ROW_HEIGHT = 86;
 const NODE_SIZE = 68;
@@ -20,8 +21,10 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
   const listRef = useRef<FlatList<AyahRoadmapItem>>(null);
   const [width, setWidth] = useState(320);
   useEffect(() => {
-    if (!focusAyah || focusAyah < 1 || focusAyah > items.length) return;
-    const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index: focusAyah - 1, viewPosition: 0.35 }), 60);
+    if (!focusAyah || focusAyah < 1) return;
+    const index = findAyahRoadmapIndex(items, focusAyah);
+    if (index < 0) return;
+    const timer = setTimeout(() => listRef.current?.scrollToIndex({ animated: true, index, viewPosition: 0.35 }), 60);
     return () => clearTimeout(timer);
   }, [focusAyah, items.length]);
 
@@ -31,8 +34,10 @@ export default function AyahRoadmap({ items, onSelectLevel, header, focusAyah }:
     return (
       <View style={styles.row}>
         {index < items.length - 1 ? <View style={styles.connector}><RoadmapPath fromX={pathX} height={ROW_HEIGHT} index={index} state={item.state} toX={nextPathX} width={width} /></View> : null}
-        <View style={[styles.node, { left: pathX - NODE_SIZE / 2 }]}>
-          <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />
+        <View style={[styles.node, item.kind === 'milestone' && styles.milestoneNode, { left: item.kind === 'ayah' ? pathX - NODE_SIZE / 2 : Math.max(0, Math.min(pathX - 102, width - 204)) }]}>
+          {item.kind === 'ayah'
+            ? <AyahRoadmapNode ayahNumber={item.ayahNumber} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />
+            : <RoadmapMilestoneNode kind={item.milestoneKind} onPress={onSelectLevel} state={item.state} targetLevelId={item.targetLevelId} />}
         </View>
       </View>
     );
@@ -65,4 +70,5 @@ const styles = StyleSheet.create({
   row: { height: ROW_HEIGHT, position: 'relative' },
   connector: { height: ROW_HEIGHT, left: 0, position: 'absolute', right: 0, top: NODE_SIZE / 2 },
   node: { position: 'absolute', top: 0, zIndex: 1 },
+  milestoneNode: { alignItems: 'center', height: NODE_SIZE, justifyContent: 'center', width: 204 },
 });

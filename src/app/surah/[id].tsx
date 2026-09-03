@@ -50,16 +50,14 @@ export default function SurahPathScreen() {
         <Pressable accessibilityLabel={t('surah.backHome')} accessibilityRole="button" onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
           <Ionicons color={colors.primary} name={direction === 'rtl' ? 'arrow-forward' : 'arrow-back'} size={23} />
         </Pressable>
-        <Pressable
+        <View
           accessibilityLabel={`${authored.surah.arabicName}, ${authored.surah.transliteratedName}`}
-          accessibilityRole={roadmap.header.targetLevelId ? 'button' : undefined}
-          disabled={!roadmap.header.targetLevelId}
-          onPress={() => roadmap.header.targetLevelId && openLevel(roadmap.header.targetLevelId)}
-          style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
+          accessibilityRole="header"
+          style={styles.identity}
         >
           <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={styles.arabic}>{authored.surah.arabicName}</Text>
           <Text numberOfLines={2} style={styles.english}>{authored.surah.transliteratedName}</Text>
-        </Pressable>
+        </View>
         <View style={styles.topSpacer} />
       </View>
     </View>

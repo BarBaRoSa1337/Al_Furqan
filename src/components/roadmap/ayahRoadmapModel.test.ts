@@ -17,17 +17,17 @@ const curriculum: SurahCurriculum = {
 };
 const authored = { packageId: 'pkg', path: {} as never, curriculum, levels, surah: { id: 'surah-1', surahNumber: 1, ayahCount: 4 } as SurahRecord } satisfies AuthoredSurahSummary;
 
-test('expands ranges into one node per ayah and anchors active checkpoint', () => {
+test('preserves authored milestones and expands ranges into one node per ayah', () => {
   const model = buildAyahRoadmapModel(authored, ['intro', 'ayah-1', 'ayah-2-3']);
-  expect(model.items.map(item => item.ayahNumber)).toEqual([1, 2, 3, 4]);
-  expect(model.items.map(item => item.state)).toEqual(['completed', 'completed', 'current', 'upcoming']);
-  expect(model.items[2].targetLevelId).toBe('checkpoint');
+  expect(model.items.map(item => item.kind === 'ayah' ? item.ayahNumber : item.milestoneKind)).toEqual(['intro', 1, 2, 3, 'checkpoint', 4, 'final_review']);
+  expect(model.items.map(item => item.state)).toEqual(['completed', 'completed', 'completed', 'completed', 'current', 'upcoming', 'upcoming']);
+  expect(model.items[4].targetLevelId).toBe('checkpoint');
 });
 
-test('uses header for introduction and last ayah for final review', () => {
-  expect(buildAyahRoadmapModel(authored, []).header).toMatchObject({ state: 'current', targetLevelId: 'intro' });
+test('renders introduction and final review as distinct milestones', () => {
+  expect(buildAyahRoadmapModel(authored, []).items[0]).toMatchObject({ kind: 'milestone', milestoneKind: 'intro', state: 'current', targetLevelId: 'intro' });
   const model = buildAyahRoadmapModel(authored, ['intro', 'ayah-1', 'ayah-2-3', 'checkpoint', 'ayah-4']);
-  expect(model.items[3]).toMatchObject({ state: 'current', targetLevelId: 'review' });
+  expect(model.items.at(-1)).toMatchObject({ kind: 'milestone', milestoneKind: 'final_review', state: 'current', targetLevelId: 'review' });
 });
 
 function range(start: number, end: number) {
